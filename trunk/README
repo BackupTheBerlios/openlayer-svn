@@ -1,0 +1,37 @@
+OpenLayer
+
+For installation please see INSTALL
+
+Requirements:
+-# GNU Tools
+-# OpenGL library
+-# Allegro library
+-# AllegroGL library
+-# Glyph Keeper Library (Both Allegro and AllegroGL TARGETS)
+-# Freetype library
+-# Png library
+-# LoadPng library
+-# Zlib library
+    
+Introduction
+ 
+**PROVIDE PROJECT INFORMATION HERE**
+    
+Implementation
+
+Multi-Platform: Windows / Linux / Unix / Mac OS
+Language: C++
+
+Written by: Esa Tanskanen (Fladimir da Gorf)
+Additional: 
+			10/27/2005 by juvinious (Miguel Gavidia)
+			10/27/2005 by Peter Hull (MACOSX Support)
+
+Contact:
+myemail@somewhere.com
+
+Website:
+http://crystalstorm.ath.cx/index.php?lan=en&page=OpenLayer
+
+Berlios.de
+http://openlayer.berlios.de

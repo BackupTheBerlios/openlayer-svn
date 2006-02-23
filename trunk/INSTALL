@@ -1,0 +1,94 @@
+INSTALLATION
+
+Before compiling ensure you have the following installed and in your path:
+- GNU compiler tools (ie gcc/g++, make, etc)
+- OpenGL Library
+- Allegro Library
+- AllegroGL Library
+- Freetype library version 2.1.10 or greater. Anything else and it won't work.
+- GlyphKeeper library specifically built for ALLEGROGL
+	- the allegrogl version should be named libglyph-agl.a
+	- Attached is a makefile (under utils) to create the allegrogl verision with glyphkeeper 0.29.1
+	- Note that GK 0.29.1 will have 2 compile errors in glyph_to_opengl. Either remove the comments
+	  or change // to /* with it's closing */ brace
+- Png library
+- LoadPng library 1.4 pre1 
+	- Loadpng must be the 1.4 pre1 release anything before that WILL not work
+	- The library is included in the utils directory run 'make loadpng' to build it and follow the instructions to install
+- Zlib library
+
+GNU/MINGW
+
+To compile:
+Type 'make TARGET=platform' in the root directory of OpenLayer
+You must specify the target platform like:
+	LINUX
+	make TARGET=LINUX
+	
+	WINDOWS
+	make TARGET=WINDOWS
+	
+	MACOSX
+	make TARGET=MACOSX
+	
+This will do the following:
+	- Create the library and place it in the lib folder  (lib/libopenlayer.a)
+	- Create several demos of the library in the demos folder
+
+To clean up resources and remove the built library and demos:
+Type 'make clean' in the root directory of OpenLayer
+
+To install:
+Type 'make install LOCATION=/path' in the root directory of OpenLayer
+You must specify "LOCATION" with the path to where a lib and include directory exist
+or else it will not install.
+EXAMPLES:
+	LINUX (must be root or with write permissions)
+	make TARGET=LINUX install LOCATION=/usr
+	
+	WINDOWS
+	make TARGET=WINDOWS install LOCATION=c:\dev-cpp
+	
+	MACOSX
+	make TARGET=MACOSX install LOCATION=/usr
+
+To uninstall:
+Type 'make uninstall INSTALL_LOCATION' in the root directory of OpenLayer
+You must specify "INSTALL_LOCATION" with the path to where OpenLayer was installed.
+EXAMPLES:
+	LINUX (must be root or with write permissions)
+	make TARGET=LINUX uninstall INSTALL_LOCATION=/usr
+	
+	WINDOWS
+	make TARGET=WINDOWS uninstall INSTALL_LOCATION=c:\dev-cpp
+	
+	MACOSX
+	make TARGET=MACOSX uninstall INSTALL_LOCATION=/usr
+
+FOR COMPILERS OTHER THAN GCC
+ 
+- For precompiled versions of the library please see 
+  http://www.sourceforge.net/projects/openlayer/ for more info.
+
+- If no package exists for your compiler you'll have to compile OpenLayer's source files and
+  include them in the same archive. Also download the required external libraries and follow the
+  installation instructions included with them.
+
+
+To Use:
+
+- Read the provided documentation found in the Manual folder to know how to use the library
+
+- #include <OpenLayer.hpp> in your project's sources
+
+	LINUX
+- Link your projects with:
+	"-lopenlayer -lglyph-agl -lfreetype -lldpng -lpng -lz -lagl `allegro-config --libs` -lGL -lGLU"
+	
+	WINDOWS
+- Link your projects with:
+	"-lopenlayer -lglyph-agl -lfreetype -lldpng -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32-lopengl32"
+	
+	MACOSX
+- Link your projects with:
+	"-lopenlayer -lglyph-agl -lfreetype -lldpng -lpng -lz -lagl `allegro-config --libs` -framework OpenGL -framework Carbon"

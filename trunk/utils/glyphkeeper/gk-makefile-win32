@@ -1,0 +1,229 @@
+# Glyph Keeper makefile
+TARGET=ALLEGGL
+
+VPATH :=
+vpath %.c src examples freetype/src
+vpath %.h src include
+
+targetcode :=
+
+ifeq ($(TARGET),TEXT)
+targetname := Text
+targetcode := text
+gk_targetlibs :=
+ex_targetlibs :=
+target_sources := glyph_to_text.c
+exampletag := _text
+endif
+
+ifeq ($(TARGET),ALLEGRO)
+ifdef ALLEGRO_STATICLINK
+ifdef GLYPH_DLL
+$(error Combination of Glyph Keeper DLL and static Allegro is not supported)
+endif
+targetname := static Allegro
+targetcode := allegs
+gk_targetlibs := alleg_s kernel32 user32 gdi32 comdlg32 ole32 dinput ddraw dxguid winmm dsound
+else
+targetname := Allegro
+targetcode := alleg
+gk_targetlibs := alleg
+endif
+ex_targetlibs := $(gk_targetlibs)
+target_sources := glyph_to_allegro.c glyph_to_allegro_aa.c glyph_to_allegro_mono.c
+exampletag := _alleg
+endif
+
+ifeq ($(TARGET),ALLEGGL)
+targetname := AllegGL
+targetcode := agl
+gk_targetlibs := agl alleg
+ex_targetlibs := $(gk_targetlibs)
+target_sources := 
+endif
+
+ifeq ($(TARGET),SDL)
+targetname := SDL
+targetcode := sdl
+gk_targetlibs := SDL
+ex_targetlibs := $(gk_targetlibs) SDLmain
+target_sources := glyph_to_sdl.c glyph_to_sdl_rect.c
+exampletag := _sdl
+endif
+
+ifndef targetcode
+ifdef TARGET
+$(error Unknown TARGET "$(TARGET)")
+else
+$(error TARGET is not specified)
+endif
+endif
+
+
+
+#
+# CFLAGS
+#
+
+ft_defines = -DNDEBUG -DWIN32 -D_LIB
+
+gk_defines := -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_$(TARGET) $(if $(GLYPH_DLL),-DGLYPH_DLL,)
+
+ifeq ($(targetcode),allegs)
+gk_defines += -DALLEGRO_STATICLINK
+endif
+
+CC := gcc
+
+WFLAGS := -W -Wall
+
+OFLAGS := -O3 -s
+
+FT_CFLAGS := $(WFLAGS) -std=c89 $(OFLAGS) -Ifreetype/include $(ft_defines)
+
+GK_CFLAGS := $(WFLAGS) -std=c89 $(OFLAGS) -Iinclude $(gk_defines) $(if $(FT_LIB),,-Ifreetype/include)
+
+
+
+
+#
+# Files
+#
+
+ifdef GLYPH_DLL
+dll_name := glyph-$(targetcode).dll
+dll_path := examples/$(dll_name)
+endif
+
+static_lib_name := glyph-$(targetcode)
+static_obj_nameext := $(static_lib_name).o
+static_lib_nameext := lib$(static_lib_name).a
+static_obj_path := obj/$(static_obj_nameext)
+static_lib_path := obj/$(static_lib_nameext)
+
+dll_lib_name := glyph-$(targetcode)-dll
+dll_obj_nameext := $(dll_lib_name).o
+dll_lib_nameext := lib$(dll_lib_name).a
+dll_obj_path := obj/$(dll_obj_nameext)
+dll_lib_path := obj/$(dll_lib_nameext)
+
+goal_obj_nameext := $(if $(GLYPH_DLL),$(dll_obj_nameext),$(static_obj_nameext))
+goal_obj_path    := $(if $(GLYPH_DLL),$(dll_obj_path),$(static_obj_path))
+goal_lib_nameext := $(if $(GLYPH_DLL),$(dll_lib_nameext),$(static_lib_nameext))
+goal_lib_path    := $(if $(GLYPH_DLL),$(dll_lib_path),$(static_lib_path))
+
+sources := glyph_dimensions.c glyph_face.c glyph_global_vars.c \
+           glyph_index.c glyph_internal.h glyph_main.c glyph_rend.c \
+           glyph_structs.h glyph_utils.c $(target_sources)
+
+gk_libs := $(FT_LIB) $(gk_targetlibs:%=lib%.a)
+ex_libs := $(if $(GLYPH_DLL),,$(FT_LIB)) $(ex_targetlibs:%=lib%.a)
+
+ifdef GLYPH_DLL
+ifdef FT_LIB
+bench_alfont_alleg_extra_libs := $(FT_LIB)
+endif
+endif
+
+link_gk_libs := $(gk_libs:lib%.a=-l%)
+link_ex_libs := $(ex_libs:lib%.a=-l%)
+
+ifndef FT_LIB
+ftobjs := $(addprefix freetype/obj/,$(addsuffix .o,\
+  autofit ftapi ftbase ftbbox ftbdf ftbitmap ftdebug ftglyph ftinit ftmm \
+  ftotval ftpfr ftstroke ftsynth ftsystem fttype1 ftwinfnt ftxf86 bdf \
+  ftcache cff type1cid ftgzip ftlzw otvalid pcf pfr psaux pshinter psmodule \
+  raster sfnt smooth truetype type1 type42 winfnt ))
+endif
+
+example_sources := $(wildcard examples/*$(exampletag).c)
+example_executables := $(example_sources:.c=$(EXE))
+
+includedir_u := $(subst \,/,$(includedir))
+libdir_u := $(subst \,/,$(libdir))
+
+
+
+#
+# Tools
+#
+
+ifdef WINDOWS_TOOLS
+delete = del /q $(subst /,\,$(1))
+copy = copy $(subst /,\,$(1) $(2))
+else
+delete = rm -f $(1)
+copy = @cp -v $(1) $(2)
+endif
+
+
+
+#
+# Rules
+#
+
+.PHONY: all lib examples clean veryclean install uninstall
+
+all: lib
+
+lib: $(goal_lib_path) $(dll_path)
+
+$(static_lib_path): $(ftobjs) $(static_obj_path)
+	ar r $@ $^
+
+$(dll_lib_path) $(dll_path): $(ftobjs) $(dll_obj_path)
+	gcc -shared -o $(dll_path) $(dll_obj_path) $(ftobjs) $(link_gk_libs) -Wl,--output-def,glyph.def
+	gcc -shared -o $(dll_path) $(dll_obj_path) $(ftobjs) $(link_gk_libs) -Wl,--kill-at
+	dlltool -d glyph.def --dllname $(dll_path) --output-lib $(dll_lib_path) --kill-at
+	$(call delete,glyph.def)
+
+$(goal_obj_path): glyph.c $(sources) glyph.h
+	@-echo Compiling Glyph Keeper / $(targetname) with $(compiler)
+	$(CC) $(GK_CFLAGS) -c -o $@ $<
+
+freetype/obj/%.o: %.c
+	$(CC) $(FT_CFLAGS) -c -o $@ $<
+
+examples: lib $(example_executables)
+
+$(example_executables): %$(EXE): %.c
+	@echo $(notdir $(basename $@))_extra_libs
+	$(CC) $(GK_CFLAGS) -o $@ $< $(goal_lib_path) $(link_ex_libs) $($(notdir $(basename $@))_extra_libs:lib%.a=-l%)
+
+clean:
+	@-echo Cleaning up Glyph Keeper with $(compiler)
+	$(call delete,$(goal_obj_path))
+	$(call delete,$(goal_lib_path))
+	$(call delete,$(example_executables))
+	$(call delete,$(example_executables:%$(EXE)=%.log))
+	$(call delete,freetype/obj/*)
+ifdef GLYPH_DLL
+	$(call delete,glyph.def)
+	$(call delete,$(dll_path))
+endif
+
+veryclean:
+	@-echo Cleaning up Glyph Keeper
+	$(call delete,glyph.def)
+	$(call delete,obj/*)
+	$(call delete,freetype/obj/*)
+	$(call delete,examples/*.exe)
+	$(call delete,examples/*.log)
+	$(call delete,examples/*.dll)
+
+install: glyph.h lib
+	@-echo Installing Glyph Keeper / $(targetname) for $(compiler)
+	$(call copy,$<,"$(includedir_u)")
+	$(call copy,$(goal_lib_path),"$(libdir_u)")
+	@-echo Glyph Keeper / $(targetname) is now installed.
+	@-echo Dont forget to link your program to: $(goal_lib_nameext) $(ex_libs)
+ifdef GLYPH_DLL
+	@-echo Glyph Keeper DLL $(dll_name) is now in examples/ directory.
+	@-echo You may need to put it somewhere in PATH.
+endif
+
+uninstall:
+	@-echo Uninstalling Glyph Keeper / $(targetname) for $(compiler)
+	$(call delete,"$(includedir_u)glyph.h")
+	$(call delete,"$(libdir_u)$(goal_lib_nameext)")
+	@-echo Glyph Keeper / $(targetname) is now uninstalled.
