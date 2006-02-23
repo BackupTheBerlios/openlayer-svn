@@ -1,3 +1,5 @@
+
+
 OpenLayer
 
 For installation please see INSTALL
@@ -13,11 +15,11 @@ Requirements:
 -# LoadPng library
 -# Zlib library
     
-Introduction
+Introduction:
  
 **PROVIDE PROJECT INFORMATION HERE**
     
-Implementation
+Implementation:
 
 Multi-Platform: Windows / Linux / Unix / Mac OS
 Language: C++
