@@ -30,38 +30,7 @@ float FRand( float min, float max ) {
 using namespace ol;
 
 
-class Rectagon : public Poly
-{
 
-public:
-	Rectagon( const Vec2D& topright, const Vec2D& _size )
-		: tr( topright ), bl( topright + _size )
-	{
-		Add( tr );
-		Add( Vec2D( bl.x, tr.y ));
-		Add( bl );
-		Add( Vec2D( tr.x, bl.y ));
-	}
-
-	bool Contains( Poly& p )
-	{
-		unsigned int i;
-		const std::vector< Vec2D > v = p.GetVertices();
-		for( i = 0; i < v.size(); i++ )
-		{
-			if( v[i].x > bl.x || v[i].x < tr.x ||
-			    v[i].y > bl.y || v[i].y < tr.y )
-				return false;
-		}
-		return true;
-	}
-
-
-private:
-
-	Vec2D tr;
-	Vec2D bl;
-};
 
 
 
@@ -75,50 +44,62 @@ public:
 
 	void UpdatePosition( float deltaTime )
 	{
-		MoveBy( mVelocity * deltaTime );
-		//mPosition += ( mVelocity * deltaTime );
-		/*
-
-		if( mPosition .x < 0 )
-		{
-			mVelocity.x *= -1;
-			mPosition .x = 0 - mPosition .x;
-		}
-		if( mPosition .x >= SCREEN_W )
-		{
-			mVelocity.x *= -1;
-			mPosition .x = SCREEN_W - ( mPosition .x - SCREEN_W );
-		}
-
-		if( mPosition .y < 0 )
-		{
-			mVelocity.y *= -1;
-			mPosition .y = 0 - mPosition .y;
-		}
-		if( mPosition .y >= SCREEN_H )
-		{
-			mPosition .y = SCREEN_H - ( mPosition .y - SCREEN_H );
-			mVelocity.y *= -1;
-		}
-		*/
+		position += velocity * deltaTime;
 	}
 
 	void Draw()
 	{
+		Transforms::SetPosition( position );
 		Poly::Draw( Rgba::WHITE );
 	}
 
 	Placement GetPlacement()
 	{
-		return Placement();
+		return Placement( position );
 	}
 
-	Vec2D		mVelocity;
-	Vec2D		mPosition;
+	float    mass;
+	Vec2D		velocity;
+	Vec2D		position;
 
 };
 
+class BoundingRectangle : public Poly
+{
 
+public:
+	BoundingRectangle( const Vec2D& topleft, const Vec2D& _size )
+		: tl( topleft ), br( topleft + _size )
+	{
+		Add( tl );
+		Add( Vec2D( br.x, tl.y ));
+		Add( br );
+		Add( Vec2D( tl.x, br.y ));
+	}
+
+	bool Contains( MotionPoly& p )
+	{
+		unsigned int i;
+		const std::vector< Vec2D > v = p.GetVertices();
+		Vec2D test_tl = tl - p.position;
+		Vec2D test_br = br - p.position;
+
+
+		for( i = 0; i < v.size(); i++ )
+		{
+			if( v[i].x > test_br.x || v[i].x < test_tl.x ||
+			    v[i].y > test_br.y || v[i].y < test_tl.y )
+				return false;
+		}
+		return true;
+	}
+
+
+private:
+
+	Vec2D tl;
+	Vec2D br;
+};
 
 
 int main() {
@@ -134,16 +115,16 @@ int main() {
 
 
 	MotionPoly player;
-	player.Add( Vec2D( 0.0, 0.0 ));
-	player.Add( Vec2D( 20.0, 0.0 ));
-	player.Add( Vec2D( 25.0, 10.0 ));
-	player.Add( Vec2D( 20.0, 20.0 ));
-	player.Add( Vec2D( 0.0, 20.0 ));
+	player.Add( Vec2D( 0, 0 ));
+	player.Add( Vec2D( 30, 0 ));
+	player.Add( Vec2D( 30, 30 ));
+	player.Add( Vec2D( 0, 30 ));
 
-
-
-	player.mVelocity.x = 1.0;
-	player.mVelocity.y = 1.0;
+	player.position.x = 20.0;
+	player.position.y = 20.0;
+	player.velocity.x = 0.0;
+	player.velocity.y = 0.0;
+	player.mass = 25.0;
 
 	MotionPoly wall;
 	wall.Add( Vec2D( 0.0, 0.0 ));
@@ -151,22 +132,16 @@ int main() {
 	wall.Add( Vec2D( SCREEN_W, SCREEN_H ));
 	wall.Add( Vec2D( 0.0, SCREEN_H ));
 
-
 	MotionPoly enemy;
 	enemy.Add( Vec2D( 15, 0 ));
-	enemy.Add( Vec2D( 30, 10 ));
-	enemy.Add( Vec2D( 25, 15 ));
-	enemy.Add( Vec2D( 30, 20 ));
+	enemy.Add( Vec2D( 30, 15 ));
 	enemy.Add( Vec2D( 15, 30 ));
-	enemy.Add( Vec2D( 0, 20 ));
-	enemy.Add( Vec2D( 5, 15 ));
-	enemy.Add( Vec2D( 0, 10 ));
-	enemy.mPosition = Vec2D( 700,500 );
-	enemy.MoveBy( Vec2D( 700,500 ));
+	enemy.Add( Vec2D( 0, 15 ));
 
-	//enemy.speed.x = -2.0;
-	//enemy.speed.y = -1.5;
+	enemy.mass = 10.0;
+	enemy.position = Vec2D( 700,0 );
 
+	BoundingRectangle goal( Vec2D( 300,200 ), Vec2D( 80.0, 80.0 ));
 
    // Set up the delta time routines with the default fps of 100.0 //
 	const float FRAMERATE = 100.0;
@@ -176,34 +151,34 @@ int main() {
 	Collision collision;
 
 
-	Rect testr( Vec2D( 100, 100 ), Vec2D( 200, 100 ), 1.0, 70 );
-
-	Rectagon rr( Vec2D( 100, 100 ), Vec2D( 200, 100 ));
+	const float THRUST = 5.0;
+	const float GRAVITY = .098;
+	bool bExit = false;
 
    // Run the game loop until esc is pressed //
-   while( !key[KEY_ESC] ) {
+   while( !key[KEY_ESC] && !bExit ) {
       // LOGIC //
 
-		if( collisionzoom )
+		while( keypressed())
 		{
-			FpsCounter::Pause();
-			while( !key[KEY_SPACE] )
+			if( readkey() >> 8 == KEY_SPACE )
 			{
-				Transforms::SetPosition( collision.GetPoint());
-				Transforms::SetStretch( 2.0, 2.0 );
-
-				Canvas::Fill( Rgba::BLACK );
-				player.Draw();
-				enemy.Draw();
-				Canvas::Refresh();
-				rest(1);
+				FpsCounter::Pause();
+				bool pause = true;
+				while( pause )
+				{
+					while( keypressed())
+					{
+						if( readkey() >> 8 == KEY_SPACE )
+						  pause = false;
+					}
+					rest(1);
+				}
+				FpsCounter::Resume();
 			}
-			//Transforms::ResetTransforms();
-			Transforms::SetPosition( Vec2D( 0.0, 0.0 ));
-			Transforms::SetStretch( 1.0, 1.0 );
-			collisionzoom = false;
-			FpsCounter::Resume();
 		}
+
+		//printf( "Starting a frame\n" );
 
 
       // Inform the fps counter that a new frame has started //
@@ -211,74 +186,87 @@ int main() {
 
       // Get the delta time //
       float deltaTime = FpsCounter::GetDeltaTime();
-
+		//printf( "Currentfps - %f\n", FpsCounter::GetFps());
       // Move the bitmap with the arrow keys //
+		Vec2D force;
 
+      if( key[KEY_LEFT] ) force.x -= 1;
+      if( key[KEY_RIGHT] ) force.x += 1;
+      if( key[KEY_UP] ) force.y -= 1;
+      if( key[KEY_DOWN] ) force.y += 1;
 
-      if( key[KEY_LEFT] ) player.mVelocity.x -= 4 * deltaTime / FRAMERATE;
-      if( key[KEY_RIGHT] ) player.mVelocity.x += 4 * deltaTime / FRAMERATE;
-      if( key[KEY_UP] ) player.mVelocity.y -= 4 * deltaTime / FRAMERATE;
-      if( key[KEY_DOWN] ) player.mVelocity.y += 4 * deltaTime / FRAMERATE;
+      if( force.x && force.y )
+			force *= .7071;
 
-		float xAccel, yAccel;
+		force *= THRUST;
 
-		/*xAccel = FRand( -.1, .1 );
-		yAccel = FRand( -.1, .1 );
-		player.mVelocity.x += xAccel * deltaTime;
-		player.mVelocity.y += yAccel * deltaTime;*/
+		Vec2D accel = force / player.mass;
+		accel.y += GRAVITY;
+
+		//printf( "Force is %f,%f\n", force.x, force.y );
+		//printf( "Accel is %f,%f\n", accel.x, accel.y );
+		//printf( "DT is %f\n", deltaTime );
+
+		//printf( "PreVelocity is %+07.3f,%+07.3f\n", player.velocity.x, player.velocity.y );
+		player.velocity += accel*deltaTime;
+		//printf( "Velocity is    %+07.3f,%+07.3f\n", player.velocity.x, player.velocity.y );
 		player.UpdatePosition( deltaTime );
 
 
 
-		xAccel = FRand( -.1, .1 );
-		yAccel = FRand( -.1, .1 );
-		enemy.mVelocity.x += xAccel * deltaTime;
-		enemy.mVelocity.y += yAccel * deltaTime;
+		//accel.x = FRand( -.1, .1 );
+		//accel.y = FRand( -.1, .1 );
+		accel.x = 0.0;
+		accel.y = GRAVITY;
+		enemy.velocity += accel * deltaTime;
 		enemy.UpdatePosition( deltaTime );
-
 
 
 		collision = player.GetCollision( wall, player.GetPlacement(), wall.GetPlacement());
 		if( collision.IsCollision())
 		{
 			Vec2D surfaceNormal = collision.GetSegment( OBJ_B ).GetNormal();
-			float speedAgainstSurface = -player.mVelocity * surfaceNormal;
-			player.mVelocity += 2 * speedAgainstSurface * surfaceNormal;
+			float speedAgainstSurface = -player.velocity * surfaceNormal;
+			player.velocity += 2 * speedAgainstSurface * surfaceNormal;
 		}
+
 
 		collision = enemy.GetCollision( wall, enemy.GetPlacement(), wall.GetPlacement());
 		if( collision.IsCollision())
 		{
 			Vec2D surfaceNormal = collision.GetSegment( OBJ_B ).GetNormal();
-			float speedAgainstSurface = -enemy.mVelocity * surfaceNormal;
-			enemy.mVelocity += 2 * speedAgainstSurface * surfaceNormal;
+			float speedAgainstSurface = -enemy.velocity * surfaceNormal;
+			enemy.velocity += 2 * speedAgainstSurface * surfaceNormal;
 		}
+
 
 		collision = player.GetCollision( enemy, player.GetPlacement(), enemy.GetPlacement());
 		if( collision.IsCollision())
 		{
-			Vec2D surfaceNormal = collision.GetSegment( OBJ_B ).GetNormal();
-			float speedAgainstSurface = -player.mVelocity * surfaceNormal;
-			player.mVelocity += 2 * speedAgainstSurface * surfaceNormal;
+			Vec2D pp = player.velocity * player.mass;
+			Vec2D ep = enemy.velocity * enemy.mass;
+			Vec2D vcm = (pp + ep) / (player.mass + enemy.mass );
 
-			surfaceNormal = collision.GetSegment( OBJ_A ).GetNormal();
-			speedAgainstSurface = -enemy.mVelocity * surfaceNormal;
-			enemy.mVelocity += 2 * speedAgainstSurface * surfaceNormal;
+			Vec2D pvf = -( player.velocity - vcm ) + vcm;
+			Vec2D evf = -( enemy.velocity - vcm ) + vcm;
+
+			player.velocity = pvf;
+			enemy.velocity = evf;
+
 		}
 
-/*
-		collision = player.GetCollision( enemy, player.GetPlacement(), enemy.GetPlacement());
-
-		if( collision.IsCollision())
+		if( goal.Contains( player ))
 		{
-			player.mVelocity.x *= -1;
-			player.mVelocity.y *= -1;
-			enemy.mVelocity.x *= -1;
-			enemy.mVelocity.y *= -1;
-			printf( "Collision at %f,%f\n", collision.GetPoint().x, collision.GetPoint().y );
-			collisionzoom = true;
+			allegro_message( "You went into the firey goal of death!  You lose!" );
+			bExit = true;
 		}
-*/
+		if( goal.Contains( enemy ))
+		{
+			allegro_message( "You got the enemy into the firey goal of death!  Congrats, you win!" );
+			bExit = true;
+		}
+
+
       // RENDERING //
 
       // Clear the screen to white //
@@ -287,17 +275,12 @@ int main() {
       // Draw the bitmap to the screen with the top-left coordinates //
 		player.Draw();
 		enemy.Draw();
-		//testr.Draw( Rgba::GREEN );
-      rr.Draw( Rgba::RED );
-
-      if( rr.Contains( player ))
-      {
-			printf( "Player is inside rectangle\n" );
-      }
+		Transforms::SetPosition( 0,0 );
+		goal.DrawOutline( Rgba::RED );
 
       // Refresh the screen contents to show this frame //
       Canvas::Refresh();
-      rest(1);
+      rest(0);
    }
    return 0;
 }
