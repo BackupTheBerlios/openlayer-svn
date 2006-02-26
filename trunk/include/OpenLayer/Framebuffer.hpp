@@ -13,7 +13,7 @@ namespace ol {
 class FrameBuffer {
 public:
    virtual ~FrameBuffer();
-   
+
    virtual const char *GetName() = 0;
    virtual bool Initialize() = 0;
    virtual void BindToTexture( const OlTextureInfo &texture ) = 0;
@@ -23,7 +23,7 @@ public:
    virtual void RefreshSurface() = 0;
    virtual void ReadPixels( int x, int y, int width, int height, GLenum textureFormat, unsigned char *pixelData ) = 0;
    virtual void CopyTexSubImage( int x, int y, int width, int height, int yOffset ) = 0;
-   
+
    static FrameBuffer &GetInstance();
    static void Register( FrameBuffer *buffer );
    static void DestroyFramebuffers();
@@ -42,17 +42,24 @@ class BackbufFramebuf : public FrameBuffer {
 public:
    BackbufFramebuf()
       : boundTexture(0) {}
-   
+
    virtual const char *GetName();
    virtual bool Initialize();
    virtual void BindToTexture( const OlTextureInfo &texture );
    virtual void Release();
    virtual void Destroy( OlTextureInfo &texture );
+#ifdef DestroyAll
+#undef DestroyAll
    virtual void DestroyAll();
+#define DestroyAll 0
+#else
+   virtual void DestroyAll();
+#endif
+
    virtual void RefreshSurface();
    virtual void ReadPixels( int x, int y, int width, int height, GLenum textureFormat, unsigned char *pixelData );
    virtual void CopyTexSubImage( int x, int y, int width, int height, int yOffset );
-   
+
 private:
    const OlTextureInfo *boundTexture;
 };
@@ -63,7 +70,7 @@ class OlFramebufferObjExt : public FrameBuffer {
 public:
    OlFramebufferObjExt()
       : boundTexture( 0 ) {}
-   
+
    ~OlFramebufferObjExt();
 
    virtual const char *GetName();
@@ -75,40 +82,40 @@ public:
    virtual void RefreshSurface();
    virtual void ReadPixels( int x, int y, int width, int height, GLenum textureFormat, unsigned char *pixelData );
    virtual void CopyTexSubImage( int x, int y, int width, int height, int yOffset );
-   
+
 private:
-   
+
    #ifdef GL_EXT_framebuffer_object
       #ifdef _WIN32
          #ifndef PFNGLGENFRAMEBUFFERSEXTPROC
             typedef void (APIENTRY * PFNGLGENFRAMEBUFFERSEXTPROC)
                                  (GLsizei n, GLuint *renderbuffers);
          #endif
-         
+
          #ifndef PFNGLFRAMEBUFFERTEXTURE2DEXTPROC
             typedef void (APIENTRY * PFNGLFRAMEBUFFERTEXTURE2DEXTPROC)
-                                (GLenum target, GLenum attachment,  
-                                 GLenum textarget, GLuint texture,  
+                                (GLenum target, GLenum attachment,
+                                 GLenum textarget, GLuint texture,
                                  GLenum level);
          #endif
-         
+
          #ifndef PFNGLBINDFRAMEBUFFEREXTPROC
             typedef void (APIENTRY * PFNGLBINDFRAMEBUFFEREXTPROC)
                                  (GLenum target, GLuint renderbuffer);
          #endif
-         
+
          #ifndef PFNGLDELETERENDERBUFFERSEXTPROC
             typedef void (APIENTRY * PFNGLDELETERENDERBUFFERSEXTPROC)
                                  (GLsizei n, const GLuint *renderbuffers);
          #endif
-         
+
          PFNGLGENFRAMEBUFFERSEXTPROC glGenFramebuffersEXT;
          PFNGLFRAMEBUFFERTEXTURE2DEXTPROC glFramebufferTexture2DEXT;
          PFNGLBINDFRAMEBUFFEREXTPROC glBindFramebufferEXT;
          PFNGLDELETERENDERBUFFERSEXTPROC glDeleteRenderbuffersEXT;
       #endif // _WIN32
    #endif // GL_EXT_framebuffer_object
-   
+
    //static const int INTERNAL_FORMAT;
    std::map< GLuint, GLuint > bufferMap;
    const OlTextureInfo *boundTexture;
