@@ -16,7 +16,7 @@ public:
       : Shape( 1.0 ) {}
    
    Line( float x1, float y1, float x2, float y2, float lineWidth = 1.0 )
-      : Shape( lineWidth ), start( x1, y1 ), end( y1, y2 ) {}
+      : Shape( lineWidth ), start( x1, y1 ), end( x2, y2 ) {}
    
    Line( Vec2D start, Vec2D end, float lineWidth = 1.0 )
       : Shape( lineWidth ), start( start ), end( end ) {}
