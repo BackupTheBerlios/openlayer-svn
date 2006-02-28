@@ -7,7 +7,6 @@
 
 #ifdef DestroyAll
 #undef DestroyAll
-#define RedefineDA
 #endif
 
 using namespace ol;
@@ -360,8 +359,4 @@ DestroyFramebuffers() {
    frameBuffer = 0;
 }
 
-#ifdef RedefineDA
-#define DestroyAll 0
-#undef RedefineDA
-#endif
 

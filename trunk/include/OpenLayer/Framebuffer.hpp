@@ -6,6 +6,11 @@
 #include <map>
 
 
+
+#ifdef DestroyAll
+#undef DestroyAll
+#endif
+
 namespace ol {
 
 
@@ -48,13 +53,8 @@ public:
    virtual void BindToTexture( const OlTextureInfo &texture );
    virtual void Release();
    virtual void Destroy( OlTextureInfo &texture );
-#ifdef DestroyAll
-#undef DestroyAll
    virtual void DestroyAll();
-#define DestroyAll 0
-#else
-   virtual void DestroyAll();
-#endif
+
 
    virtual void RefreshSurface();
    virtual void ReadPixels( int x, int y, int width, int height, GLenum textureFormat, unsigned char *pixelData );
