@@ -28,21 +28,23 @@ enum ETexCoord {
 
 class RenderMode {
 public:
+   virtual ~RenderMode(){}
+
    // The sum of two RenderModes returns a combination of those two //
    MultiMode operator+( const RenderMode &other ) const;
-   
+
    // Internal functions //
-   
+
    virtual void Select() const {}
    virtual void Unselect() const {}
-   
+
    virtual bool SetsTexCoords() const { return false; }
    virtual void SetTexCoord( ETexCoord coord, OlRect &renderRect, OlTexCoords &texCoordRect, float w, float h ) const;
    static void PrimarySetTexCoord( ETexCoord coord, OlRect &renderRect, OlTexCoords &texCoordRect, float w, float h );
-   
+
    virtual OlRect GetRenderRect( OlRect current ) const;
    virtual OlTexCoords GetTexCoords( OlTexCoords current ) const;
-   
+
    //virtual OlRect GetRenderArea() const;
 };
 
@@ -52,13 +54,14 @@ public:
 
 class TintMode : public RenderMode {
 public:
+
    // The bitmap will be tinted to the given color //
    // The alpha value of the color tells the intensity of the tinting //
    TintMode( Rgba color ) : color( color ) {}
-   
-   
+	virtual ~TintMode(){}
+
    // Internal functions //
-   
+
    virtual void Select() const;
    virtual void Unselect() const;
 protected:
@@ -72,18 +75,18 @@ protected:
 class GainAlphaMode : public RenderMode {
 public:
    GainAlphaMode( const Bitmap &alphaFrom, float anchorX = 0.0, float anchorY = 0.0 ) : alphaFrom( alphaFrom ), x( anchorX ), y( anchorY ) {}
-   
+	virtual ~GainAlphaMode(){}
    // Internal functions //
-   
+
    virtual void Select() const;
    virtual void Unselect() const;
-   
+
    virtual bool SetsTexCoords() const { return true; }
    virtual void SetTexCoord( ETexCoord coord, OlRect &renderRect, OlTexCoords &texCoordRect, float w, float h ) const;
-   
+
    virtual OlRect GetRenderRect( OlRect current ) const;
    virtual OlTexCoords GetTexCoords( OlTexCoords current ) const;
-   
+
 protected:
    const Bitmap &alphaFrom;
    float x, y;
@@ -104,7 +107,8 @@ enum OlFlippingChoise {
 class FlippedMode : public RenderMode {
 public:
    FlippedMode( OlFlippingChoise mode ) : mode( mode ) {}
-   
+   virtual ~FlippedMode(){}
+
    virtual OlTexCoords GetTexCoords( OlTexCoords current ) const;
 protected:
    OlFlippingChoise mode;
@@ -117,10 +121,11 @@ class ClippedMode : public RenderMode {
 public:
    ClippedMode( float x, float y, float w, float h )
       : clipRect( x, y, w, h ) {}
-   
+
    ClippedMode( const Rect &clipArea )
       : clipRect( clipArea.pos.x, clipArea.pos.y, clipArea.size.x, clipArea.size.y ) {}
-   
+   virtual ~ClippedMode(){}
+
    virtual OlRect GetRenderRect( OlRect current ) const;
    virtual OlTexCoords GetTexCoords( OlTexCoords current ) const;
 private:
@@ -141,7 +146,8 @@ class SliceMultiplyMode : public RenderMode {
 public:
    SliceMultiplyMode( float slicePos, OlSlicingChoise mode )
       : slicePos( slicePos ), mode( mode ) {}
-   
+	virtual ~SliceMultiplyMode(){}
+
    virtual OlTexCoords GetTexCoords( OlTexCoords current ) const;
 private:
    float slicePos;
@@ -160,7 +166,7 @@ public:
       corners[2] = bottomRight;
       corners[3] = bottomLeft;
    }
-   
+
    // Specifies different alpha values for each corner of the Bitmap
    GradientMode( float topLeft, float topRight, float bottomRight, float bottomLeft ) {
       corners[0] = Rgba(1.0f, 1.0f, 1.0f, topLeft);
@@ -168,13 +174,14 @@ public:
       corners[2] = Rgba(1.0f, 1.0f, 1.0f, bottomRight);
       corners[3] = Rgba(1.0f, 1.0f, 1.0f, bottomLeft);
    }
-   
+   virtual ~GradientMode(){}
+
    virtual OlTexCoords GetTexCoords( OlTexCoords current ) const;
 private:
    enum {
       NUM_CORNERS = 4
    };
-   
+
    Rgba corners[NUM_CORNERS];
 };
 
@@ -183,7 +190,7 @@ class Perspective : public RenderMode {
 public:
    Perspective( float topStretch, float bottomStretch )
       : topStretch( topStretch ), bottomStretch( bottomStretch ) {}
-   
+
    virtual OlRect GetRenderRect( OlRect current ) const;
 private:
    float topStretch;
@@ -209,13 +216,14 @@ typedef GradientMode Gradient;
 class MultiMode : public RenderMode {
 public:
    MultiMode( const RenderMode &mode1, const RenderMode &mode2 ) : mode1( mode1 ), mode2( mode2 ) {}
-   
+   virtual ~MultiMode(){}
+
    virtual void Select() const;
    virtual void Unselect() const;
-   
+
    virtual bool SetsTexCoords() const;
    virtual void SetTexCoord( ETexCoord coord, OlRect &renderRect, OlTexCoords &texCoordRect, float w, float h ) const;
-   
+
    virtual OlRect GetRenderRect( OlRect current ) const;
    virtual OlTexCoords GetTexCoords( OlTexCoords current ) const;
 protected:

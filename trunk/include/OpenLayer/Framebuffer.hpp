@@ -42,7 +42,7 @@ class BackbufFramebuf : public FrameBuffer {
 public:
    BackbufFramebuf()
       : boundTexture(0) {}
-
+	virtual ~BackbufFramebuf(){}
    virtual const char *GetName();
    virtual bool Initialize();
    virtual void BindToTexture( const OlTextureInfo &texture );
@@ -71,7 +71,7 @@ public:
    OlFramebufferObjExt()
       : boundTexture( 0 ) {}
 
-   ~OlFramebufferObjExt();
+   virtual ~OlFramebufferObjExt();
 
    virtual const char *GetName();
    virtual bool Initialize();
