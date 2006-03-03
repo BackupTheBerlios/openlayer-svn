@@ -52,6 +52,8 @@ void Blenders::
 Set( GLenum sourceFactor, GLenum destFactor ) {
    activeBlender.source = sourceFactor;
    activeBlender.dest = destFactor;
+   
+   SelectBlender();
 }
 
 
