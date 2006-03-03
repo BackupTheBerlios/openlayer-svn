@@ -6,11 +6,6 @@
 #include <map>
 
 
-
-#ifdef DestroyAll
-#undef DestroyAll
-#endif
-
 namespace ol {
 
 
@@ -24,7 +19,7 @@ public:
    virtual void BindToTexture( const OlTextureInfo &texture ) = 0;
    virtual void Release() = 0;
    virtual void Destroy( OlTextureInfo &texture ) = 0;
-   virtual void DestroyAll() = 0;
+   virtual void DestroySurfaces() = 0;
    virtual void RefreshSurface() = 0;
    virtual void ReadPixels( int x, int y, int width, int height, GLenum textureFormat, unsigned char *pixelData ) = 0;
    virtual void CopyTexSubImage( int x, int y, int width, int height, int yOffset ) = 0;
@@ -53,7 +48,7 @@ public:
    virtual void BindToTexture( const OlTextureInfo &texture );
    virtual void Release();
    virtual void Destroy( OlTextureInfo &texture );
-   virtual void DestroyAll();
+   virtual void DestroySurfaces();
 
 
    virtual void RefreshSurface();
@@ -78,7 +73,7 @@ public:
    virtual void BindToTexture( const OlTextureInfo &texture );
    virtual void Release();
    virtual void Destroy( OlTextureInfo &texture );
-   virtual void DestroyAll();
+   virtual void DestroySurfaces();
    virtual void RefreshSurface();
    virtual void ReadPixels( int x, int y, int width, int height, GLenum textureFormat, unsigned char *pixelData );
    virtual void CopyTexSubImage( int x, int y, int width, int height, int yOffset );

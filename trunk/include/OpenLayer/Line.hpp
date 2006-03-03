@@ -21,7 +21,7 @@ public:
    Line( Vec2D start, Vec2D end, float lineWidth = 1.0 )
       : Shape( lineWidth ), start( start ), end( end ) {}
 
-   virtual ~Line(){}
+   virtual ~Line() {}
 
    inline void Draw( const Rgba &color ) const {
    #ifdef OL_NO_STATE_CHANGE
@@ -77,10 +77,25 @@ public:
       Vec2D normal( -s.y, s.x );
       return normal.Normalized();
    }
-
+   
+   
+   Collision GetCollision( const Line &other ) const {
+      if( Collides( other )) {
+         return Collision( *this, other );
+      }
+      else {
+         return Collision( false );
+      }
+   }
+   
+   
+   Collision GetCollision( const Line &other, const Placement &thisPlacement,
+                           const Placement &otherPlacement ) const;
+   
    Vec2D start, end;
 	Vec2D origin;
 protected:
+   
    // Draws the line with the specified color //
    void ExecDraw() const;
 
@@ -88,7 +103,6 @@ protected:
    void ExecDrawOutline() const {
       ExecDraw();
    }
-
 };
 
 

@@ -65,8 +65,7 @@ GetIntersectionPoint( const Line &other ) const {
 
 // Tests if the two line segments collide //
 bool Line::
-Collides( const Line &other ) const
-{
+Collides( const Line &other ) const {
 	Vec2D absStart = start + origin;
 	Vec2D absEnd = end + origin;
 	Vec2D otherStart = other.start + other.origin;

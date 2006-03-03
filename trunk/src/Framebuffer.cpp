@@ -5,9 +5,6 @@
 #include "Canvas.hpp"
 #include "Blenders.hpp"
 
-#ifdef DestroyAll
-#undef DestroyAll
-#endif
 
 using namespace ol;
 using namespace std;
@@ -29,7 +26,7 @@ FrameBuffer::
 
 OlFramebufferObjExt::
 ~OlFramebufferObjExt() {
-   OlFramebufferObjExt::DestroyAll();
+   OlFramebufferObjExt::DestroySurfaces();
 }
 
 
@@ -164,7 +161,7 @@ BindToTexture( const OlTextureInfo &texture ) {
 
 
 void BackbufFramebuf::
-DestroyAll() {
+DestroySurfaces() {
    boundTexture = 0;
 }
 
@@ -330,7 +327,7 @@ Destroy( OlTextureInfo &texture ) {
 }
 
 void OlFramebufferObjExt::
-DestroyAll() {
+DestroySurfaces() {
    #ifdef GL_EXT_framebuffer_object
       for( std::map< GLuint, GLuint > ::iterator iter = bufferMap.begin(); iter != bufferMap.end(); iter++ ) {
          GLuint framebufferID = iter->second;

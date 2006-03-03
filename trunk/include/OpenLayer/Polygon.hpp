@@ -105,7 +105,7 @@ public:
 	inline bool Collides( const Poly& other ) const {
 		return DoCollisionTest( other, placement, other.placement, false ).IsCollision();
 	}
-
+   
    // Tests if two polygons collide and gives detailed information about the collision //
    inline Collision GetCollision( const Poly &other, const Placement &thisPlacement,
                   const Placement &otherPlacement ) const {
@@ -162,8 +162,6 @@ protected:
 
    // Draws the outline of the polygon to the active canvas //
    virtual void ExecDrawOutline() const;
-
-
    
    std::vector< Vec2D > vertices;
 	Placement placement;

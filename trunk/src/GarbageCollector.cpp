@@ -22,7 +22,7 @@ void OlCollectTheGarbage() {
    OlLog( "Collecting garbage" );
    OlGetCollection().DestroyGarbage();
    OlLog( "Destroying the framebuffer" );
-   FrameBuffer::GetInstance().DestroyAll();
+   FrameBuffer::GetInstance().DestroySurfaces();
    FrameBuffer::DestroyFramebuffers();
    OlLog( "OpenLayer shutdown finished" );
 }
