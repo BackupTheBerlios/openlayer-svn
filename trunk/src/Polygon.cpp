@@ -18,7 +18,11 @@ Poly( const Vec2D *vertices, int numVertices, Vec2D rotationPivot )
 
 void ol::Poly::
 ExecDrawOutline() const {
+	glPushMatrix();
+	glTranslatef( placement.GetPosition().x, placement.GetPosition().y, 0.0 );
+	//glRotatef( placement.GetRotation(), rotationPivot.x, rotationPivot.y, 0.0 );
    if( lineWidth <= 1.0 + OL_NEAR_ZERO ) {
+
       glBegin( GL_LINE_LOOP );
 
          for( std::vector< Vec2D > ::const_iterator iter = vertices.begin(); iter != vertices.end(); iter++ ) {
@@ -177,11 +181,15 @@ ExecDrawOutline() const {
 
       glEnd();
    }
+	glPopMatrix();
 }
 
 
 void ol::Poly::
 ExecDraw() const {
+	glPushMatrix();
+	glTranslatef( placement.GetPosition().x, placement.GetPosition().y, 0.0 );
+	//glRotatef( placement.GetRotation(), rotationPivot.x, rotationPivot.y, 0.0 );
    glBegin( GL_POLYGON );
 
       for( std::vector< Vec2D > ::const_iterator iter = vertices.begin(); iter != vertices.end(); iter++ ) {
@@ -189,16 +197,17 @@ ExecDraw() const {
       }
 
    glEnd();
+   glPopMatrix();
 }
 
-
+/*
 void ol::Poly::
 MoveBy( const Vec2D &amount ) {
    for( std::vector< Vec2D > ::iterator iter = vertices.begin(); iter != vertices.end(); iter++ ) {
       *iter += amount;
    }
 }
-
+*/
 
 Collision ol::Poly::
 DoCollisionTest( const ol::Poly &other, const Placement &thisPlacement,

@@ -102,17 +102,40 @@ public:
       return DoCollisionTest( other, thisPlacement, otherPlacement, false ).IsCollision();
    }
 
+	inline bool Collides( const Poly& other ) const {
+		return DoCollisionTest( other, placement, other.placement, false ).IsCollision();
+	}
+
    // Tests if two polygons collide and gives detailed information about the collision //
    inline Collision GetCollision( const Poly &other, const Placement &thisPlacement,
                   const Placement &otherPlacement ) const {
       return DoCollisionTest( other, thisPlacement, otherPlacement );
    }
 
+	inline Collision GetCollision( const Poly &other ) const {
+		return DoCollisionTest( other, placement, other.placement );
+	}
+
    // Returns a constant reference to the list of the vertices //
    inline const std::vector< Vec2D > &GetVertices() const { return vertices; }
 
    // Moves the polygon by the specified amount //
-   virtual void MoveBy( const Vec2D &amount );
+   virtual void MoveBy( const Vec2D &amount ) {
+   	placement.MoveBy( amount );
+   }
+
+	inline virtual void MoveTo( const Vec2D &position ) {
+		placement.SetPosition( position );
+	}
+
+
+	inline void SetRotationAngle( float angle ) {
+		placement.SetRotation( angle );
+	}
+
+	inline float GetRotationAngle() {
+		return placement.GetRotation();
+	}
 
    // Sets the rotation pivot //
    inline void SetPivot( Vec2D rotationPivot ) {
@@ -129,6 +152,9 @@ public:
       outlineTexture = texture;
    }
 
+
+
+
 protected:
    Collision DoCollisionTest( const Poly &other, const Placement &thisPlacement,
                   const Placement &otherPlacement, bool getResults = true ) const;
@@ -139,7 +165,10 @@ protected:
    // Draws the outline of the polygon to the active canvas //
    virtual void ExecDrawOutline() const;
 
+
+
    std::vector< Vec2D > vertices;
+	Placement placement;
    Vec2D rotationPivot;
    Bitmap *outlineTexture;
    OutlineTextureMode outlineMode;
