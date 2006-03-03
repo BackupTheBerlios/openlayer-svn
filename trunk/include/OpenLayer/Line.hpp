@@ -16,10 +16,12 @@ public:
       : Shape( 1.0 ) {}
 
    Line( float x1, float y1, float x2, float y2, float lineWidth = 1.0 )
-      : Shape( lineWidth ), start( x1, y1 ), end( x2, y2 ) {}
+      : Shape( lineWidth ), start( x1, y1 ), end( x2, y2 ),
+        p_start( start ), p_end( end ) {}
 
    Line( Vec2D start, Vec2D end, float lineWidth = 1.0 )
-      : Shape( lineWidth ), start( start ), end( end ) {}
+      : Shape( lineWidth ), start( start ), end( end ),
+        p_start( start ), p_end( end ) {}
 
    virtual ~Line(){}
 
@@ -63,6 +65,10 @@ public:
       start += amount;
       end += amount;
    }
+   virtual void MoveTo( const Vec2D &position ) {
+		start = p_start + position;
+		end = p_end + position;
+   }
 
    // Returns the intersection point of two lines //
    Vec2D GetIntersectionPoint( const Line &other ) const {
@@ -99,6 +105,14 @@ protected:
    void ExecDrawOutline() const {
       ExecDraw();
    }
+
+
+private:
+// Could either keep the initial 2 points and the current 2 points, or just one
+// pair of points with an absolute position.  Based on the assumption that the
+// line will be drawn more often than its position is changed, I went for
+// two sets of points
+	Vec2D p_start, p_end;
 };
 
 

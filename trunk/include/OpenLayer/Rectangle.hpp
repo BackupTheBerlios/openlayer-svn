@@ -69,6 +69,10 @@ public:
       pos += amount;
    }
 
+   virtual void MoveTo( const Vec2D &position ) {
+   	pos = position;
+   }
+
    // Sets the visual accuracy of the rounded rectangle //
    void SetAccuracy( float accuracy ) {
       angleIncrement = std::min(( 2.0 * asin( 1.0/roundness )/accuracy ), 0.35 * AL_PI );

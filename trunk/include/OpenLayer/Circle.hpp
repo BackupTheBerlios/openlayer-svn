@@ -94,6 +94,10 @@ public:
       pos += amount;
    }
 
+   virtual void MoveTo( const Vec2D &position ) {
+   	pos = position;
+   }
+
    // Sets the x or y radius of the ellipse //
    // Axis should be: X_AXIS or Y_AXIS //
    inline void SetRadius( Axis axis, float radius ) {

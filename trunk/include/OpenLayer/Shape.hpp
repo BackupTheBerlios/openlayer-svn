@@ -119,6 +119,9 @@ public:
    // Moves the shape by the specified amount //
    virtual void MoveBy( const Vec2D &amount ) = 0;
 
+   // Moves the shape to the specified position //
+   virtual void MoveTo( const Vec2D &position ){}
+
    // Sets the line width of the shape //
    inline void SetLineWidth( float lineWidth ) {
       this->lineWidth = lineWidth;
