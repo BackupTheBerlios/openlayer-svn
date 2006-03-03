@@ -28,7 +28,7 @@ Set( Blender blender ) {
         break;
       case SUBTRACTIVE_BLENDER:
          activeBlender.source = GL_ZERO;
-         activeBlender.dest = GL_ONE_MINUS_SRC_ALPHA;
+         activeBlender.dest = GL_ONE_MINUS_SRC_COLOR;
         break;
       case COPY_BLENDER:
          activeBlender.source = GL_ONE;
@@ -60,8 +60,13 @@ Set( GLenum sourceFactor, GLenum destFactor ) {
 
 void Blenders::
 SelectBlender() {
-   glBlendFunc( activeBlender.source, activeBlender.dest );
-   glEnable( GL_BLEND );
+   if( activeBlender.source == GL_ONE && activeBlender.dest == GL_ZERO ) {
+      glDisable( GL_BLEND );
+   }
+   else {
+      glBlendFunc( activeBlender.source, activeBlender.dest );
+      glEnable( GL_BLEND );
+   }
 }
 
 

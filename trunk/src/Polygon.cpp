@@ -19,8 +19,8 @@ Poly( const Vec2D *vertices, int numVertices, Vec2D rotationPivot )
 void ol::Poly::
 ExecDrawOutline() const {
 	glPushMatrix();
-	glTranslatef( placement.GetPosition().x, placement.GetPosition().y, 0.0 );
-	//glRotatef( placement.GetRotation(), rotationPivot.x, rotationPivot.y, 0.0 );
+   placement.Apply( rotationPivot );
+   
    if( lineWidth <= 1.0 + OL_NEAR_ZERO ) {
 
       glBegin( GL_LINE_LOOP );
@@ -188,14 +188,13 @@ ExecDrawOutline() const {
 void ol::Poly::
 ExecDraw() const {
 	glPushMatrix();
-	glTranslatef( placement.GetPosition().x, placement.GetPosition().y, 0.0 );
-	//glRotatef( placement.GetRotation(), rotationPivot.x, rotationPivot.y, 0.0 );
+   placement.Apply( rotationPivot );
    glBegin( GL_POLYGON );
-
+   
       for( std::vector< Vec2D > ::const_iterator iter = vertices.begin(); iter != vertices.end(); iter++ ) {
          glVertex2f( iter->x, iter->y );
       }
-
+   
    glEnd();
    glPopMatrix();
 }
@@ -216,18 +215,18 @@ DoCollisionTest( const ol::Poly &other, const Placement &thisPlacement,
       OlError( "An empty Poly can't ever collide!" );
       return Collision( false );
    }
-
+   
    Vec2D thisCo = thisPlacement.GetPosition();
    Vec2D otherCo = otherPlacement.GetPosition();
-
+   
    Matrix2D thisTransform = thisPlacement.Get2DMatrix();
    Matrix2D otherTransform = otherPlacement.Get2DMatrix();
-
+   
    std::vector< Vec2D > ::const_iterator thisIter = vertices.begin();
-
+   
    Vec2D thisPrev = thisTransform.Transform( *thisIter - rotationPivot ) + thisCo + rotationPivot;
    thisIter++;
-
+   
    // Loop through each vertex //
    while( true ) {
       bool breakNow = false;

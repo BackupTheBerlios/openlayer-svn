@@ -15,8 +15,8 @@ Collision( const Line &aSegment, const Line &bSegment )
 
    segments[(int) OBJ_A] = new Line( aSegment );
    segments[(int) OBJ_B] = new Line( bSegment );
-	normals[(int) OBJ_A] = NULL;
-	normals[(int) OBJ_B] = NULL;
+	normals[(int) OBJ_A] = 0;
+	normals[(int) OBJ_B] = 0;
    point = aSegment.GetIntersectionPoint( bSegment );
 }
 

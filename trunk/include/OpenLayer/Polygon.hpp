@@ -27,13 +27,13 @@ public:
    // Construct the polygon from a list of vertices //
    Poly( const Vec2D *vertices, int numVertices, Vec2D rotationPivot = Vec2D( 0.0, 0.0 ));
 
-   virtual ~Poly(){}
-
+   virtual ~Poly() {}
+   
    // Adds a vertex to the polygon //
    inline void Add( Vec2D vec ) {
       vertices.push_back( vec );
    }
-
+   
    // Returns a reference to the vertex with the given index //
    inline const Vec2D &GetVertex( unsigned int index ) const {
       static Vec2D dummyValue;
@@ -46,8 +46,8 @@ public:
 
       return vertices[index];
    }
-
-
+   
+   
    inline Vec2D &GetVertex( unsigned int index ) {
       static Vec2D dummyValue;
 
@@ -59,11 +59,11 @@ public:
 
       return vertices[index];
    }
-
+   
    inline int GetNumberOfVertices() {
       return vertices.size();
    }
-
+   
    inline void Draw( const Rgba &color ) const {
    #ifdef OL_NO_STATE_CHANGE
       GLboolean texturesEnabled;
@@ -153,8 +153,6 @@ public:
    }
 
 
-
-
 protected:
    Collision DoCollisionTest( const Poly &other, const Placement &thisPlacement,
                   const Placement &otherPlacement, bool getResults = true ) const;
@@ -166,7 +164,7 @@ protected:
    virtual void ExecDrawOutline() const;
 
 
-
+   
    std::vector< Vec2D > vertices;
 	Placement placement;
    Vec2D rotationPivot;

@@ -143,13 +143,13 @@ ApplyTransforms() {
    transformationStored = true;
 
    glTranslatef( x, y, 0.0 );
-
+   
    if( angle != 0.0 ) {
       glTranslatef( pivotX, pivotY, 0.0 );
       RotateMatrix( angle );
       glTranslatef( -pivotX, -pivotY, 0.0 );
    }
-
+   
    if( xStretch != 1.0 || yStretch != 1.0 ) {
       float xTranslate = -(xStretch - 1.0) * SCREEN_W/2;
       float yTranslate = -(yStretch - 1.0) * SCREEN_H/2;
@@ -157,7 +157,6 @@ ApplyTransforms() {
       glTranslatef( xTranslate, yTranslate, 0.0 );
 
       glScalef( xStretch, yStretch, 0.0 );
-
    }
 }
 

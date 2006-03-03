@@ -22,10 +22,10 @@ class Collision {
 public:
    Collision( bool isCollision = false )
       : isCollision( isCollision ) {
-      segments[(int) OBJ_A] = NULL;
-      segments[(int) OBJ_B] = NULL;
-      normals[(int) OBJ_A] = NULL;
-      normals[(int) OBJ_B] = NULL;
+      segments[(int) OBJ_A] = 0;
+      segments[(int) OBJ_B] = 0;
+      normals[(int) OBJ_A] = 0;
+      normals[(int) OBJ_B] = 0;
 	}
 
 
@@ -34,8 +34,8 @@ public:
 
    Collision( const Vec2D &aNormal, const Vec2D &bNormal, const Vec2D &collisionPoint )
       : isCollision( true ), point( collisionPoint ) {
-      segments[(int) OBJ_A] = NULL;
-      segments[(int) OBJ_B] = NULL;
+      segments[(int) OBJ_A] = 0;
+      segments[(int) OBJ_B] = 0;
       normals[(int) OBJ_A] = new Vec2D( aNormal );
       normals[(int) OBJ_B] = new Vec2D( bNormal );
    }

@@ -63,11 +63,13 @@ public:
    
    inline float GetStretch() const {
       return stretch;
-   }   
+   }
    
    // Returns the rotation and stretch in a matrix //
    Matrix2D Get2DMatrix() const;
    
+   // Applies the placement
+   void Apply( const Vec2D &pivot ) const;
    
 private:
    Vec2D position;

@@ -48,8 +48,7 @@ Draw( const Rgba &color1, const Rgba &color2 ) const {
 
 
 Vec2D Line::
-GetIntersectionPoint( const Line &other ) const
-{
+GetIntersectionPoint( const Line &other ) const {
 	Vec2D absStart = start + origin;
 	Vec2D absEnd = end + origin;
 	Vec2D otherStart = other.start + other.origin;
@@ -62,6 +61,7 @@ GetIntersectionPoint( const Line &other ) const
 	return Vec2D( absEnd.x + ua * ( absEnd.x - absStart.x ),
 						absEnd.y + ua * ( absEnd.y - absStart.y ));
 }
+
 
 // Tests if the two line segments collide //
 bool Line::
