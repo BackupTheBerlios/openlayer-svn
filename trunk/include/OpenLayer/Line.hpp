@@ -16,12 +16,10 @@ public:
       : Shape( 1.0 ) {}
 
    Line( float x1, float y1, float x2, float y2, float lineWidth = 1.0 )
-      : Shape( lineWidth ), start( x1, y1 ), end( x2, y2 ),
-        p_start( start ), p_end( end ) {}
+      : Shape( lineWidth ), start( x1, y1 ), end( x2, y2 ) {}
 
    Line( Vec2D start, Vec2D end, float lineWidth = 1.0 )
-      : Shape( lineWidth ), start( start ), end( end ),
-        p_start( start ), p_end( end ) {}
+      : Shape( lineWidth ), start( start ), end( end ) {}
 
    virtual ~Line(){}
 
@@ -62,32 +60,17 @@ public:
 
    // Moves the line by the specified amount //
    virtual void MoveBy( const Vec2D &amount ) {
-      start += amount;
-      end += amount;
+      origin += amount;
    }
    virtual void MoveTo( const Vec2D &position ) {
-		start = p_start + position;
-		end = p_end + position;
+		origin = position;
    }
 
    // Returns the intersection point of two lines //
-   Vec2D GetIntersectionPoint( const Line &other ) const {
-      float ua = (( other.end.x - other.start.x ) * ( start.y - other.start.y )
-         - ( other.end.y - other.start.y ) * ( start.x - other.start.x ))
-         / (( other.end.y - other.start.y ) * ( end.x - start.x )
-         - ( other.end.x - other.start.x ) * ( end.y - start.y ));
-      return Vec2D( start.x + ua * ( end.x - start.x ),
-                    start.y + ua * ( end.y - start.y ));
-   }
+   Vec2D GetIntersectionPoint( const Line &other ) const;
 
    // Tests if the two line segments collide //
-   bool Collides( const Line &other ) const {
-      return IsCounterClockwise( start, end, other.start )
-             != IsCounterClockwise( start, end, other.end )
-             &&
-             IsCounterClockwise( other.start, other.end, start )
-             != IsCounterClockwise( other.start, other.end, end );
-   }
+   bool Collides( const Line &other ) const;
 
    Vec2D GetNormal() const {
       Vec2D s = end - start;
@@ -96,7 +79,7 @@ public:
    }
 
    Vec2D start, end;
-
+	Vec2D origin;
 protected:
    // Draws the line with the specified color //
    void ExecDraw() const;
@@ -106,13 +89,6 @@ protected:
       ExecDraw();
    }
 
-
-private:
-// Could either keep the initial 2 points and the current 2 points, or just one
-// pair of points with an absolute position.  Based on the assumption that the
-// line will be drawn more often than its position is changed, I went for
-// two sets of points
-	Vec2D p_start, p_end;
 };
 
 
