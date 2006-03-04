@@ -65,8 +65,8 @@ GetNormal( CollidingObject objectID ) {
          OlError( "Can't create a collision normal without a segment!" );
          return DEFAULT_NORMAL;
       }
-
-      *normal = segment->GetNormal();
+      
+      normal = new Vec2D( segment->GetNormal() );
    }
 
    return *normal;
@@ -75,18 +75,17 @@ GetNormal( CollidingObject objectID ) {
 
 Collision::
 ~Collision() {
-
    for( int i = 0; i < (int) NUM_OBJS; i++ ) {
-
       if( segments[i] ) {
          delete segments[i];
       }
-
+      
       if( normals[i] ) {
          delete normals[i];
       }
    }
 }
+
 
 Collision& Collision::
 operator =( const Collision& c ) {
