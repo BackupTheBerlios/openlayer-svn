@@ -57,6 +57,18 @@ public:
    // Returns the accuracy of the generated collision polygons //
    static float GetCollisionPolyAccuracy();
    
+   // Sets the maxium alpha value which is considered transparent //
+   // by the collision polygon generation //
+   static void SetCollisionPolyAlphaLimit( float limit ) {
+      collisionPolyAlphaLimit = int( limit * 255.0 );
+   }
+   
+   // Returns the maxium alpha value which is considered transparent //
+   // by the collision polygon generation //
+   static float GetCollisionPolyAlphaLimit() {
+      return float( collisionPolyAlphaLimit )/255.0;
+   }
+   
    friend class GfxRend;
    friend class Bitmap;
 private:
