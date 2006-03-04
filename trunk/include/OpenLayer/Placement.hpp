@@ -13,9 +13,11 @@ class Placement {
 public:
    Placement( Vec2D position = Vec2D( 0.0, 0.0 ),
               float rotation = 0.0,
-              float stretch = 1.0 )          : position( position ), rotation( rotation ), stretch( stretch ) {}
-
-
+              float stretch = 1.0,
+              Vec2D rotationPivot = Vec2D( 0.0, 0.0 ))
+   : position( position ), rotation( rotation ), stretch( stretch ), rotationPivot( rotationPivot ) {}
+   
+   
    inline float GetDistance( const Placement &other ) const{
       return (position - other.position).GetMagnitude();
    }
@@ -54,6 +56,16 @@ public:
    inline float GetRotation() const {
       return rotation;
    }
+   
+   
+   inline void SetRotationPivot( Vec2D rotationPivot ) {
+      this->rotationPivot = rotationPivot;
+   }
+   
+   
+   inline Vec2D GetRotationPivot() const {
+      return rotationPivot;
+   }
 
 
    inline void SetStretch( float stretch ) {
@@ -84,14 +96,20 @@ public:
 
    // Returns the rotation and stretch in a matrix //
    Matrix2D Get2DMatrix() const;
-
+   
    // Applies the placement
+   inline void Apply() const {
+      Apply( rotationPivot );
+   }
+   
+   // Same as above but overrides the pivot
    void Apply( const Vec2D &pivot ) const;
 
 private:
    Vec2D position;
    float rotation;
    float stretch;
+   Vec2D rotationPivot;
 };
 
 

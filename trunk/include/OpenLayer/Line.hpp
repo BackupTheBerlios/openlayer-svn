@@ -68,9 +68,11 @@ public:
 
    // Returns the intersection point of two lines //
    Vec2D GetIntersectionPoint( const Line &other ) const;
-
+   
    // Tests if the two line segments collide //
-   bool Collides( const Line &other ) const;
+   inline bool Collides( const Line &other ) const {
+      return Collides( start, end, other.origin, other.start, other.end );
+   }
 
    Vec2D GetNormal() const {
       Vec2D s = end - start;
@@ -79,7 +81,7 @@ public:
    }
    
    
-   Collision GetCollision( const Line &other ) const {
+   inline Collision GetCollision( const Line &other ) const {
       if( Collides( other )) {
          return Collision( *this, other );
       }
@@ -89,12 +91,25 @@ public:
    }
    
    
-   Collision GetCollision( const Line &other, const Placement &thisPlacement,
-                           const Placement &otherPlacement ) const;
+   bool Collides( const Line &other, const Placement &thisPlacement,
+                  const Placement &otherPlacement ) const;
+   
+   
+   inline Collision GetCollision( const Line &other, const Placement &thisPlacement,
+                           const Placement &otherPlacement ) const {
+      if( Collides( other, thisPlacement, otherPlacement )) {
+         return Collision( *this, other );
+      }
+      else {
+         return Collision( false );
+      }
+   }
    
    Vec2D start, end;
 	Vec2D origin;
 protected:
+   bool Collides( const Vec2D &thisStart, const Vec2D &thisEnd, const Vec2D &otherOrigin,
+                  const Vec2D &otherStart, const Vec2D &otherEnd ) const;
    
    // Draws the line with the specified color //
    void ExecDraw() const;
