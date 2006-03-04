@@ -1093,6 +1093,18 @@ static inline bool IsSurroundedInv( int x, int y, int lessThan, OL_MEMORY_IMG *b
 */
 
 
+//extern BITMAP *tempbuf;
+
+
+/*
+enum {
+   CB_EMPTY = 0,
+   CB_TRACED = 1,
+   CB_FILLED = 2
+};
+*/
+
+
 // COLLISION ROUTINES //
 
 ol::Poly *Bitmap::
@@ -1132,12 +1144,9 @@ GetCollisionPolygon( OL_MEMORY_IMG *bitmap, int alphaLimit, int numSkips, Vec2D 
             startX = x;
             startY = y;
 
-            putpixel( bitmap, x, y, 0xffff00ff );
-
             found = true;
             break;
          }
-         //putpixel( bitmap, x, y, 0xff00009f );
       }
 
       if( found ) {
@@ -1149,149 +1158,205 @@ GetCollisionPolygon( OL_MEMORY_IMG *bitmap, int alphaLimit, int numSkips, Vec2D 
    y = startY;
 
    int skipCounter = 0;
-
-
+   
+   int i = 0;
+   
+   int width = bitmap->w;
+   int height = bitmap->h;
+   
+   char *collisionBuffer = new char[width * height];
+   
+   for( int i = 0; i < width * height; i++ ) {
+      collisionBuffer[i] = 0;
+   }
+   
    do {
+      //printf( "x %d y %d xMov %d yMov %d\n", x, y, lastXMove, lastYMove );
+      //putpixel( tempbuf, x, y, makeacol( 4*i, 4*i, (255 - 4*i), 255 ));
+      
       bool polyAllowed = true;
-
+      
       int storedX = x;
       int storedY = y;
-
-      if( y == 0 || y == lastRow ) {
-         if( lastYMove != 0 ) {
-            // Entering the edge //
-            xMov = ( x != 0 && TestAlpha( x-1, y, alphaLimit, bitmap ))? -1 : 1;
-         }
-         else {
-            polyAllowed = false;
-         }
-
-
-         if(( x != 0 || xMov > 0 ) && ( x != lastCol || xMov < 0 )) {
-            if( !TestAlpha( x + xMov, y, alphaLimit, bitmap )) {
-               yMov = (y == 0)? 1 : -1;
-               y += yMov;
-            }
-            else {
+      
+      char &collisionBufPoint = collisionBuffer[ y * width + x];
+      
+      bool movedAlready = false;
+      
+      if( collisionBufPoint != 0 ) {
+         // We're going back in our tracks //
+         if( lastXMove == 0 ) {
+            if( x > 0 && TestAlpha( x-1, y, alphaLimit, bitmap )
+               && collisionBuffer[ y * width + (x-1) ] == 0 ) {
+               
+               xMov = -1;
                x += xMov;
+               yMov = 0;
+               movedAlready = true;
             }
-         }
-      }
-      else if( x == 0 || x == lastCol ) {
-         if( lastXMove != 0 ) {
-            // Entering the edge //
-            yMov = ( y != 0 && TestAlpha( x, y-1, alphaLimit, bitmap ))? -1 : 1;
-         }
-         else {
-            polyAllowed = false;
-         }
-
-         if(( y != 0 || yMov > 0 ) && ( y != lastRow || yMov < 0 )) {
-            if( !TestAlpha( x, y + yMov, alphaLimit, bitmap )) {
-               xMov = (x == 0)? 1 : -1;
+            else if( x < lastCol && TestAlpha( x+1, y, alphaLimit, bitmap )
+               && collisionBuffer[ y * width + (x+1) ] == 0 ) {
+               
+               xMov = 1;
                x += xMov;
-            }
-            else {
-               y += yMov;
-            }
-         }
-      }
-      else {
-         bool left = TestAlpha( x-1, y, alphaLimit, bitmap );
-         bool right = TestAlpha( x+1, y, alphaLimit, bitmap );
-         bool top = TestAlpha( x, y-1, alphaLimit, bitmap );
-         bool bottom = TestAlpha( x, y+1, alphaLimit, bitmap );
-
-         //TRACE( "%d %d %d %d\n", (int) left, (int) right, (int) top, (int) bottom );
-
-         if( left ) {
-            if( top ) {
-               if( right ) {
-                  if( bottom ) {
-                     if( lastXMove == 0 ) {
-                        bool lastLeft = TestAlpha( x-1, y - lastYMove, alphaLimit, bitmap );
-                        xMov = lastLeft? 1 : -1;
-                        x += xMov;
-                     }
-                     else {
-                        bool lastTop = TestAlpha( x - lastXMove, y-1, alphaLimit, bitmap );
-                        yMov = lastTop? 1 : -1;
-                        y += yMov;
-                     }
-                  }
-                  else {
-                     x += xMov;
-                     polyAllowed = false;
-                  }
-               }
-               else {
-                  if( bottom ) {
-                     y += yMov;
-                     polyAllowed = false;
-                  }
-                  else {
-                     if( lastXMove == 0 ) {
-                        xMov = -1;
-                        x += xMov;
-                     }
-                     else {
-                        yMov = -1;
-                        y += yMov;
-                     }
-                  }
-               }
-            }
-            else {
-               if( right ) {
-                  // Bottom doesn't matter //
-                  x += xMov;
-                  polyAllowed = false;
-               }
-               else if( bottom ) {
-                  if( lastXMove == 0 ) {
-                     xMov = -1;
-                     x += xMov;
-                  }
-                  else {
-                     yMov = 1;
-                     y += yMov;
-                  }
-               }
-               else {
-                  // End of a line, go back left //
-                  xMov = -1;
-                  x += xMov;
-               }
+               yMov = 0;
+               movedAlready = true;
             }
          }
-         else {
-            if( top ) {
-               if( bottom ) {
-                  // Right doesn't matter //
-                  y += yMov;
-                  polyAllowed = false;
-               }
-               else if( right ) {
-                  if( lastXMove == 0 ) {
-                     xMov = 1;
-                     x += xMov;
-                  }
-                  else {
-                     yMov = -1;
-                     y += yMov;
-                  }
-               }
-               else {
-                  // End of a line, go back up //
+         
+         if( lastYMove == 0 || !movedAlready ) {
+            if( lastYMove <= 0 ) {
+               if( y > 0 && TestAlpha( x, y-1, alphaLimit, bitmap )
+                  && collisionBuffer[ (y-1) * width + x ] == 0 ) {
+                  
                   yMov = -1;
                   y += yMov;
+                  xMov = 0;
+                  movedAlready = true;
                }
             }
+            
+            if( lastYMove >= 0 && !movedAlready ) {
+               if( y < lastRow && TestAlpha( x, y+1, alphaLimit, bitmap )
+                  && collisionBuffer[ (y+1) * width + x ] == 0 ) {
+                  
+                  yMov = -1;
+                  y += yMov;
+                  xMov = 0;
+                  movedAlready = true;
+               }
+            }
+         }
+         
+         if( !movedAlready && lastYMove == 0 ) {
+            if((( lastXMove < 0 && x > 0 ) || ( lastXMove > 0 && x < lastCol ))
+                && TestAlpha( x+lastXMove, y, alphaLimit, bitmap )
+               && collisionBuffer[ y * width + (x+lastXMove) ] == 0 ) {
+               
+               xMov = lastXMove;
+               x += xMov;
+               yMov = 0;
+               movedAlready = true;
+            }
+         }
+         
+         if( !movedAlready ) {
+            movedAlready = true;
+            
+            xMov = -(( collisionBufPoint >> 4 )-1);
+            yMov = -(( collisionBufPoint & 0xf )-1);
+            
+            //printf( "Moves: %d %d\n", xMov, yMov );
+            x += xMov;
+            y += yMov;
+         }
+      }
+      
+      if( movedAlready ) {
+         lastYMove = yMov;
+         lastXMove = xMov;
+            
+         //printf( "movedAlready: %d %d\n", (int) lastXMove, (int) lastYMove );
+      }
+      else {
+         collisionBufPoint = ((lastXMove+1) << 4) | (lastYMove+1);
+         
+         i++;
+   
+         if( y == 0 || y == lastRow ) {
+            if( lastYMove != 0 ) {
+               // Entering the edge //
+               xMov = ( x != 0 && TestAlpha( x-1, y, alphaLimit, bitmap ))? -1 : 1;
+            }
             else {
-               if( right ) {
-                  if( bottom ) {
+               polyAllowed = false;
+            }
+   
+   
+            if(( x != 0 || xMov > 0 ) && ( x != lastCol || xMov < 0 )) {
+               if( !TestAlpha( x + xMov, y, alphaLimit, bitmap )) {
+                  yMov = (y == 0)? 1 : -1;
+                  y += yMov;
+               }
+               else {
+                  x += xMov;
+               }
+            }
+         }
+         else if( x == 0 || x == lastCol ) {
+            if( lastXMove != 0 ) {
+               // Entering the edge //
+               yMov = ( y != 0 && TestAlpha( x, y-1, alphaLimit, bitmap ))? -1 : 1;
+            }
+            else {
+               polyAllowed = false;
+            }
+   
+            if(( y != 0 || yMov > 0 ) && ( y != lastRow || yMov < 0 )) {
+               if( !TestAlpha( x, y + yMov, alphaLimit, bitmap )) {
+                  xMov = (x == 0)? 1 : -1;
+                  x += xMov;
+               }
+               else {
+                  y += yMov;
+               }
+            }
+         }
+         else {
+            bool left = TestAlpha( x-1, y, alphaLimit, bitmap );
+            bool right = TestAlpha( x+1, y, alphaLimit, bitmap );
+            bool top = TestAlpha( x, y-1, alphaLimit, bitmap );
+            bool bottom = TestAlpha( x, y+1, alphaLimit, bitmap );
+            
+            //putpixel( bitmap, x, y, 0xffff009f );
+            //printf( "%d %d %d %d\n", (int) left, (int) right, (int) top, (int) bottom );
+            
+            if( left ) {
+               if( top ) {
+                  if( right ) {
+                     if( bottom ) {
+                        if( lastXMove == 0 ) {
+                           bool lastLeft = TestAlpha( x-1, y - lastYMove, alphaLimit, bitmap );
+                           xMov = lastLeft? 1 : -1;
+                           x += xMov;
+                        }
+                        else {
+                           bool lastTop = TestAlpha( x - lastXMove, y-1, alphaLimit, bitmap );
+                           yMov = lastTop? 1 : -1;
+                           y += yMov;
+                        }
+                     }
+                     else {
+                        x += xMov;
+                        polyAllowed = false;
+                     }
+                  }
+                  else {
+                     if( bottom ) {
+                        y += yMov;
+                        polyAllowed = false;
+                     }
+                     else {
+                        if( lastXMove == 0 ) {
+                           xMov = -1;
+                           x += xMov;
+                        }
+                        else {
+                           yMov = -1;
+                           y += yMov;
+                        }
+                     }
+                  }
+               }
+               else {
+                  if( right ) {
+                     // Bottom doesn't matter //
+                     x += xMov;
+                     polyAllowed = false;
+                  }
+                  else if( bottom ) {
                      if( lastXMove == 0 ) {
-                        xMov = 1;
+                        xMov = -1;
                         x += xMov;
                      }
                      else {
@@ -1300,27 +1365,71 @@ GetCollisionPolygon( OL_MEMORY_IMG *bitmap, int alphaLimit, int numSkips, Vec2D 
                      }
                   }
                   else {
-                     // End of a line, go back right //
-                     xMov = 1;
+                     // End of a line, go back left //
+                     xMov = -1;
                      x += xMov;
                   }
                }
-               else if( bottom ) {
-                  // End of a line, go back down //
-                  yMov = 1;
-                  y += yMov;
+            }
+            else {
+               if( top ) {
+                  if( bottom ) {
+                     // Right doesn't matter //
+                     y += yMov;
+                     polyAllowed = false;
+                  }
+                  else if( right ) {
+                     if( lastXMove == 0 ) {
+                        xMov = 1;
+                        x += xMov;
+                     }
+                     else {
+                        yMov = -1;
+                        y += yMov;
+                     }
+                  }
+                  else {
+                     // End of a line, go back up //
+                     yMov = -1;
+                     y += yMov;
+                  }
                }
                else {
-                  OlError( "GetCollisionPoly confused!" );
-                  break;
+                  if( right ) {
+                     if( bottom ) {
+                        if( lastXMove == 0 ) {
+                           xMov = 1;
+                           x += xMov;
+                        }
+                        else {
+                           yMov = 1;
+                           y += yMov;
+                        }
+                     }
+                     else {
+                        // End of a line, go back right //
+                        xMov = 1;
+                        x += xMov;
+                     }
+                  }
+                  else if( bottom ) {
+                     // End of a line, go back down //
+                     yMov = 1;
+                     y += yMov;
+                  }
+                  else {
+                     printf( "GetCollisionPoly confused!" );
+                     OlError( "GetCollisionPoly confused!" );
+                     break;
+                  }
                }
             }
          }
+   
+         lastXMove = x - storedX;
+         lastYMove = y - storedY;
       }
-
-      lastXMove = x - storedX;
-      lastYMove = y - storedY;
-
+      
       skipCounter++;
 
       if( polyAllowed && skipCounter > numSkips ) {
@@ -1329,6 +1438,8 @@ GetCollisionPolygon( OL_MEMORY_IMG *bitmap, int alphaLimit, int numSkips, Vec2D 
       }
    }
    while( x != startX || y != startY );
+   
+   delete[] collisionBuffer;
 
    return poly;
 }
