@@ -56,6 +56,9 @@ Render( const Rgba *color1, const Rgba *color2 ) const {
    float lastLowerX = last.x - lastS.y * lineWidth;
    float lastLowerY = last.y + lastS.x * lineWidth;
    
+   glPushMatrix();
+   glTranslatef( origin.x, origin.y, 0.0 );
+   
    // Render the begin of the strip //
    
    glBegin( GL_QUAD_STRIP );
@@ -229,6 +232,8 @@ Render( const Rgba *color1, const Rgba *color2 ) const {
    
    glEnd();
    
+   glPopMatrix();
+   
 #ifdef OL_NO_STATE_CHANGE
    if( texturesEnabled ) 
       glEnable( GL_TEXTURE_2D );
@@ -255,14 +260,4 @@ GetVertex( int index ) const {
    
    return *iter;
 }
-
-
-void LineStrip::
-MoveBy( const Vec2D &amount ) {
-   for( std::list< Vec2D > ::iterator iter = vertices.begin(); iter != vertices.end(); iter++ ) {
-      *iter += amount;
-   }
-}
-
-
 
