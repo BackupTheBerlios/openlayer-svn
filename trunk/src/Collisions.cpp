@@ -94,8 +94,8 @@ operator =( const Collision& c ) {
 	segments[(int)OBJ_A] = ( c.segments[(int)OBJ_A] )? new Line( *c.segments[(int)OBJ_A] ) : 0;
 	segments[(int)OBJ_A] = ( c.segments[(int)OBJ_B] )? new Line( *c.segments[(int)OBJ_B] ) : 0;
 	
-	normals[(int)OBJ_A] = ( c.normals[(int)OBJ_A] )? new Line( *c.normals[(int)OBJ_A] ) : 0;
-	normals[(int)OBJ_B] = ( c.normals[(int)OBJ_B] )? new Line( *c.normals[(int)OBJ_B] ) : 0;
+	normals[(int)OBJ_A] = ( c.normals[(int)OBJ_A] )? new Vec2D( *c.normals[(int)OBJ_A] ) : 0;
+	normals[(int)OBJ_B] = ( c.normals[(int)OBJ_B] )? new Vec2D( *c.normals[(int)OBJ_B] ) : 0;
 	return *this;
 }
 
