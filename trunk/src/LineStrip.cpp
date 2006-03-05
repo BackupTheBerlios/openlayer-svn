@@ -1,11 +1,21 @@
 #define DEBUGMODE
 #include "LineStrip.hpp"
 #include "Bitmap.hpp"
+#include "VertexListCollision.hpp"
 
 static const float OL_NEAR_ZERO = 0.0001;
 
 using namespace std;
 using namespace ol;
+
+
+Collision LineStrip::
+DoCollisionTest( const ol::LineStrip &other, const Placement &thisPlacement,
+                 const Placement &otherPlacement, bool getResults ) const {
+   return LineStripCollision( vertices, other.GetVertices(), thisPlacement,
+                              otherPlacement, getResults, false, false );
+}
+
 
 
 void LineStrip::
@@ -57,7 +67,7 @@ Render( const Rgba *color1, const Rgba *color2 ) const {
    float lastLowerY = last.y + lastS.x * lineWidth;
    
    glPushMatrix();
-   glTranslatef( origin.x, origin.y, 0.0 );
+   placement.Apply();
    
    // Render the begin of the strip //
    
@@ -260,4 +270,5 @@ GetVertex( int index ) const {
    
    return *iter;
 }
+
 

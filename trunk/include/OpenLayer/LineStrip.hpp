@@ -3,6 +3,7 @@
 
 #include "Shape.hpp"
 #include "Vec2D.hpp"
+#include "Placement.hpp"
 #include <list>
 
 
@@ -61,11 +62,19 @@ public:
 
    // Moves the line strip by the specified amount //
    virtual void MoveBy( const Vec2D &amount ) {
-		origin += amount;
+		placement.MoveBy( amount );
    }
 
    virtual void MoveTo( const Vec2D &position ) {
-   	origin = position;
+   	this->placement.SetPosition( position );
+   }
+   
+   inline void SetPlacement( const Placement &placement ) {
+      this->placement = placement;
+   }
+   
+   inline const Placement &GetPlacement() const {
+      return placement;
    }
 
    // Sets the filler texture of the line strip //
@@ -119,18 +128,50 @@ public:
          lengths.pop_back();
       }
    }
-
+   
    // Returns the specified vertex //
    Vec2D GetVertex( int index ) const;
-
+   
    // Returns the number of vertices //
    inline int GetNumOfVertices() const {
       return vertices.size();
    }
+   
+   const std::list< Vec2D > &GetVertices() const {
+      return vertices;
+   }
+   
+   // The following functions could be derived from Set/GetPlacement
+   
+	inline void SetRotationAngle( float angle ) {
+		placement.SetRotation( angle );
+	}
 
-   Vec2D origin;
+	inline float GetRotationAngle() {
+		return placement.GetRotation();
+	}
 
+	inline void RotateBy( float angle ) {
+		placement.RotateBy( angle );
+	}
+	
+	// Collision routines
+   
+   inline bool Collides( const LineStrip &other, const Placement &thisPlacement,
+                  const Placement &otherPlacement ) const {
+      return DoCollisionTest( other, thisPlacement, otherPlacement, false ).IsCollision();
+   }
+   
+   
+   inline Collision GetCollision( const LineStrip &other, const Placement &thisPlacement,
+                           const Placement &otherPlacement ) const {
+      return DoCollisionTest( other, thisPlacement, otherPlacement, true );
+   }
+   
 private:
+   Collision DoCollisionTest( const LineStrip &other, const Placement &thisPlacement,
+                              const Placement &otherPlacement, bool getResults = true ) const;
+   
    // Draws the line strip with the specified color //
    void ExecDraw() const;
 
@@ -145,6 +186,8 @@ private:
    std::list< Vec2D > vertices;
    std::list< float > lengths;
    float totalLength;
+   
+   Placement placement;
 
    const Bitmap *texture;
 };

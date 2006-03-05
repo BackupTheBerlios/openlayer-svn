@@ -9,24 +9,26 @@
 #include "Shape.hpp"
 #include "Placement.hpp"
 #include "Collisions.hpp"
+#include "LineStrip.hpp"
 
 
 namespace ol {
 
 class Bitmap;
 
+
 class Poly : public Shape {
 public:
    Poly( Vec2D rotationPivot = Vec2D( 0.0, 0.0 ))
-      : rotationPivot( rotationPivot ), outlineTexture( 0 ) {}
+      : outlineTexture( 0 ) { placement.SetRotationPivot( rotationPivot ); }
 
    // Construct the polygon from a list of vertices //
-   Poly( const std::vector< Vec2D > &vertices, Vec2D rotationPivot = Vec2D( 0.0, 0.0 ))
-      : vertices( vertices ), rotationPivot( rotationPivot ), outlineTexture( 0 ) {}
-
+   template< class std_container >
+   Poly( const std_container &vertices, Vec2D rotationPivot = Vec2D( 0.0, 0.0 ));
+   
    // Construct the polygon from a list of vertices //
    Poly( const Vec2D *vertices, int numVertices, Vec2D rotationPivot = Vec2D( 0.0, 0.0 ));
-
+   
    virtual ~Poly() {}
    
    // Adds a vertex to the polygon //
@@ -97,6 +99,7 @@ public:
    }
 
    // Tests if two polygons collide //
+   
    inline bool Collides( const Poly &other, const Placement &thisPlacement,
                   const Placement &otherPlacement ) const {
       return DoCollisionTest( other, thisPlacement, otherPlacement, false ).IsCollision();
@@ -107,6 +110,7 @@ public:
 	}
    
    // Tests if two polygons collide and gives detailed information about the collision //
+   
    inline Collision GetCollision( const Poly &other, const Placement &thisPlacement,
                   const Placement &otherPlacement ) const {
       return DoCollisionTest( other, thisPlacement, otherPlacement );
@@ -124,11 +128,28 @@ public:
    	placement.MoveBy( amount );
    }
 
+	// Sets the position of the polygon
 	inline virtual void MoveTo( const Vec2D &position ) {
 		placement.SetPosition( position );
 	}
+	
+	// Sets the placement of the polygon
+	inline void SetPlacement( const Placement &placement ) {
+      this->placement = placement;
+   }
+   
+	// Returns the placement of the polygon
+   inline const Placement &GetPlacement() const {
+      return placement;
+   }
 
-
+   // Sets the outline texture of the polygon, pass zero to get rid of the outline texture //
+   inline void SetOutlineTexture( ol::Bitmap *texture, OutlineTextureMode mode = OPTIMIZE ) {
+      outlineTexture = texture;
+   }
+   
+   // The following functions could be derived from Set/GetPlacement
+   
 	inline void SetRotationAngle( float angle ) {
 		placement.SetRotation( angle );
 	}
@@ -136,27 +157,46 @@ public:
 	inline float GetRotationAngle() {
 		return placement.GetRotation();
 	}
-
-   // Sets the rotation pivot //
+   
    inline void SetPivot( Vec2D rotationPivot ) {
-      this->rotationPivot = rotationPivot;
+      placement.SetRotationPivot( rotationPivot );
    }
 
-   // Returns the rotation pivot //
-   inline Vec2D GetPivot() {
-      return rotationPivot;
+   inline Vec2D GetPivot() const {
+      return placement.GetRotationPivot();
    }
-
-   // Sets the outline texture of the polygon, pass zero to get rid of the outline texture //
-   inline void SetOutlineTexture( ol::Bitmap *texture, OutlineTextureMode mode = OPTIMIZE ) {
-      outlineTexture = texture;
+   
+   // Collision between other Shapes
+   
+   inline bool Collides( const LineStrip &other, const Placement &thisPlacement,
+                  const Placement &otherPlacement ) const {
+      return DoCollisionTest( other, thisPlacement, otherPlacement, false ).IsCollision();
    }
-
-
+   
+   
+   inline Collision GetCollision( const LineStrip &other, const Placement &thisPlacement,
+                           const Placement &otherPlacement ) const {
+      return DoCollisionTest( other, thisPlacement, otherPlacement, true );
+   }
+   
+   
+   inline bool Collides( const LineStrip &other ) const {
+      return DoCollisionTest( other, placement, other.GetPlacement(), false ).IsCollision();
+   }
+   
+   
+   inline Collision GetCollision( const LineStrip &other ) const {
+      return DoCollisionTest( other, placement, other.GetPlacement(), true );
+   }
+   
 protected:
    Collision DoCollisionTest( const Poly &other, const Placement &thisPlacement,
-                  const Placement &otherPlacement, bool getResults = true ) const;
-
+                              const Placement &otherPlacement, bool getResults = true ) const;
+   
+   Collision DoCollisionTest( const LineStrip &other, const Placement &thisPlacement,
+                              const Placement &otherPlacement, bool getResults = true ) const;
+   
+                     
    // Draws the polygon to the active canvas //
    virtual void ExecDraw() const;
 
@@ -165,10 +205,28 @@ protected:
    
    std::vector< Vec2D > vertices;
 	Placement placement;
-   Vec2D rotationPivot;
    Bitmap *outlineTexture;
    OutlineTextureMode outlineMode;
 };
+
+
+
+// TEMPLATES //
+
+#include "Internal.hpp"
+
+
+template< class std_container >
+Poly::Poly( const std_container &theVertices, Vec2D rotationPivot )
+   : outlineTexture( 0 ) {
+   
+   placement.SetRotationPivot( rotationPivot );
+   vertices.reserve( theVertices.size() );
+   
+   for( typename std_container::const_iterator iter = theVertices.begin(); iter != theVertices.end(); iter++ ) {
+      vertices.push_back( *iter );
+   }
+}
 
 
 

@@ -91,17 +91,11 @@ Collision& Collision::
 operator =( const Collision& c ) {
 	isCollision = c.isCollision;
 	point = c.point;
-	if( c.segments[(int)OBJ_A] )
-		segments[(int)OBJ_A] = new Line( *c.segments[(int)OBJ_A] );
-	if( c.segments[(int)OBJ_B] )
-		segments[(int)OBJ_B] = new Line( *c.segments[(int)OBJ_B] );
-	if( c.normals[(int)OBJ_A] )
-		normals[(int)OBJ_A] = new Vec2D( *c.normals[(int)OBJ_A] );
-	if( c.normals[(int)OBJ_B] )
-		normals[(int)OBJ_B] = new Vec2D( *c.normals[(int)OBJ_B] );
+	segments[(int)OBJ_A] = ( c.segments[(int)OBJ_A] )? new Line( *c.segments[(int)OBJ_A] ) : 0;
+	segments[(int)OBJ_A] = ( c.segments[(int)OBJ_B] )? new Line( *c.segments[(int)OBJ_B] ) : 0;
+	
+	normals[(int)OBJ_A] = ( c.normals[(int)OBJ_A] )? new Line( *c.normals[(int)OBJ_A] ) : 0;
+	normals[(int)OBJ_B] = ( c.normals[(int)OBJ_B] )? new Line( *c.normals[(int)OBJ_B] ) : 0;
 	return *this;
 }
-
-
-
 

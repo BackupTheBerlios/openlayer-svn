@@ -133,6 +133,11 @@ public:
    }
 
 protected:
+   template< class std_container1, class std_container2 >
+   Collision LineStripCollision( const std_container1 &vertices, const std_container2 &otherVertices,
+                                 const Placement &thisPlacement, const Placement &otherPlacement,
+                                 bool getResults, bool thisConnectFirstAndLast, bool otherConnectFirstAndLast ) const;
+   
    virtual void ExecDraw() const = 0;
 
    virtual void ExecDrawOutline() const = 0;

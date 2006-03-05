@@ -1,6 +1,8 @@
 #include "Polygon.hpp"
 #include "Bitmap.hpp"
 #include "Line.hpp"
+#include "VertexListCollision.hpp"
+#include "LineStrip.hpp"
 
 using namespace std;
 using namespace ol;
@@ -9,7 +11,8 @@ static const float OL_NEAR_ZERO = 0.000001;
 
 ol::Poly::
 Poly( const Vec2D *vertices, int numVertices, Vec2D rotationPivot )
-   : rotationPivot( rotationPivot ), outlineTexture( 0 ) {
+   : outlineTexture( 0 ) {
+   placement.SetRotationPivot( rotationPivot );
    for( int i = 0; i < numVertices; i++ ) {
       this->vertices.push_back( vertices[i] );
    }
@@ -19,7 +22,7 @@ Poly( const Vec2D *vertices, int numVertices, Vec2D rotationPivot )
 void ol::Poly::
 ExecDrawOutline() const {
 	glPushMatrix();
-   placement.Apply( rotationPivot );
+   placement.Apply();
    
    if( lineWidth <= 1.0 + OL_NEAR_ZERO ) {
 
@@ -188,7 +191,7 @@ ExecDrawOutline() const {
 void ol::Poly::
 ExecDraw() const {
 	glPushMatrix();
-   placement.Apply( rotationPivot );
+   placement.Apply();
    glBegin( GL_POLYGON );
    
       for( std::vector< Vec2D > ::const_iterator iter = vertices.begin(); iter != vertices.end(); iter++ ) {
@@ -208,6 +211,23 @@ MoveBy( const Vec2D &amount ) {
 }
 */
 
+
+Collision ol::Poly::
+DoCollisionTest( const ol::Poly &other, const Placement &thisPlacement,
+                 const Placement &otherPlacement, bool getResults ) const {
+   return LineStripCollision( vertices, other.vertices, thisPlacement, otherPlacement, getResults, true, true );
+}
+
+
+Collision ol::Poly::
+DoCollisionTest( const ol::LineStrip &other, const Placement &thisPlacement,
+                 const Placement &otherPlacement, bool getResults ) const {
+   return LineStripCollision( vertices, other.GetVertices(),
+                              thisPlacement, otherPlacement, getResults, true, false );
+}
+
+
+/*
 Collision ol::Poly::
 DoCollisionTest( const ol::Poly &other, const Placement &thisPlacement,
                  const Placement &otherPlacement, bool getResults ) const {
@@ -296,3 +316,4 @@ DoCollisionTest( const ol::Poly &other, const Placement &thisPlacement,
    return Collision( false );
 }
 
+*/

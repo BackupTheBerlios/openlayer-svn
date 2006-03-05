@@ -63,7 +63,7 @@ public:
    }
    
    
-   inline Vec2D GetRotationPivot() const {
+   inline const Vec2D &GetRotationPivot() const {
       return rotationPivot;
    }
 
@@ -91,6 +91,13 @@ public:
 		position += amount.position;
 		rotation += amount.rotation;
 		stretch *= amount.stretch;
+		return *this;
+   }
+
+   inline Placement& operator -( const Placement& amount ) {
+		position -= amount.position;
+		rotation -= amount.rotation;
+		stretch /= amount.stretch;
 		return *this;
    }
 

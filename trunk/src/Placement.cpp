@@ -29,7 +29,7 @@ Apply( const Vec2D &pivot ) const {
    
    if( rotation != 0.0 ) {
       glTranslatef( pivot.x, pivot.y, 0.0 );
-      RotateMatrix( rotation );
+      RotateMatrix( -rotation );
       glTranslatef( -pivot.x, -pivot.y, 0.0 );
    }
    
