@@ -58,8 +58,8 @@ GetIntersectionPoint( const Line &other ) const {
 		- ( otherEnd.y - otherStart.y ) * ( absStart.x - otherStart.x ))
 		/ (( otherEnd.y - otherStart.y ) * ( absEnd.x - absStart.x )
 		- ( otherEnd.x - otherStart.x ) * ( absEnd.y - absStart.y ));
-	return Vec2D( absEnd.x + ua * ( absEnd.x - absStart.x ),
-						absEnd.y + ua * ( absEnd.y - absStart.y ));
+	return Vec2D( absStart.x + ua * ( absEnd.x - absStart.x ),
+						absStart.y + ua * ( absEnd.y - absStart.y ));
 }
 
 
