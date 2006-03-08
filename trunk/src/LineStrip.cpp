@@ -55,9 +55,22 @@ Render( const Rgba *color1, const Rgba *color2 ) const {
    list< float > ::const_iterator lengthIter = lengths.begin();
    
    // Find the normal of the beginning of the strip //
-   
+
    Vec2D last = vertices.front();
-   Vec2D lastS = GetVertex( 1 ) - last;
+   Vec2D lastS = GetVertex( 1 );
+   if( lastS == last )
+   {
+		int index = 2;
+		while( lastS == last )
+		{
+			if( GetNumOfVertices() <= index )
+				return;
+			lastS = GetVertex( index );
+			index++;
+		}
+   }
+   lastS = lastS - last;
+
    lastS /= lastS.GetMagnitude();
    
    float lastUpperX = last.x + lastS.y * lineWidth;
