@@ -13,65 +13,68 @@ namespace ol {
 class Vec2D {
 public:
    float x, y;
-   
-   
+
+
    // CONSTRUCTORS //
-   
+
    Vec2D( float x = 0.0, float y = 0.0 )
       : x( x ), y( y ) {}
-   
-   
+
+
    static inline Vec2D PolarCoords( float angle, float magnitude ) {
       return Vec2D( magnitude * std::cos( angle ), magnitude * std::sin( angle ));
    }
-   
-   
+
+
    // METHODS //
-   
+
    inline float GetAngle() const {
       return std::atan2( y, x );
    }
-   
-   
+
+
    inline float GetMagnitude() const {
       return std::sqrt( GetMagnitudeSquared() );
    }
-   
-   
+
+
    inline float GetMagnitudeSquared() const {
       return x * x + y * y;
    }
-   
-   
+
+
    inline Vec2D Normalized() const {
       float magnitude = GetMagnitude();
-      
+
       return Vec2D( x / magnitude, y / magnitude );
    }
-   
-   
+
+
    // OPERATORS //
-   
-   
+
+
    inline void operator += ( const Vec2D &other ) {
       x += other.x; y += other.y;
    }
-   
+
    inline void operator -= ( const Vec2D &other ) {
       x -= other.x; y -= other.y;
    }
-   
-   
+
+
    inline void operator *= ( float factor ) {
       x *= factor; y *= factor;
    }
-   
-   
+
+
    inline void operator /= ( float divisor ) {
       x /= divisor; y /= divisor;
    }
-   
-   
+
+   inline bool operator == ( const Vec2D &other ) {
+		return x == other.x && y == other.y;
+   }
+
    inline std::string GetString() const {
       return "( " + ToString( x ) + ", " + ToString( y ) + " )";
    }
@@ -121,8 +124,8 @@ inline Vec2D operator - ( Vec2D vec ) {
 }
 
 
-// NORMALIZATION  
-  
+// NORMALIZATION
+
 inline Vec2D operator ~ ( Vec2D vec ) {
    return vec.Normalized();
 }
@@ -135,12 +138,12 @@ inline Vec2D operator ~ ( Vec2D vec ) {
 
 inline bool IsCounterClockwise( const Vec2D first, const Vec2D second, const Vec2D third ) {
   float dx1, dx2, dy1, dy2;
-  
+
   dx1 = second.x - first.x;
   dy1 = second.y - first.y;
-  dx2 = third.x - second.x; 
+  dx2 = third.x - second.x;
   dy2 = third.y - second.y;
-  
+
   return dy1*dx2 < dy2*dx1;
 }
 
