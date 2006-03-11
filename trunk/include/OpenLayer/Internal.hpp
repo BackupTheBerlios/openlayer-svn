@@ -30,9 +30,18 @@ static inline void OlError( std::string errorStr ) {
 
 
 
+//TTD - change OlAssert to do FILE and LINE correctly
+
+
+
 #define OlAssert( condition ) \
-if( !condition ) { \
-  OlError( "Assertion failed in __FILE__ __PRETTY_FUNCTION__ __LINE__\nProgram shutting down" ); \
+if( !(condition) ) { \
+  char linechars[64]; \
+  sprintf( linechars, "%i", __LINE__ ); \
+  OlError( "Assertion failed in \nFile:     " + std::string( __FILE__ ) \
+			+ ", line " + std::string( linechars ) \
+			+ "\nFunction: " + std::string( __PRETTY_FUNCTION__ ) \
+			+ "\nProgram shutting down" ); \
   exit( -1 ); \
 }
 
