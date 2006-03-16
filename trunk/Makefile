@@ -1,10 +1,5 @@
 # OpenLayer Makefile
 
-
-
-
-
-
 ifeq ($(TARGET) ,WINDOWS)
 ENVIRONMENT=WINDOWS
 endif
@@ -39,14 +34,26 @@ $(error Unknown Environment. \
 Specify target with either TARGET=WINDOWS, TARGET=LINUX, TARGET=MACOSX, or TARGET=MSYS )
 endif
 
+#Preproccessors
+ifeq ($(NOTTF) ,1)
+PREPROC+=-DOL_NO_TTF
+endif
 
+ifeq ($(NOSTATECHANGE) ,1)
+PREPROC+=-DOL_NO_STATE_CHANGE
+endif
 
+ifeq ($(NOOLDAPI) ,1)
+PREPROC+=-DOL_NO_OLD_API
+endif
 
-
+ifeq ($(NOPNG) ,1)
+PREPROC+=-DOL_NO_PNG
+endif
 
 #Compiler and flags
 CC=g++
-CFLAGS=-O2 -Wall -Iinclude -Iinclude/OpenLayer -fexpensive-optimizations
+CFLAGS=-O2 -Wall -Iinclude -Iinclude/OpenLayer -fexpensive-optimizations $(PREPROC)
 LDFLAGS=
 LIBFLAGS=-lglyph-agl -lfreetype -lldpng -lpng -lz -lagl `allegro-config --libs` -lGL -lGLU
 
