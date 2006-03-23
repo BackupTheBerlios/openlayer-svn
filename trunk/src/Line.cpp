@@ -46,6 +46,15 @@ Draw( const Rgba &color1, const Rgba &color2 ) const {
 }
 
 
+void Line::
+ApplyPlacement( const Placement &placement ) {
+   origin += placement.GetPosition();
+   Matrix2D matrix = placement.Get2DMatrix();
+   start = matrix.Transform( start );
+   end = matrix.Transform( end );
+}
+
+
 
 Vec2D Line::
 GetIntersectionPoint( const Line &other ) const {

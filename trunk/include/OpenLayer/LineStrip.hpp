@@ -4,6 +4,7 @@
 #include "Shape.hpp"
 #include "Vec2D.hpp"
 #include "Placement.hpp"
+#include "Line.hpp"
 #include <list>
 
 
@@ -89,24 +90,24 @@ public:
 
    // Add a vertex to the end of the line strip //
    inline void AddToEnd( Vec2D vertex ) {
+      vertices.push_back( vertex );
+      
       if( vertices.size() > 1 ) {
          float length = ( vertex - vertices.back() ).GetMagnitude();
          lengths.push_back( length );
          totalLength += length;
       }
-
-      vertices.push_back( vertex );
    }
 
    // Add a vertex to the beginning of the line strip //
    inline void AddToBegin( Vec2D vertex ) {
+      vertices.push_front( vertex );
+      
       if( vertices.size() > 1 ) {
          float length = ( vertices.front() - vertex ).GetMagnitude();
          lengths.push_front( length );
          totalLength += length;
       }
-
-      vertices.push_front( vertex );
    }
 
    // Delete the first vertex of the line strip //
@@ -132,6 +133,11 @@ public:
    // Returns the specified vertex //
    Vec2D GetVertex( int index ) const;
    
+   // Returns the specified segment //
+   inline Line GetSegment( int index ) const {
+      return Line( GetVertex( index ), GetVertex( index+1 ));
+   }
+   
    // Returns the number of vertices //
    inline int GetNumOfVertices() const {
       return vertices.size();
@@ -151,7 +157,7 @@ public:
 		return placement.GetRotation();
 	}
 
-	inline void RotateBy( float angle ) {
+	virtual void RotateBy( float angle ) {
 		placement.RotateBy( angle );
 	}
 	
@@ -168,8 +174,17 @@ public:
       return DoCollisionTest( other, thisPlacement, otherPlacement, true );
    }
    
+   
+   inline Collision GetCollision( const Line &other, const Placement &thisPlacement,
+                           const Placement &otherPlacement ) const {
+      return DoCollisionTest( other, thisPlacement, otherPlacement, true );
+   }
+   
 private:
    Collision DoCollisionTest( const LineStrip &other, const Placement &thisPlacement,
+                              const Placement &otherPlacement, bool getResults = true ) const;
+   
+   Collision DoCollisionTest( const Line &other, const Placement &thisPlacement,
                               const Placement &otherPlacement, bool getResults = true ) const;
    
    // Draws the line strip with the specified color //

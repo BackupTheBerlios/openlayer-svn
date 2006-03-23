@@ -62,8 +62,19 @@ public:
    virtual void MoveBy( const Vec2D &amount ) {
       origin += amount;
    }
+   
    virtual void MoveTo( const Vec2D &position ) {
 		origin = position;
+   }
+   
+   void ApplyPlacement( const Placement &placement );
+   
+   inline Placement GetPlacement() {
+      return Placement( origin );
+   }
+   
+   virtual void RotateBy( float angle ) {
+      ApplyPlacement( Placement( Vec2D( 0.0f, 0.0f ), angle ));
    }
 
    // Returns the intersection point of two lines //

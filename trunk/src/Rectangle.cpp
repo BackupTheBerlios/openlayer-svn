@@ -2,11 +2,18 @@
 
 using namespace ol;
 
-static const float OL_NEAR_ZERO = 0.000001;
+static const float OL_NEAR_ZERO = 0.00001;
 
 void Rect::
 ExecDraw() const {
+   bool applyRotation = fabs( rotationAngle ) > OL_NEAR_ZERO;
+   
    if( roundness <= OL_NEAR_ZERO ) {
+      if( applyRotation ) {
+         glPushMatrix();
+         RotateMatrix( rotationAngle );
+      }
+      
       glBegin( GL_TRIANGLE_FAN );
          
          glVertex2f( pos.x, pos.y+size.y );
@@ -15,8 +22,18 @@ ExecDraw() const {
          glVertex2f( pos.x, pos.y );
          
       glEnd();
+      
+      if( applyRotation ) {
+         glPopMatrix();
+      }
    }
    else {
+      glPushMatrix();
+      
+      if( applyRotation ) {
+         RotateMatrix( rotationAngle );
+      }
+      
       float topY = pos.y + roundness;
       float bottomY = pos.y + size.y - roundness;
       
@@ -42,8 +59,6 @@ ExecDraw() const {
          glVertex2f( rightX, bottomY );
          glVertex2f( leftX, bottomY );
       glEnd();
-      
-      glPushMatrix();
       
       glTranslatef( pos.x + roundness, pos.y + roundness, GLfloat( 0.0 ));
       RenderCircleQuarter( AL_PI );
@@ -132,7 +147,14 @@ RenderThickCircleOutlineQuarter( float startAngle ) const {
 
 void Rect::
 ExecDrawOutline() const {
-   if( roundness <= 0.0 ) {
+   bool applyRotation = fabs( rotationAngle ) > OL_NEAR_ZERO;
+   
+   if( roundness <= OL_NEAR_ZERO ) {
+      if( applyRotation ) {
+         glPushMatrix();
+         RotateMatrix( rotationAngle );
+      }
+      
       glBegin( GL_QUADS );
          // Top //
          glVertex2f( pos.x -lineWidth, pos.y -lineWidth );
@@ -155,8 +177,18 @@ ExecDrawOutline() const {
          glVertex2f( pos.x+size.x +lineWidth, pos.y+size.y );
          glVertex2f( pos.x+size.x, pos.y+size.y );
       glEnd();
+      
+      if( applyRotation ) {
+         glPopMatrix();
+      }
    }
    else {
+      glPushMatrix();
+      
+      if( applyRotation ) {
+         RotateMatrix( rotationAngle );
+      }
+      
       glBegin( GL_QUADS );
          // Top //
          glVertex2f( pos.x +roundness, pos.y -lineWidth );
@@ -180,7 +212,6 @@ ExecDrawOutline() const {
          glVertex2f( pos.x+size.x, pos.y+size.y -roundness );
       glEnd();
       
-      glPushMatrix();
       
       glTranslatef( pos.x + roundness, pos.y + roundness, GLfloat( 0.0 ));
       RenderThickCircleOutlineQuarter( AL_PI );

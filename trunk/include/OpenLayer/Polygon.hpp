@@ -10,6 +10,7 @@
 #include "Placement.hpp"
 #include "Collisions.hpp"
 #include "LineStrip.hpp"
+#include "Line.hpp"
 
 
 namespace ol {
@@ -122,6 +123,14 @@ public:
 
    // Returns a constant reference to the list of the vertices //
    inline const std::vector< Vec2D > &GetVertices() const { return vertices; }
+   
+   // Returns the specified segment //
+   inline Line GetSegment( int index ) const {
+      if( index >= 0 && index < vertices.size()-1 ) {
+         return Line( vertices[index], vertices[index+1] );
+      }
+      return Line();
+   }
 
    // Moves the polygon by the specified amount //
    virtual void MoveBy( const Vec2D &amount ) {
@@ -133,13 +142,17 @@ public:
 		placement.SetPosition( position );
 	}
 	
+	virtual void RotateBy( float angle ) {
+      placement.RotateBy( angle );
+   }
+	
 	// Sets the placement of the polygon
 	inline void SetPlacement( const Placement &placement ) {
       this->placement = placement;
    }
    
 	// Returns the placement of the polygon
-   inline const Placement &GetPlacement() const {
+   inline Placement &GetPlacement() {
       return placement;
    }
 
@@ -189,11 +202,19 @@ public:
       return DoCollisionTest( other, placement, other.GetPlacement(), true );
    }
    
+   inline Collision GetCollision( const Line &other, const Placement &thisPlacement,
+                  const Placement &otherPlacement ) const {
+      return DoCollisionTest( other, thisPlacement, otherPlacement, true );
+   }
+   
 protected:
    Collision DoCollisionTest( const Poly &other, const Placement &thisPlacement,
                               const Placement &otherPlacement, bool getResults = true ) const;
    
    Collision DoCollisionTest( const LineStrip &other, const Placement &thisPlacement,
+                              const Placement &otherPlacement, bool getResults = true ) const;
+   
+   Collision DoCollisionTest( const Line &other, const Placement &thisPlacement,
                               const Placement &otherPlacement, bool getResults = true ) const;
    
                      

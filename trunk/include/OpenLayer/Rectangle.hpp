@@ -17,12 +17,12 @@ public:
 
    Rect( Vec2D pos, Vec2D size, float lineWidth = 1.0,
          float roundness = 0.0, float accuracy = Settings::GetCircleAccuracy() )
-      : Shape( lineWidth ), pos( pos ), size( size ), roundness( roundness )
+      : Shape( lineWidth ), pos( pos ), size( size ), roundness( roundness ), rotationAngle( 0.0 )
         { SetAccuracy( accuracy ); }
 
    Rect( float x, float y, float w, float h, float lineWidth = 1.0,
          float roundness = 0.0, float accuracy = Settings::GetCircleAccuracy() )
-      : Shape( lineWidth ), pos( x, y ), size( w, h ), roundness( roundness )
+      : Shape( lineWidth ), pos( x, y ), size( w, h ), roundness( roundness ), rotationAngle( 0.0 )
         { SetAccuracy( accuracy ); }
 
 	virtual ~Rect(){}
@@ -72,9 +72,13 @@ public:
    virtual void MoveTo( const Vec2D &position ) {
    	pos = position;
    }
+   
+   virtual void RotateBy( float angle ) {
+      rotationAngle += angle;
+   }
 
    // Sets the visual accuracy of the rounded rectangle //
-   void SetAccuracy( float accuracy ) {
+   inline void SetAccuracy( float accuracy ) {
       angleIncrement = std::min(( 2.0 * asin( 1.0/roundness )/accuracy ), 0.35 * AL_PI );
    }
 
@@ -102,6 +106,7 @@ protected:
 
    float roundness;
    float angleIncrement;
+   float rotationAngle;
 };
 
 

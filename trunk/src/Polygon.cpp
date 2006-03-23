@@ -9,6 +9,7 @@ using namespace ol;
 
 static const float OL_NEAR_ZERO = 0.000001;
 
+
 ol::Poly::
 Poly( const Vec2D *vertices, int numVertices, Vec2D rotationPivot )
    : outlineTexture( 0 ) {
@@ -224,6 +225,18 @@ DoCollisionTest( const ol::LineStrip &other, const Placement &thisPlacement,
                  const Placement &otherPlacement, bool getResults ) const {
    return LineStripCollision( vertices, other.GetVertices(),
                               thisPlacement, otherPlacement, getResults, true, false );
+}
+
+
+Collision ol::Poly::
+DoCollisionTest( const ol::Line &other, const Placement &thisPlacement,
+                 const Placement &otherPlacement, bool getResults ) const {
+   std::vector< Vec2D > otherVertices;
+   otherVertices.reserve( 2 );
+   otherVertices.push_back( other.start );
+   otherVertices.push_back( other.end );
+   
+   return LineStripCollision( vertices, otherVertices, thisPlacement, otherPlacement, getResults, true, false );
 }
 
 

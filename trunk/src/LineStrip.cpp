@@ -17,6 +17,18 @@ DoCollisionTest( const ol::LineStrip &other, const Placement &thisPlacement,
 }
 
 
+Collision LineStrip::
+DoCollisionTest( const ol::Line &other, const Placement &thisPlacement,
+                 const Placement &otherPlacement, bool getResults ) const {
+   std::vector< Vec2D > otherVertices;
+   otherVertices.reserve( 2 );
+   otherVertices.push_back( other.start );
+   otherVertices.push_back( other.end );
+   
+   return LineStripCollision( vertices, otherVertices, thisPlacement, otherPlacement, getResults, true, false );
+}
+
+
 
 void LineStrip::
 ExecDraw() const {
@@ -96,13 +108,6 @@ Render( const Rgba *color1, const Rgba *color2 ) const {
       vertexIter++;
       
       while( true ) {
-         if( color1 ) {
-            float factor = sumLengths / totalLength;
-            sumLengths += *lengthIter;
-            
-            color1->InterpolateWith( *color2, factor ).Select();
-         }
-         
          float x = vertexIter->x;
          float y = vertexIter->y;
          
@@ -110,6 +115,13 @@ Render( const Rgba *color1, const Rgba *color2 ) const {
          
          if( vertexIter == vertices.end()) {
             break;
+         }
+         
+         if( color1 ) {
+            float factor = sumLengths / totalLength;
+            sumLengths += *lengthIter;
+            
+            color1->InterpolateWith( *color2, factor ).Select();
          }
          
          if( fabs( x - last.x ) < OL_NEAR_ZERO && fabs( y - last.y ) < OL_NEAR_ZERO ) {
