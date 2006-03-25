@@ -86,6 +86,12 @@ public:
       this->roundness = roundness;
       SetAccuracy( Settings::GetCircleAccuracy() );
    }
+   
+   virtual void TransformBy( const Placement &placement ) {
+      pos += placement.GetPosition();
+      rotationAngle += placement.GetRotation();
+      size *= placement.GetStretch();
+   }
 
    // Returns the common area of this rectangle and an another one //
    Rect ClippedTo( const Rect &other ) const;

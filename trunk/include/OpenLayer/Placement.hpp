@@ -93,14 +93,28 @@ public:
 		stretch *= amount.stretch;
 		return *this;
    }
-
+   
+   inline Placement& operator +=( const Placement& amount ) {
+		position += amount.position;
+		rotation += amount.rotation;
+		stretch *= amount.stretch;
+		return *this;
+   }
+   
    inline Placement& operator -( const Placement& amount ) {
 		position -= amount.position;
 		rotation -= amount.rotation;
 		stretch /= amount.stretch;
 		return *this;
    }
-
+   
+   inline Placement& operator -=( const Placement& amount ) {
+		position += amount.position;
+		rotation += amount.rotation;
+		stretch *= amount.stretch;
+		return *this;
+   }
+   
    // Returns the rotation and stretch in a matrix //
    Matrix2D Get2DMatrix() const;
    

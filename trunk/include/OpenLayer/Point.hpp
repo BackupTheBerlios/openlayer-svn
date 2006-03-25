@@ -49,7 +49,11 @@ public:
    inline void MoveTo( const Vec2D &position ) {
    	pos = position;
    }
-
+   
+   virtual void TransformBy( const Placement &placement ) {
+      pos += placement.GetPosition();
+   }
+   
    Vec2D pos;
 
 protected:

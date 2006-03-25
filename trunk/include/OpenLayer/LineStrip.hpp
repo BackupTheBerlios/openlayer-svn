@@ -74,6 +74,10 @@ public:
       this->placement = placement;
    }
    
+   virtual void TransformBy( const Placement &placement ) {
+      this->placement += placement;
+   }
+   
    inline const Placement &GetPlacement() const {
       return placement;
    }

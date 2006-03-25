@@ -5,6 +5,7 @@
 #include "Shape.hpp"
 #include "Settings.hpp"
 #include "Rgba.hpp"
+#include "Placement.hpp"
 #include <cmath>
 
 
@@ -96,6 +97,13 @@ public:
 
    virtual void MoveTo( const Vec2D &position ) {
    	pos = position;
+   }
+   
+   virtual void TransformBy( const Placement &placement ) {
+      pos += placement.GetPosition();
+      angle += placement.GetRotation();
+      xRad *= placement.GetStretch();
+      yRad *= placement.GetStretch();
    }
 
    // Sets the x or y radius of the ellipse //

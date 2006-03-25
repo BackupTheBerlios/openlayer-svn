@@ -151,6 +151,10 @@ public:
       this->placement = placement;
    }
    
+   virtual void TransformBy( const Placement &placement ) {
+      this->placement += placement;
+   }
+   
 	// Returns the placement of the polygon
    inline Placement &GetPlacement() {
       return placement;

@@ -67,14 +67,19 @@ public:
 		origin = position;
    }
    
-   void ApplyPlacement( const Placement &placement );
-   
    inline Placement GetPlacement() {
       return Placement( origin );
    }
    
+   virtual void TransformBy( const Placement &placement ) {
+      origin += placement.GetPosition();
+      Matrix2D matrix = placement.Get2DMatrix();
+      start = matrix.Transform( start );
+      end = matrix.Transform( end );
+   }
+   
    virtual void RotateBy( float angle ) {
-      ApplyPlacement( Placement( Vec2D( 0.0f, 0.0f ), angle ));
+      TransformBy( Placement( Vec2D( 0.0f, 0.0f ), angle ));
    }
 
    // Returns the intersection point of two lines //

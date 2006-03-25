@@ -42,8 +42,8 @@ public:
    Shape( float lineWidth = 1.0 )
       : lineWidth( lineWidth ), displayList( 0 ) {}
 
-   virtual ~Shape(){}
-
+   virtual ~Shape() {}
+   
    void Draw( const Rgba &color ) const {
       OL_SHAPE_START_RENDERING()
 
@@ -124,7 +124,10 @@ public:
 
    // Rotates the shape by the specified angle //
    virtual void RotateBy( float angle ) {}
-
+   
+   // Transforms the shape by a Placement //
+   virtual void TransformBy( const Placement &placement );
+   
    // Sets the line width of the shape //
    inline void SetLineWidth( float lineWidth ) {
       this->lineWidth = lineWidth;
