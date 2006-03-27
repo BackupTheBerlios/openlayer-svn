@@ -125,7 +125,7 @@ public:
    inline const std::vector< Vec2D > &GetVertices() const { return vertices; }
    
    // Returns the specified segment //
-   inline Line GetSegment( int index ) const {
+   inline Line GetSegment( unsigned int index ) const {
       if( index >= 0 && index < vertices.size()-1 ) {
          return Line( vertices[index], vertices[index+1] );
       }
