@@ -88,8 +88,10 @@ public:
    }
    
    virtual void TransformBy( const Placement &placement ) {
+      float placementRotation = placement.GetRotation();
       pos += placement.GetPosition();
-      rotationAngle += placement.GetRotation();
+      pos -= placement.GetRotationPivot();
+      rotationAngle += placementRotation;
       size *= placement.GetStretch();
    }
 

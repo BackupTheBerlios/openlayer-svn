@@ -42,7 +42,7 @@ public:
    Shape( float lineWidth = 1.0 )
       : lineWidth( lineWidth ), displayList( 0 ) {}
 
-   virtual ~Shape() {}
+   virtual ~Shape();
    
    void Draw( const Rgba &color ) const {
       OL_SHAPE_START_RENDERING()
@@ -120,10 +120,10 @@ public:
    virtual void MoveBy( const Vec2D &amount ) = 0;
 
    // Moves the shape to the specified position //
-   virtual void MoveTo( const Vec2D &position );
+   virtual void MoveTo( const Vec2D &position ) = 0;
 
    // Rotates the shape by the specified angle //
-   virtual void RotateBy( float angle ) {}
+   virtual void RotateBy( float angle );
    
    // Transforms the shape by a Placement //
    virtual void TransformBy( const Placement &placement );
