@@ -142,6 +142,8 @@ public:
    // Raw disk rendering function //
    void DiskRender( const Rgba &innerCol, const Rgba &outerCol,
                     float innerXRad, float innerYRad, bool setCols ) const;
+   
+   virtual std::string ToString() const;
 
 protected:
    float xRad;

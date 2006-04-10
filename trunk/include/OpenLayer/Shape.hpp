@@ -34,6 +34,8 @@
 
 namespace ol {
 
+class Poly;
+
 
 // The base class of all Shapes //
 
@@ -132,11 +134,15 @@ public:
    inline void SetLineWidth( float lineWidth ) {
       this->lineWidth = lineWidth;
    }
+   
+   //virtual Poly ToPolygon() const = 0;
 
    // Returns the line width of the shape //
    inline float GetLineWidth() {
       return lineWidth;
    }
+   
+   virtual std::string ToString() const = 0;
 
 protected:
    template< class std_container1, class std_container2 >

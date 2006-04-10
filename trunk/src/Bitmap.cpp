@@ -149,10 +149,14 @@ Load( int w, int h, int textureWidth, int textureHeight, GLfloat *data, GLenum f
    Select();
    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-
+   
    if( Settings::useAntiAlias ) {
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+   }
+   else {
+      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
    }
 }
 
@@ -907,6 +911,10 @@ SendToGPU() {
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
    }
+   else {
+      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+   }
 
 
    if( destroyBmp && !Settings::MemoryBitmapsStored() ) {
@@ -1184,6 +1192,7 @@ GetCollisionPolygon( OL_MEMORY_IMG *bitmap, int alphaLimit, int numSkips, Vec2D 
       bool movedAlready = false;
       
       if( collisionBufPoint != 0 ) {
+         //cout << "Going back" << endl;
          // We're going back in our tracks //
          if( lastXMove == 0 ) {
             if( x > 0 && TestAlpha( x-1, y, alphaLimit, bitmap )
@@ -1220,7 +1229,7 @@ GetCollisionPolygon( OL_MEMORY_IMG *bitmap, int alphaLimit, int numSkips, Vec2D 
                if( y < lastRow && TestAlpha( x, y+1, alphaLimit, bitmap )
                   && collisionBuffer[ (y+1) * width + x ] == 0 ) {
                   
-                  yMov = -1;
+                  yMov = 1;
                   y += yMov;
                   xMov = 0;
                   movedAlready = true;
@@ -1291,7 +1300,7 @@ GetCollisionPolygon( OL_MEMORY_IMG *bitmap, int alphaLimit, int numSkips, Vec2D 
             else {
                polyAllowed = false;
             }
-   
+            
             if(( y != 0 || yMov > 0 ) && ( y != lastRow || yMov < 0 )) {
                if( !TestAlpha( x, y + yMov, alphaLimit, bitmap )) {
                   xMov = (x == 0)? 1 : -1;
@@ -1431,7 +1440,7 @@ GetCollisionPolygon( OL_MEMORY_IMG *bitmap, int alphaLimit, int numSkips, Vec2D 
       }
       
       skipCounter++;
-
+      
       if( polyAllowed && skipCounter > numSkips ) {
          poly->Add( Vec2D( storedX, storedY ));
          skipCounter = 0;

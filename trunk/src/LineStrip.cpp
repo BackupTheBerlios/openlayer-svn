@@ -67,20 +67,20 @@ Render( const Rgba *color1, const Rgba *color2 ) const {
    list< float > ::const_iterator lengthIter = lengths.begin();
    
    // Find the normal of the beginning of the strip //
-
+   
    Vec2D last = vertices.front();
    Vec2D lastS = GetVertex( 1 );
-   if( lastS == last )
-   {
+   if( lastS == last ) {
 		int index = 2;
-		while( lastS == last )
-		{
+		while( lastS == last ) {
 			if( GetNumOfVertices() <= index )
 				return;
 			lastS = GetVertex( index );
 			index++;
+			lengthIter++;
 		}
    }
+   
    lastS = lastS - last;
 
    lastS /= lastS.GetMagnitude();
@@ -281,8 +281,8 @@ Render( const Rgba *color1, const Rgba *color2 ) const {
 Vec2D LineStrip::
 GetVertex( int index ) const {
    if( index >= (signed)vertices.size()) {
-      OlError( "Tried to retrieve vertex #" + ToString( index ) + " from a LineStrip with only "
-               + ToString( vertices.size() ) + " vertices!" );
+      OlError( "Tried to retrieve vertex #" + VarToString( index ) + " from a LineStrip with only "
+               + VarToString( vertices.size() ) + " vertices!" );
       
       return Vec2D( 0.0, 0.0 );
    }
@@ -296,4 +296,16 @@ GetVertex( int index ) const {
    return *iter;
 }
 
+
+std::string LineStrip::
+ToString() const {
+    std::ostringstream str;
+    str << "LineStrip: Placement: " << placement.ToString() << " Vertices:";
+    
+    for( list< Vec2D > ::const_iterator iter = vertices.begin(); iter != vertices.end(); iter++ ) {
+       str << " ( " << iter->x << ", " << iter->y << " )";
+    }
+    
+    return str.str();
+}
 

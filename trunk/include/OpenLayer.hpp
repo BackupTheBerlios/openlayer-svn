@@ -52,6 +52,8 @@
 #include "OpenLayer/RenderModes.hpp"
 
 #include "OpenLayer/Shape.hpp"
+#include "OpenLayer/TexturedPoly.hpp"
+#include "OpenLayer/Polygon.hpp"
 #include "OpenLayer/Line.hpp"
 #include "OpenLayer/Rectangle.hpp"
 #include "OpenLayer/Circle.hpp"

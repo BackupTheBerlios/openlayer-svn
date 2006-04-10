@@ -6,6 +6,15 @@
 using namespace ol;
 
 
+std::string Line::
+ToString() const {
+    std::ostringstream str;
+    str << "Line: Start: ( " << start.x << ", " << start.y << " ) End: ( " << end.x << ", " << end.y
+        << " ) Origin: ( " << origin.x << ", " << origin.y << " )";
+    return str.str();
+}
+
+
 void Line::
 ExecDraw() const {
    glLineWidth( lineWidth );

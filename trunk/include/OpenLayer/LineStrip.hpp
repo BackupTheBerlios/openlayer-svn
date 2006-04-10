@@ -94,10 +94,11 @@ public:
 
    // Add a vertex to the end of the line strip //
    inline void AddToEnd( Vec2D vertex ) {
+      Vec2D *previous = vertices.empty()? 0 : &vertices.back();
       vertices.push_back( vertex );
       
       if( vertices.size() > 1 ) {
-         float length = ( vertex - vertices.back() ).GetMagnitude();
+         float length = ( vertex - ( *previous )).GetMagnitude();
          lengths.push_back( length );
          totalLength += length;
       }
@@ -105,10 +106,11 @@ public:
 
    // Add a vertex to the beginning of the line strip //
    inline void AddToBegin( Vec2D vertex ) {
+      Vec2D *previous = vertices.empty()? 0 : &vertices.front();
       vertices.push_front( vertex );
       
       if( vertices.size() > 1 ) {
-         float length = ( vertices.front() - vertex ).GetMagnitude();
+         float length = (( *previous ) - vertex ).GetMagnitude();
          lengths.push_front( length );
          totalLength += length;
       }
@@ -150,6 +152,8 @@ public:
    const std::list< Vec2D > &GetVertices() const {
       return vertices;
    }
+   
+   virtual std::string ToString() const;
    
    // The following functions could be derived from Set/GetPlacement
    

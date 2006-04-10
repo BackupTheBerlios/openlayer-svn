@@ -44,3 +44,12 @@ Apply( const Vec2D &pivot ) const {
 }
 
 
+std::string Placement::
+ToString() const {
+    std::ostringstream str;
+    str << "Position: ( " << position.x << ", " << position.y << " ) Angle: " << rotation
+        << " Stretch: " << stretch;
+    return str.str();
+}
+
+

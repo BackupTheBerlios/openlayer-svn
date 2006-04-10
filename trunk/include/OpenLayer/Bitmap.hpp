@@ -328,18 +328,29 @@ public:
     // Same as above but using a RenderMode //
     void TexturedQuad( float w, float h, float fact, const RenderMode &mode ) const;
     
+    inline int TextureWidth() const {
+      return textureInfo.texWidth;
+    }
+    
+    inline int TextureHeight() const {
+      return textureInfo.texHeight;
+    }
+    
+    void GetReadyToRender( float opacity ) const;
+    
+    
     friend class GainAlphaMode;
     friend class ClippedMode;
     friend class Canvas;
+    friend class TexturedPoly;
     
     OlTextureInfo textureInfo;
 protected:
+   
     // A faster save function to call if the Bitmap is already selected as Canvas //
     void SaveIfSurface( std::string filename ) const;
     
     void HandleExtraFlags( int flags );
-    
-    void GetReadyToRender( float opacity ) const;
     
     void SelectDefaultPivot( int imageWidth, int imageHeight );
     

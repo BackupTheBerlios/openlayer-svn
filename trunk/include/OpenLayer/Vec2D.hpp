@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <string>
+#include <sstream>
 #include "General.hpp"
 
 
@@ -72,11 +73,21 @@ public:
    }
 
    inline bool operator == ( const Vec2D &other ) {
-		return x == other.x && y == other.y;
+		return fabs(x - other.x) < 0.01 && fabs(y - other.y) < 0.01;
    }
-
+   
+   inline bool operator != ( const Vec2D &other ) {
+		return !(*this == other);
+   }
+   
+   inline std::string ToString() const {
+      std::ostringstream str;
+      str << "( " << x << ", " << y << " )";
+      return str.str();
+   }
+   
    inline std::string GetString() const {
-      return "( " + ToString( x ) + ", " + ToString( y ) + " )";
+      return ToString();
    }
 };
 

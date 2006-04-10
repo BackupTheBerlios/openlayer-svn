@@ -3,9 +3,13 @@
 
 
 #include "Vec2D.hpp"
-
+#include <utility>
+#include <vector>
 
 namespace ol {
+
+
+class Line;
 
 
 enum CollidingObject {
@@ -15,31 +19,23 @@ enum CollidingObject {
 };
 
 
-class Line;
-
-
 class Collision {
 public:
    Collision( bool isCollision = false )
       : isCollision( isCollision ) {
-      segments[(int) OBJ_A] = 0;
-      segments[(int) OBJ_B] = 0;
       normals[(int) OBJ_A] = 0;
       normals[(int) OBJ_B] = 0;
 	}
-
-
+   
    Collision( const Line &aSegment, const Line &bSegment );
 
 
    Collision( const Vec2D &aNormal, const Vec2D &bNormal, const Vec2D &collisionPoint )
       : isCollision( true ), point( collisionPoint ) {
-      segments[(int) OBJ_A] = 0;
-      segments[(int) OBJ_B] = 0;
       normals[(int) OBJ_A] = new Vec2D( aNormal );
       normals[(int) OBJ_B] = new Vec2D( bNormal );
    }
-
+   
 
    Collision( const Collision& c );
    ~Collision();
@@ -62,11 +58,14 @@ public:
       return point;
    }
 
-
+   
    // Returns a colliding line segment for OBJ_A or OBJ_B //
-   const Line &GetSegment( CollidingObject objectID );
-
-
+   const Line GetSegment( CollidingObject objectID );
+   
+   inline const std::vector< std::pair< Line, Line > *> &GetAllCollidingSegments() {
+      return segmentLists;
+   }
+   
    // Returns the normal of the collision point for OBJ_A or OBJ_B //
    Vec2D GetNormal( CollidingObject objectID );
 
@@ -74,10 +73,11 @@ public:
 
 private:
    Line CreateVirtualSegment( const Vec2D &normal );
-
+   
    bool isCollision;
    Vec2D point;
-   Line *segments[(int) NUM_OBJS];
+   
+   std::vector< std::pair< Line, Line > *> segmentLists;
    Vec2D *normals[(int) NUM_OBJS];
 
    const static Line DEFAULT_SEGMENT;

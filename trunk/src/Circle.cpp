@@ -6,6 +6,15 @@ using namespace ol;
 static const float OL_NEAR_ZERO = 0.000001;
 
 
+std::string ol::Ellipse::
+ToString() const {
+    std::ostringstream str;
+    str << "Circle: Pos: ( " << pos.x << ", " << pos.y << " ) Radius: ( " << xRad << ", " << yRad
+        << " ) Angle: " << angle;
+    return str.str();
+}
+
+
 void ol::Ellipse::
 ExecDraw() const {
    glPushMatrix();

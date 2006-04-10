@@ -125,6 +125,8 @@ public:
    
    // Same as above but overrides the pivot
    void Apply( const Vec2D &pivot ) const;
+   
+   std::string ToString() const;
 
 private:
    Vec2D position;

@@ -97,6 +97,11 @@ public:
    }
    
    
+   inline Placement GetPlacement() const {
+      return Placement( origin );
+   }
+   
+   
    inline Collision GetCollision( const Line &other ) const {
       if( Collides( other )) {
          return Collision( *this, other );
@@ -120,6 +125,8 @@ public:
          return Collision( false );
       }
    }
+   
+   virtual std::string ToString() const;
    
    Vec2D start, end;
 	Vec2D origin;

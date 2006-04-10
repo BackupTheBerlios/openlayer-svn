@@ -17,6 +17,12 @@ std::string ToString( Type value ) {
 }
 
 
+template< class Type >
+std::string VarToString( Type value ) {
+   return ToString( value );
+}
+
+
 int ToNextPowOfTwo( int num );
 
 

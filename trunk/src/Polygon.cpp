@@ -20,6 +20,16 @@ Poly( const Vec2D *vertices, int numVertices, Vec2D rotationPivot )
 }
 
 
+ol::Poly::
+~Poly() {}
+
+
+void Poly::
+Add( Vec2D vec ) {
+   vertices.push_back( vec );
+}
+
+
 void ol::Poly::
 ExecDrawOutline() const {
 	glPushMatrix();
@@ -237,6 +247,19 @@ DoCollisionTest( const ol::Line &other, const Placement &thisPlacement,
    otherVertices.push_back( other.end );
    
    return LineStripCollision( vertices, otherVertices, thisPlacement, otherPlacement, getResults, true, false );
+}
+
+
+std::string ol::Poly::
+ToString() const {
+    std::ostringstream str;
+    str << "Polygon: Placement: " << placement.ToString() << " Vertices:";
+    
+    for( vector< Vec2D > ::const_iterator iter = vertices.begin(); iter != vertices.end(); iter++ ) {
+       str << " ( " << iter->x << ", " << iter->y << " )";
+    }
+    
+    return str.str();
 }
 
 

@@ -30,20 +30,18 @@ public:
    // Construct the polygon from a list of vertices //
    Poly( const Vec2D *vertices, int numVertices, Vec2D rotationPivot = Vec2D( 0.0, 0.0 ));
    
-   virtual ~Poly() {}
+   virtual ~Poly();
    
    // Adds a vertex to the polygon //
-   inline void Add( Vec2D vec ) {
-      vertices.push_back( vec );
-   }
+   virtual void Add( Vec2D vec );
    
    // Returns a reference to the vertex with the given index //
    inline const Vec2D &GetVertex( unsigned int index ) const {
       static Vec2D dummyValue;
 
       if( index < 0 || index >= vertices.size()) {
-         OlError( "Invalid vertex index: " + ToString( index )
-            + " ( Number of vertices: " + ToString( vertices.size()) + " )" );
+         OlError( "Invalid vertex index: " + VarToString( index )
+            + " ( Number of vertices: " + VarToString( vertices.size()) + " )" );
          return dummyValue;
       }
 
@@ -55,8 +53,8 @@ public:
       static Vec2D dummyValue;
 
       if( index < 0 || index >= vertices.size()) {
-         OlError( "Invalid vertex index: " + ToString( index )
-            + " ( Number of vertices: " + ToString( vertices.size()) + " )" );
+         OlError( "Invalid vertex index: " + VarToString( index )
+            + " ( Number of vertices: " + VarToString( vertices.size()) + " )" );
          return dummyValue;
       }
 
@@ -131,12 +129,12 @@ public:
       }
       return Line();
    }
-
+   
    // Moves the polygon by the specified amount //
    virtual void MoveBy( const Vec2D &amount ) {
    	placement.MoveBy( amount );
    }
-
+   
 	// Sets the position of the polygon
 	inline virtual void MoveTo( const Vec2D &position ) {
 		placement.SetPosition( position );
@@ -156,22 +154,28 @@ public:
    }
    
 	// Returns the placement of the polygon
-   inline Placement &GetPlacement() {
+   inline const Placement &GetPlacement() const {
       return placement;
    }
-
+   /*
+   virtual Poly ToPolygon() const {
+      return *this;
+   }
+   */
    // Sets the outline texture of the polygon, pass zero to get rid of the outline texture //
    inline void SetOutlineTexture( ol::Bitmap *texture, OutlineTextureMode mode = OPTIMIZE ) {
       outlineTexture = texture;
    }
+   
+   virtual std::string ToString() const;
    
    // The following functions could be derived from Set/GetPlacement
    
 	inline void SetRotationAngle( float angle ) {
 		placement.SetRotation( angle );
 	}
-
-	inline float GetRotationAngle() {
+   
+	inline float GetRotationAngle() const {
 		return placement.GetRotation();
 	}
    
@@ -188,6 +192,11 @@ public:
    inline bool Collides( const LineStrip &other, const Placement &thisPlacement,
                   const Placement &otherPlacement ) const {
       return DoCollisionTest( other, thisPlacement, otherPlacement, false ).IsCollision();
+   }
+   
+   
+   inline bool Collides( const Line &other ) {
+      return DoCollisionTest( other, placement, other.GetPlacement(), false );
    }
    
    
@@ -209,6 +218,10 @@ public:
    inline Collision GetCollision( const Line &other, const Placement &thisPlacement,
                   const Placement &otherPlacement ) const {
       return DoCollisionTest( other, thisPlacement, otherPlacement, true );
+   }
+   
+   inline Collision GetCollision( const Line &other ) {
+      return DoCollisionTest( other, placement, other.GetPlacement(), true );
    }
    
 protected:

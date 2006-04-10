@@ -54,6 +54,8 @@ public:
       pos += placement.GetPosition();
    }
    
+   virtual std::string ToString() const;
+   
    Vec2D pos;
 
 protected:
