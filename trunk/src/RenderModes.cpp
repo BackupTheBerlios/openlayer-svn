@@ -2,6 +2,7 @@
 #include "TextureInfo.hpp"
 #include "Bitmap.hpp"
 #include "Rgba.hpp"
+#include "Rectangle.hpp"
 
 using namespace ol;
 
@@ -9,6 +10,11 @@ using namespace ol;
 
 
 // * GENERAL FUNCTIONS //
+
+ClippedMode::
+ClippedMode( const Rect &clipArea )
+   : clipRect( clipArea.pos.x, clipArea.pos.y, clipArea.size.x, clipArea.size.y ) {}
+
 
 OlRect RenderMode::
 GetRenderRect( OlRect current ) const {

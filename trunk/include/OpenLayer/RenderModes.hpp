@@ -3,7 +3,6 @@
 
 #include "Rgba.hpp"
 #include "TextureInfo.hpp"
-#include "Rectangle.hpp"
 
 
 // RENDER MODES //
@@ -115,6 +114,8 @@ protected:
 };
 
 
+class Rect;
+
 // Clips the bitmap to a region //
 
 class ClippedMode : public RenderMode {
@@ -122,8 +123,8 @@ public:
    ClippedMode( float x, float y, float w, float h )
       : clipRect( x, y, w, h ) {}
 
-   ClippedMode( const Rect &clipArea )
-      : clipRect( clipArea.pos.x, clipArea.pos.y, clipArea.size.x, clipArea.size.y ) {}
+   ClippedMode( const Rect &clipArea );
+   
    virtual ~ClippedMode(){}
 
    virtual OlRect GetRenderRect( OlRect current ) const;

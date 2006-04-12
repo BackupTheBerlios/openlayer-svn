@@ -8,7 +8,6 @@
 #include "Internal.hpp"
 #include "PendingLoad.hpp"
 #include "Collisions.hpp"
-#include "Polygon.hpp"
 #include "Vec2D.hpp"
 #include "RenderModes.hpp"
 
@@ -22,6 +21,7 @@ namespace ol {
 
 class RenderMode;
 class Rect;
+class Poly;
 
 
 // Conversion options used when converting an Allegro BITMAP to an OpenLayer Bitmap //

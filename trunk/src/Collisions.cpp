@@ -17,7 +17,21 @@ Collision( const Line &aSegment, const Line &bSegment )
    
 	normals[(int) OBJ_A] = 0;
 	normals[(int) OBJ_B] = 0;
-   point = aSegment.GetIntersectionPoint( bSegment );
+   points.push_back( aSegment.GetIntersectionPoint( bSegment ));
+}
+
+
+Collision::
+Collision( const std::vector< std::pair< Line, Line > *> &segmentLists )
+   : segmentLists( segmentLists ) {
+   
+	normals[(int) OBJ_A] = 0;
+	normals[(int) OBJ_B] = 0;
+	
+	for( std::vector< std::pair< Line, Line > *> ::const_iterator iter = segmentLists.begin();
+        iter != segmentLists.end(); iter++ ) {
+      points.push_back((*iter)->first.GetIntersectionPoint((*iter)->second ));
+   }
 }
 
 
@@ -30,7 +44,7 @@ Collision( const Collision& c ) {
 Line Collision::
 CreateVirtualSegment( const Vec2D &normal ) {
    Vec2D s = Vec2D( -normal.y, normal.x ) * 0.5;
-   return Line( point - s, point + s );
+   return Line( GetPoint() - s, GetPoint() + s );
 }
 
 
@@ -57,7 +71,7 @@ GetSegment( CollidingObject objectID ) {
       }
       
       Vec2D s = Vec2D( -normal->y, normal->x ) * 0.5;
-      return Line( point - s, point + s );
+      return Line( GetPoint() - s, GetPoint() + s );
    }
 }
 
@@ -89,13 +103,21 @@ Collision::
          delete normals[i];
       }
    }
+   
+	for( std::vector< std::pair< Line, Line > *> ::const_iterator iter = segmentLists.begin();
+        iter != segmentLists.end(); iter++ ) {
+      delete *iter;
+   }
 }
 
 
 Collision& Collision::
 operator =( const Collision& c ) {
 	isCollision = c.isCollision;
-	point = c.point;
+	
+	for( std::vector< Vec2D > ::const_iterator iter = c.points.begin(); iter != c.points.end(); iter++ ) {
+      points.push_back( *iter );
+   }
 	
 	for( std::vector< std::pair< Line, Line > *> ::const_iterator iter = c.segmentLists.begin();
         iter != c.segmentLists.end(); iter++ ) {

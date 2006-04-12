@@ -5,6 +5,7 @@
 #include "Vec2D.hpp"
 #include "Placement.hpp"
 #include "Line.hpp"
+#include "RawLineStrip.hpp"
 #include <list>
 
 
@@ -18,7 +19,7 @@ class Bitmap;
 class LineStrip : public Shape {
 public:
    LineStrip( float lineWidth = 1.0, const Bitmap *texture = 0 )
-      : Shape( lineWidth ), totalLength( 0.0 ), texture( texture ) {}
+      : Shape( lineWidth ), texture( texture ) {}
 
    template< class std_container >
    LineStrip( const std_container &vertices, float lineWidth = 1.0, const Bitmap *texture = 0 );
@@ -91,53 +92,29 @@ public:
    inline void DisableTexture() {
       texture = 0;
    }
-
+   
    // Add a vertex to the end of the line strip //
    inline void AddToEnd( Vec2D vertex ) {
-      Vec2D *previous = vertices.empty()? 0 : &vertices.back();
-      vertices.push_back( vertex );
-      
-      if( vertices.size() > 1 ) {
-         float length = ( vertex - ( *previous )).GetMagnitude();
-         lengths.push_back( length );
-         totalLength += length;
-      }
+      data.AddToEnd( vertex );
    }
 
    // Add a vertex to the beginning of the line strip //
    inline void AddToBegin( Vec2D vertex ) {
-      Vec2D *previous = vertices.empty()? 0 : &vertices.front();
-      vertices.push_front( vertex );
-      
-      if( vertices.size() > 1 ) {
-         float length = (( *previous ) - vertex ).GetMagnitude();
-         lengths.push_front( length );
-         totalLength += length;
-      }
+      data.AddToBegin( vertex );
    }
 
    // Delete the first vertex of the line strip //
    inline void DeleteFirst() {
-      if( !vertices.empty() ) {
-         vertices.pop_front();
-
-         totalLength -= lengths.front();
-         lengths.pop_front();
-      }
+      data.DeleteFirst();
    }
 
    // Delete the first last of the line strip //
    inline void DeleteLast() {
-      if( !vertices.empty() ) {
-         vertices.pop_back();
-
-         totalLength -= lengths.back();
-         lengths.pop_back();
-      }
+      data.DeleteLast();
    }
    
    // Returns the specified vertex //
-   Vec2D GetVertex( int index ) const;
+   Vec2D GetVertex( unsigned int index ) const;
    
    // Returns the specified segment //
    inline Line GetSegment( int index ) const {
@@ -146,11 +123,11 @@ public:
    
    // Returns the number of vertices //
    inline int GetNumOfVertices() const {
-      return vertices.size();
+      return data.GetVertices().size();
    }
    
    const std::list< Vec2D > &GetVertices() const {
-      return vertices;
+      return data.GetVertices();
    }
    
    virtual std::string ToString() const;
@@ -202,13 +179,11 @@ private:
    void ExecDrawOutline() const {
       ExecDraw();
    }
-
+   
    // Raw line strip rendering function //
    void Render( const Rgba *color1, const Rgba *color2 ) const;
-
-   std::list< Vec2D > vertices;
-   std::list< float > lengths;
-   float totalLength;
+   
+   RawLineStrip< std::list< Vec2D >, std::list< float > > data;
    
    Placement placement;
 
@@ -221,7 +196,7 @@ private:
 template< class std_container >
 LineStrip::
 LineStrip( const std_container &theVertices, float lineWidth, const Bitmap *texture )
-   : Shape( lineWidth ), totalLength( 0.0 ), texture( texture ) {
+   : Shape( lineWidth ), texture( texture ) {
    for( typename std_container::const_iterator iter = theVertices.begin(); iter != theVertices.end(); iter++ ) {
       AddToEnd( *iter );
    }

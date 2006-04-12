@@ -1,6 +1,7 @@
 #include "Shape.hpp"
 #include "Collisions.hpp"
 #include "Line.hpp"
+#include <utility>
 
 
 template< class std_container1, class std_container2 >
@@ -29,6 +30,8 @@ LineStripCollision( const std_container1 &vertices, const std_container2 &otherV
    
    thisIter++;
    
+   std::vector< std::pair< Line, Line > *> segmentLists;
+   
    // Loop through each vertex //
    while( true ) {
       bool breakNow = false;
@@ -49,7 +52,7 @@ LineStripCollision( const std_container1 &vertices, const std_container2 &otherV
       typename std_container2::const_iterator otherIter = otherVertices.begin();
       Vec2D otherPrev = otherTransform.Transform( *otherIter - otherRotationPivot ) + otherCo + otherRotationPivot;
       otherIter++;
-
+      
       // Loop through each vertex of the other polygon //
       while( true ) {
          bool breakNow = false;
@@ -67,22 +70,25 @@ LineStripCollision( const std_container1 &vertices, const std_container2 &otherV
          Vec2D otherVertex = otherTransform.Transform( *otherIter - otherRotationPivot )
                              + otherCo + otherRotationPivot;
          otherIter++;
-
+         
          // Test for collision //
          if( IsCounterClockwise( thisPrev, thisVertex, otherPrev )
              != IsCounterClockwise( thisPrev, thisVertex, otherVertex )
              &&
              IsCounterClockwise( otherPrev, otherVertex, thisPrev )
              != IsCounterClockwise( otherPrev, otherVertex, thisVertex )) {
-
+            
             if( !getResults ) {
                return Collision( true );
             }
             else {
                Line thisLine( thisVertex, thisPrev );
                Line otherLine( otherVertex, otherPrev );
-
-               return Collision( thisLine, otherLine );
+               
+               segmentLists.push_back( new std::pair< Line, Line >( thisLine, otherLine ));
+               
+               /*
+               return Collision( thisLine, otherLine );*/
             }
          }
 
@@ -103,7 +109,11 @@ LineStripCollision( const std_container1 &vertices, const std_container2 &otherV
       // Advance to the next vertex //
       thisPrev = thisVertex;
    }
-
+   
+   if( !segmentLists.empty() ) {
+      return Collision( segmentLists );
+   }
+   
    return Collision( false );
 }
 

@@ -72,11 +72,11 @@ public:
       x /= divisor; y /= divisor;
    }
 
-   inline bool operator == ( const Vec2D &other ) {
+   inline bool operator == ( const Vec2D &other ) const {
 		return fabs(x - other.x) < 0.01 && fabs(y - other.y) < 0.01;
    }
    
-   inline bool operator != ( const Vec2D &other ) {
+   inline bool operator != ( const Vec2D &other ) const {
 		return !(*this == other);
    }
    

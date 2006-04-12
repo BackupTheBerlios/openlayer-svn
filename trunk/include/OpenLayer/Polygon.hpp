@@ -1,7 +1,7 @@
 #ifndef OL_POLYGON_HPP
 #define OL_POLYGON_HPP
 
-#include <vector>
+#include "RawLineStrip.hpp"
 #include "Vec2D.hpp"
 #include "Rgba.hpp"
 #include "Internal.hpp"
@@ -12,10 +12,12 @@
 #include "LineStrip.hpp"
 #include "Line.hpp"
 
+#include <vector>
 
 namespace ol {
 
 class Bitmap;
+class LineStrip;
 
 
 class Poly : public Shape {
@@ -39,30 +41,30 @@ public:
    inline const Vec2D &GetVertex( unsigned int index ) const {
       static Vec2D dummyValue;
 
-      if( index < 0 || index >= vertices.size()) {
+      if( index < 0 || index >= data.GetVertices().size()) {
          OlError( "Invalid vertex index: " + VarToString( index )
-            + " ( Number of vertices: " + VarToString( vertices.size()) + " )" );
+            + " ( Number of vertices: " + VarToString( data.GetVertices().size()) + " )" );
          return dummyValue;
       }
 
-      return vertices[index];
+      return data.GetVertices()[index];
    }
    
    
    inline Vec2D &GetVertex( unsigned int index ) {
       static Vec2D dummyValue;
 
-      if( index < 0 || index >= vertices.size()) {
+      if( index < 0 || index >= data.GetVertices().size()) {
          OlError( "Invalid vertex index: " + VarToString( index )
-            + " ( Number of vertices: " + VarToString( vertices.size()) + " )" );
+            + " ( Number of vertices: " + VarToString( data.GetVertices().size()) + " )" );
          return dummyValue;
       }
-
-      return vertices[index];
+      
+      return data.GetVertices()[index];
    }
    
    inline int GetNumberOfVertices() {
-      return vertices.size();
+      return data.GetVertices().size();
    }
    
    inline void Draw( const Rgba &color ) const {
@@ -120,12 +122,12 @@ public:
 	}
 
    // Returns a constant reference to the list of the vertices //
-   inline const std::vector< Vec2D > &GetVertices() const { return vertices; }
+   inline const std::vector< Vec2D > &GetVertices() const { return data.GetVertices(); }
    
    // Returns the specified segment //
    inline Line GetSegment( unsigned int index ) const {
-      if( index >= 0 && index < vertices.size()-1 ) {
-         return Line( vertices[index], vertices[index+1] );
+      if( index >= 0 && index < data.GetVertices().size()-1 ) {
+         return Line( data.GetVertices()[index], data.GetVertices()[index+1] );
       }
       return Line();
    }
@@ -241,7 +243,8 @@ protected:
    // Draws the outline of the polygon to the active canvas //
    virtual void ExecDrawOutline() const;
    
-   std::vector< Vec2D > vertices;
+   RawLineStrip< std::vector< Vec2D >, std::vector< float > > data;
+   
 	Placement placement;
    Bitmap *outlineTexture;
    OutlineTextureMode outlineMode;
@@ -259,10 +262,10 @@ Poly::Poly( const std_container &theVertices, Vec2D rotationPivot )
    : outlineTexture( 0 ) {
    
    placement.SetRotationPivot( rotationPivot );
-   vertices.reserve( theVertices.size() );
+   data.GetVertices().reserve( theVertices.size() );
    
    for( typename std_container::const_iterator iter = theVertices.begin(); iter != theVertices.end(); iter++ ) {
-      vertices.push_back( *iter );
+      data.AddToEnd( *iter );
    }
 }
 

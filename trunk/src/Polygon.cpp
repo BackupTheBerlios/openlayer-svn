@@ -3,11 +3,10 @@
 #include "Line.hpp"
 #include "VertexListCollision.hpp"
 #include "LineStrip.hpp"
+#include "LineStripRender.hpp"
 
 using namespace std;
 using namespace ol;
-
-static const float OL_NEAR_ZERO = 0.000001;
 
 
 ol::Poly::
@@ -15,7 +14,7 @@ Poly( const Vec2D *vertices, int numVertices, Vec2D rotationPivot )
    : outlineTexture( 0 ) {
    placement.SetRotationPivot( rotationPivot );
    for( int i = 0; i < numVertices; i++ ) {
-      this->vertices.push_back( vertices[i] );
+      data.AddToEnd( vertices[i] );
    }
 }
 
@@ -26,181 +25,20 @@ ol::Poly::
 
 void Poly::
 Add( Vec2D vec ) {
-   vertices.push_back( vec );
+   data.AddToEnd( vec );
 }
 
 
 void ol::Poly::
 ExecDrawOutline() const {
-	glPushMatrix();
-   placement.Apply();
-   
-   if( lineWidth <= 1.0 + OL_NEAR_ZERO ) {
-
-      glBegin( GL_LINE_LOOP );
-
-         for( std::vector< Vec2D > ::const_iterator iter = vertices.begin(); iter != vertices.end(); iter++ ) {
-            glVertex2f( iter->x, iter->y );
-         }
-
-      glEnd();
-   }
-   else {
-      float texturePos = 0.0;
-
-      // Find the normal of the beginning of the strip //
-
-      Vec2D last = vertices.back();
-
-      Vec2D lastS = vertices.front() - last;
-      lastS /= lastS.GetMagnitude();
-
-      // Render the begin of the strip //
-
-      if( outlineTexture ) {
-         outlineTexture->Select();
-         glEnable( GL_TEXTURE_2D );
-         glBegin( GL_QUAD_STRIP );
-      }
-      else {
-         glBegin( GL_QUAD_STRIP );
-      }
-
-         bool endNow = false;
-         bool endNext = false;
-         bool isFirst = true;
-
-         vector< Vec2D > ::const_iterator vertexIter = vertices.begin();
-         while( !endNow ) {
-            if( endNext ) {
-               endNow = true;
-            }
-
-            float x = vertexIter->x;
-            float y = vertexIter->y;
-
-            // Find the direction vector from the next point to the current one //
-            vertexIter++;
-
-            if( x == last.x && y == last.y ) {
-               continue;
-            }
-
-            if( vertexIter == vertices.end()) {
-               vertexIter = vertices.begin();
-               endNext = true;
-            }
-
-            float bx = x - vertexIter->x;
-            float by = y - vertexIter->y;
-
-            float bLength = sqrt( bx * bx + by * by );
-
-            if( bLength > -OL_NEAR_ZERO && bLength < OL_NEAR_ZERO ) {
-               continue;
-            }
-
-            bx /= bLength;
-            by /= bLength;
-
-            // Find the direction vector of the displacement //
-
-            float cx = lastS.x + bx;
-            float cy = lastS.y + by;
-
-            float cLength = sqrt( cx * cx + cy * cy );
-
-            float nx, ny;
-
-            if( cLength > -OL_NEAR_ZERO && cLength < OL_NEAR_ZERO ) {
-               nx = -by;
-               ny = bx;
-
-               float nRatio = lineWidth/sqrt( nx * nx + ny * ny );
-
-               nx *= nRatio;
-               ny *= nRatio;
-            }
-            else {
-               cx /= cLength;
-               cy /= cLength;
-
-               // Make sure that the displacement happens always in the same side //
-
-               float diff1 = lastS.x - bx;
-               float diff2 = lastS.y - by;
-               float diff3 = cx - bx;
-               float diff4 = cy - by;
-
-               if(( diff1 * diff4 ) - ( diff2 * diff3 ) > 0) {
-                  cx = -cx;
-                  cy = -cy;
-               }
-
-               // Find the displacement multiplicator //
-
-               float s = lastS.y * cx + (-lastS.x) * cy;
-
-               nx = cx * lineWidth / s;
-               ny = cy * lineWidth / s;
-            }
-
-            // Find the displaced coordinates //
-
-            float upperX = x + nx;
-            float upperY = y + ny;
-
-            float lowerX = x - nx;
-            float lowerY = y - ny;
-
-            if( !outlineTexture ) {
-               glVertex2f( upperX, upperY );
-               glVertex2f( lowerX, lowerY );
-            }
-            else {
-               OlTextureInfo &textureInfo = outlineTexture->textureInfo;
-
-               texturePos += bLength / textureInfo.imgWidth;
-
-               if( texturePos > textureInfo.rect.w ) {
-                  texturePos = 0.0;
-               }
-
-               if( !isFirst ) {
-                  glTexCoord2f( textureInfo.rect.x + texturePos, textureInfo.rect.y );
-                  glVertex2f( upperX, upperY );
-                  glTexCoord2f( textureInfo.rect.x + texturePos, textureInfo.rect.y + textureInfo.rect.h );
-                  glVertex2f( lowerX, lowerY );
-               }
-               else {
-                  isFirst = false;
-               }
-
-               if( !endNow ) {
-                  glTexCoord2f( textureInfo.rect.x + texturePos, textureInfo.rect.y );
-                  glVertex2f( upperX, upperY );
-                  glTexCoord2f( textureInfo.rect.x + texturePos, textureInfo.rect.y + textureInfo.rect.h );
-                  glVertex2f( lowerX, lowerY );
-               }
-            }
-
-            // Store the information which can be used when calculating the next point //
-
-            last.x = x;
-            last.y = y;
-
-            lastS.x = -bx;
-            lastS.y = -by;
-         }
-
-      glEnd();
-   }
-	glPopMatrix();
+   data.LineStripRender( 0, 0, outlineTexture, lineWidth, placement, true );
 }
 
 
 void ol::Poly::
 ExecDraw() const {
+   const vector< Vec2D > &vertices = data.GetVertices();
+   
 	glPushMatrix();
    placement.Apply();
    glBegin( GL_POLYGON );
@@ -226,14 +64,15 @@ MoveBy( const Vec2D &amount ) {
 Collision ol::Poly::
 DoCollisionTest( const ol::Poly &other, const Placement &thisPlacement,
                  const Placement &otherPlacement, bool getResults ) const {
-   return LineStripCollision( vertices, other.vertices, thisPlacement, otherPlacement, getResults, true, true );
+   return LineStripCollision( data.GetVertices(), other.data.GetVertices(), thisPlacement,
+      otherPlacement, getResults, true, true );
 }
 
 
 Collision ol::Poly::
 DoCollisionTest( const ol::LineStrip &other, const Placement &thisPlacement,
                  const Placement &otherPlacement, bool getResults ) const {
-   return LineStripCollision( vertices, other.GetVertices(),
+   return LineStripCollision( data.GetVertices(), other.GetVertices(),
                               thisPlacement, otherPlacement, getResults, true, false );
 }
 
@@ -246,12 +85,15 @@ DoCollisionTest( const ol::Line &other, const Placement &thisPlacement,
    otherVertices.push_back( other.start );
    otherVertices.push_back( other.end );
    
-   return LineStripCollision( vertices, otherVertices, thisPlacement, otherPlacement, getResults, true, false );
+   return LineStripCollision( data.GetVertices(), otherVertices, thisPlacement, otherPlacement, getResults,
+      true, false );
 }
 
 
 std::string ol::Poly::
 ToString() const {
+    const vector< Vec2D > &vertices = data.GetVertices();
+    
     std::ostringstream str;
     str << "Polygon: Placement: " << placement.ToString() << " Vertices:";
     

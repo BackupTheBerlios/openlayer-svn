@@ -8,6 +8,7 @@
 #include "Canvas.hpp"
 #include "Rectangle.hpp"
 #include "Framebuffer.hpp"
+#include "Polygon.hpp"
 
 
 #include <vector>

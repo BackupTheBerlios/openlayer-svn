@@ -28,12 +28,15 @@ public:
 	}
    
    Collision( const Line &aSegment, const Line &bSegment );
+   
+   Collision( const std::vector< std::pair< Line, Line > *> &segmentLists );
 
 
    Collision( const Vec2D &aNormal, const Vec2D &bNormal, const Vec2D &collisionPoint )
-      : isCollision( true ), point( collisionPoint ) {
+      : isCollision( true ) {
       normals[(int) OBJ_A] = new Vec2D( aNormal );
       normals[(int) OBJ_B] = new Vec2D( bNormal );
+      points.push_back( collisionPoint );
    }
    
 
@@ -55,14 +58,25 @@ public:
 
    // Returns the exact point of collision //
    inline Vec2D GetPoint() {
-      return point;
+      if( !points.empty() ) {
+         return points[0];
+      }
+      else {
+         return Vec2D( 0.0f, 0.0f );
+      }
    }
+   
 
+   // Returns the all collision points //
+   inline const std::vector< Vec2D > &GetAllPoints() const {
+      return points;
+   }
    
    // Returns a colliding line segment for OBJ_A or OBJ_B //
    const Line GetSegment( CollidingObject objectID );
    
-   inline const std::vector< std::pair< Line, Line > *> &GetAllCollidingSegments() {
+   // Returns all colliding segments //
+   inline const std::vector< std::pair< Line, Line > *> &GetAllSegments() {
       return segmentLists;
    }
    
@@ -75,7 +89,8 @@ private:
    Line CreateVirtualSegment( const Vec2D &normal );
    
    bool isCollision;
-   Vec2D point;
+   
+   std::vector< Vec2D > points;
    
    std::vector< std::pair< Line, Line > *> segmentLists;
    Vec2D *normals[(int) NUM_OBJS];
