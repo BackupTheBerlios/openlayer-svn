@@ -107,7 +107,7 @@ done
 echo "Do you wish to drop PNG support? [y/N]"
 read PNG
 do if $(tolower ${'PNG'})='y'
-	TMPFLAGS += " -DOL_NO_PNG"
+	CPPFLAGS += " -DOL_NO_PNG"
 else if $(tolower ${'PNG'})='yes'
 	CPPFLAGS += " -DOL_NO_PNG"
 else ifnot $(tolower ${'PNG'})='n' ifnot $(tolower ${'PNG'})='no' ifnot ${'PNG'}='' goto NOPNG
@@ -116,27 +116,27 @@ done
 echo "Do you wish to drop TTF support? [y/N]"
 read TTF
 do if $(tolower ${'TTF'})='y'
-	TMPFLAGS += " -DOL_NO_TTF"
+	CPPFLAGS += " -DOL_NO_TTF"
 else if $(tolower ${'TTF'})='yes'
-	TMPFLAGS += " -DOL_NO_TTF"
+	CPPFLAGS += " -DOL_NO_TTF"
 else ifnot $(tolower ${'TTF'})='n' ifnot $(tolower ${'TTF'})='no' ifnot ${'TTF'}='' goto NOTTF
 done
 :NOOLDAPI
 echo "Do you wish to drop old API Support? [y/N]"
 read OLDAPI
 do if $(tolower ${'OLDAPI'})='y'
-	TMPFLAGS += " -DOL_NO_OLD_API"
+	CPPFLAGS += " -DOL_NO_OLD_API"
 else if $(tolower ${'OLDAPI'})='yes'
-	TMPFLAGS += " -DOL_NO_OLD_API"
+	CPPFLAGS += " -DOL_NO_OLD_API"
 else ifnot $(tolower ${'OLDAPI'})='n' ifnot $(tolower ${'OLDAPI'})='no' ifnot ${'OLDAPI'}='' goto NOOLDAPI
 done
 :NOSTATECHANGE
 echo "Do you wish to drop State Changes? [y/N]"
 read STATECHANGE
 do if $(tolower ${'STATECHANGE'})='y'
-	TMPFLAGS += " -DOL_NO_STATE_CHANGE"
+	CPPFLAGS += " -DOL_NO_STATE_CHANGE"
 else if $(tolower ${'STATECHANGE'})='yes'
-	TMPFLAGS += " -DOL_NO_STATE_CHANGE"
+	CPPFLAGS += " -DOL_NO_STATE_CHANGE"
 else ifnot $(tolower ${'STATECHANGE'})='n' ifnot $(tolower ${'STATECHANGE'})='no' ifnot ${'STATECHANGE'}='' goto NOSTATECHANGE
 done
 
