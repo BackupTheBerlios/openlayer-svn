@@ -150,6 +150,11 @@ compile ${LIB_SOURCES}
 echo "Assembling library"
 -rm lib/libopenlayer.a
 linklib libopenlayer
+echo "
+Compilation completed.
+
+You can now install the lib by doing:
+./cbuild.c install"
 exit 0
 
 # Install library

@@ -42,6 +42,7 @@ exit $?
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <setjmp.h>
 
 #ifdef __unix__
 #include <unistd.h>
@@ -178,10 +179,7 @@ static int setenv(const char *env, const char *val, int overwrite)
 	if(!overwrite && getenv(env))
 		return 0;
 
-	if(val && *val)
-		snprintf(buf, sizeof(buf), "%s=%s", env, val);
-	else
-		snprintf(buf, sizeof(buf), "%s", env);
+	snprintf(buf, sizeof(buf), "%s=%s", env, (val?val:""));
 	return _putenv(buf);
 }
 
@@ -221,6 +219,11 @@ static char *src_paths[SRC_PATH_SIZE];
 
 static int curr_line = 0;
 static char *nextline;
+
+static int stdo_bak;
+static int stde_bak;
+
+static jmp_buf jmpbuf;
 
 
 static int libify_name(char *buf, size_t buflen, char *name);
@@ -309,14 +312,19 @@ static char *expand_string(char *str, const char *stp, size_t len,
 {
 	char *buf, *ptr, *last_pos;
 	int in_quotes = 0;
+	int use_hard_quotes = 0;
+	char *end;
 	int i;
 
-	if(!(*str))
+	if(!(*str) && !fillmore)
 		return str;
 
 	buf = malloc(BUF_SIZE);
 	if(!buf)
-		exit(-1);
+	{
+		strcpy(linebuf, "exit -1\n");
+		longjmp(jmpbuf, 1);
+	}
 
 	last_pos = str;
 	do {
@@ -333,7 +341,8 @@ static char *expand_string(char *str, const char *stp, size_t len,
 						fprintf(stderr, "\n\n!!! Premature EOF !!!\n%s\n",
 						        (in_quotes?"!!! Unterminated string !!!\n":
 						                   ""));
-						exit(1);
+						strcpy(linebuf, "exit -1\n");
+						longjmp(jmpbuf, 1);
 					}
 					++curr_line;
 				}
@@ -343,7 +352,9 @@ static char *expand_string(char *str, const char *stp, size_t len,
 			{
 				i = 0;
 				do {
-					if((stp[i] == ' ' && isspace(*ptr)) || *ptr == stp[i])
+					if((stp[i] == ' ' &&  isspace(*ptr)) ||
+					   (stp[i] == '^' && !isalpha(*ptr)) ||
+					   *ptr == stp[i])
 					{
 						free(buf);
 						return ptr;
@@ -367,6 +378,200 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					continue;
 				}
 			}
+			else if(*ptr == '&')
+			{
+				if(in_quotes != '\'')
+				{
+					unsigned long val = '?';
+
+					end = NULL;
+
+					if(ptr[1] != '#')
+					{
+						static struct {
+							char *name;
+							unsigned long val;
+						} val_tab[] = {
+							{ "Aacute", 0x00C1 }, { "aacute", 0x00E1 },
+							{ "Acirc", 0x00C2 }, { "acirc", 0x00E2 },
+							{ "acute", 0x00B4 }, { "AElig", 0x00C6 },
+							{ "aelig", 0x00E6 }, { "Agrave", 0x00C0 },
+							{ "agrave", 0x00E0 }, { "alefsym", 0x2135 },
+							{ "Alpha", 0x0391 }, { "alpha", 0x03B1 },
+							{ "amp", 0x0026 }, { "and", 0x2227 },
+							{ "ang", 0x2220 }, { "Aring", 0x00C5 },
+							{ "aring", 0x00E5 }, { "asymp", 0x2248 },
+							{ "Atilde", 0x00C3 }, { "atilde", 0x00E3 },
+							{ "Auml", 0x00C4 }, { "auml", 0x00E4 },
+							{ "bdquo", 0x201E }, { "Beta", 0x0392 },
+							{ "beta", 0x03B2 }, { "brvbar", 0x00A6 },
+							{ "bull", 0x2022 }, { "cap", 0x2229 },
+							{ "Ccedil", 0x00C7 }, { "ccedil", 0x00E7 },
+							{ "cedil", 0x00B8 }, { "cent", 0x00A2 },
+							{ "Chi", 0x03A7 }, { "chi", 0x03C7 },
+							{ "circ", 0x02C6 }, { "clubs", 0x2663 },
+							{ "cong", 0x2245 }, { "copy", 0x00A9 },
+							{ "crarr", 0x21B5 }, { "cup", 0x222A },
+							{ "curren", 0x00A4 }, { "Dagger", 0x2021 },
+							{ "dagger", 0x2020 }, { "dArr", 0x21D3 },
+							{ "darr", 0x2193 }, { "deg", 0x00B0 },
+							{ "Delta", 0x0394 }, { "delta", 0x03B4 },
+							{ "diams", 0x2666 }, { "divide", 0x00F7 },
+							{ "Eacute", 0x00C9 }, { "eacute", 0x00E9 },
+							{ "Ecirc", 0x00CA }, { "ecirc", 0x00EA },
+							{ "Egrave", 0x00C8 }, { "egrave", 0x00E8 },
+							{ "empty", 0x2205 }, { "emsp", 0x2003 },
+							{ "ensp", 0x2002 }, { "Epsilon", 0x0395 },
+							{ "epsilon", 0x03B5 }, { "equiv", 0x2261 },
+							{ "Eta", 0x0397 }, { "eta", 0x03B7 },
+							{ "ETH", 0x00D0 }, { "eth", 0x00F0 },
+							{ "Euml", 0x00CB }, { "euml", 0x00EB },
+							{ "euro", 0x20AC }, { "exist", 0x2203 },
+							{ "fnof", 0x0192 }, { "forall", 0x2200 },
+							{ "frac12", 0x00BD }, { "frac14", 0x00BC },
+							{ "frac34", 0x00BE }, { "frasl", 0x2044 },
+							{ "Gamma", 0x0393 }, { "gamma", 0x03B3 },
+							{ "ge", 0x2265 }, { "gt", 0x003E },
+							{ "hArr", 0x21D4 }, { "harr", 0x2194 },
+							{ "hearts", 0x2665 }, { "hellip", 0x2026 },
+							{ "Iacute", 0x00CD }, { "iacute", 0x00ED },
+							{ "Icirc", 0x00CE }, { "icirc", 0x00EE },
+							{ "iexcl", 0x00A1 }, { "Igrave", 0x00CC },
+							{ "igrave", 0x00EC }, { "image", 0x2111 },
+							{ "infin", 0x221E }, { "int", 0x222B },
+							{ "Iota", 0x0399 }, { "iota", 0x03B9 },
+							{ "iquest", 0x00BF }, { "isin", 0x2208 },
+							{ "Iuml", 0x00CF }, { "iuml", 0x00EF },
+							{ "Kappa", 0x039A }, { "kappa", 0x03BA },
+							{ "Lambda", 0x039B }, { "lambda", 0x03BB },
+							{ "lang", 0x2329 }, { "laquo", 0x00AB },
+							{ "lArr", 0x21D0 }, { "larr", 0x2190 },
+							{ "lceil", 0x2308 }, { "ldquo", 0x201C },
+							{ "le", 0x2264 }, { "lfloor", 0x230A },
+							{ "lowast", 0x2217 }, { "loz", 0x25CA },
+							{ "lrm", 0x200E }, { "lsaquo", 0x2039 },
+							{ "lsquo", 0x2018 }, { "lt", 0x003C },
+							{ "macr", 0x00AF }, { "mdash", 0x2014 },
+							{ "micro", 0x00B5 }, { "middot", 0x00B7 },
+							{ "minus", 0x2212 }, { "Mu", 0x039C },
+							{ "mu", 0x03BC }, { "nabla", 0x2207 },
+							{ "nbsp", 0x00A0 }, { "ndash", 0x2013 },
+							{ "ne", 0x2260 }, { "ni", 0x220B },
+							{ "not", 0x00AC }, { "notin", 0x2209 },
+							{ "nsub", 0x2284 }, { "Ntilde", 0x00D1 },
+							{ "ntilde", 0x00F1 }, { "Nu", 0x039D },
+							{ "nu", 0x03BD }, { "Oacute", 0x00D3 },
+							{ "oacute", 0x00F3 }, { "Ocirc", 0x00D4 },
+							{ "ocirc", 0x00F4 }, { "OElig", 0x0152 },
+							{ "oelig", 0x0153 }, { "Ograve", 0x00D2 },
+							{ "ograve", 0x00F2 }, { "oline", 0x203E },
+							{ "Omega", 0x03A9 }, { "omega", 0x03C9 },
+							{ "Omicron", 0x039F }, { "omicron", 0x03BF },
+							{ "oplus", 0x2295 }, { "or", 0x2228 },
+							{ "ordf", 0x00AA }, { "ordm", 0x00BA },
+							{ "Oslash", 0x00D8 }, { "oslash", 0x00F8 },
+							{ "Otilde", 0x00D5 }, { "otilde", 0x00F5 },
+							{ "otimes", 0x2297 }, { "Ouml", 0x00D6 },
+							{ "ouml", 0x00F6 }, { "para", 0x00B6 },
+							{ "part", 0x2202 }, { "permil", 0x2030 },
+							{ "perp", 0x22A5 }, { "Phi", 0x03A6 },
+							{ "phi", 0x03C6 }, { "Pi", 0x03A0 },
+							{ "pi", 0x03C0 }, { "piv", 0x03D6 },
+							{ "plusmn", 0x00B1 }, { "pound", 0x00A3 },
+							{ "Prime", 0x2033 }, { "prime", 0x2032 },
+							{ "prod", 0x220F }, { "prop", 0x221D },
+							{ "Psi", 0x03A8 }, { "psi", 0x03C8 },
+							{ "quot", 0x0022 }, { "radic", 0x221A },
+							{ "rang", 0x232A }, { "raquo", 0x00BB },
+							{ "rArr", 0x21D2 }, { "rarr", 0x2192 },
+							{ "rceil", 0x2309 }, { "rdquo", 0x201D },
+							{ "real", 0x211C }, { "reg", 0x00AE },
+							{ "rfloor", 0x230B }, { "Rho", 0x03A1 },
+							{ "rho", 0x03C1 }, { "rlm", 0x200F },
+							{ "rsaquo", 0x203A }, { "rsquo", 0x2019 },
+							{ "sbquo", 0x201A }, { "Scaron", 0x0160 },
+							{ "scaron", 0x0161 }, { "sdot", 0x22C5 },
+							{ "sect", 0x00A7 }, { "shy", 0x00AD },
+							{ "Sigma", 0x03A3 }, { "sigma", 0x03C3 },
+							{ "sigmaf", 0x03C2 }, { "sim", 0x223C },
+							{ "spades", 0x2660 }, { "sub", 0x2282 },
+							{ "sube", 0x2286 }, { "sum", 0x2211 },
+							{ "sup", 0x2283 }, { "sup1", 0x00B9 },
+							{ "sup2", 0x00B2 }, { "sup3", 0x00B3 },
+							{ "supe", 0x2287 }, { "szlig", 0x00DF },
+							{ "Tau", 0x03A4 }, { "tau", 0x03C4 },
+							{ "there4", 0x2234 }, { "Theta", 0x0398 },
+							{ "theta", 0x03B8 }, { "thetasym", 0x03D1 },
+							{ "thinsp", 0x2009 }, { "THORN", 0x00DE },
+							{ "thorn", 0x00FE }, { "tilde", 0x02DC },
+							{ "times", 0x00D7 }, { "trade", 0x2122 },
+							{ "Uacute", 0x00DA }, { "uacute", 0x00FA },
+							{ "uArr", 0x21D1 }, { "uarr", 0x2191 },
+							{ "Ucirc", 0x00DB }, { "ucirc", 0x00FB },
+							{ "Ugrave", 0x00D9 }, { "ugrave", 0x00F9 },
+							{ "uml", 0x00A8 }, { "upsih", 0x03D2 },
+							{ "Upsilon", 0x03A5 }, { "upsilon", 0x03C5 },
+							{ "Uuml", 0x00DC }, { "uuml", 0x00FC },
+							{ "weierp", 0x2118 }, { "Xi", 0x039E },
+							{ "xi", 0x03BE }, { "Yacute", 0x00DD },
+							{ "yacute", 0x00FD }, { "yen", 0x00A5 },
+							{ "Yuml", 0x0178 }, { "yuml", 0x00FF },
+							{ "Zeta", 0x0396 }, { "zeta", 0x03B6 },
+							{ "zwj", 0x200D }, { "zwnj", 0x200C },
+							{ NULL, '?' }
+						};
+						int i;
+
+						end = expand_string(ptr+1, " ;", len+str-ptr-1,
+						                    fillmore);
+						if(*end == ';')
+							*(end++) = 0;
+
+						for(i = 0;val_tab[i].name;++i)
+						{
+							if(strncmp(val_tab[i].name, ptr+1, end-ptr-1) == 0)
+								break;
+						}
+						val = val_tab[i].val;
+					}
+					else
+					{
+						val = strtoul(ptr+2, &end, 0);
+						if(*end == ';')
+							++end;
+						if(end == ptr+2)
+							val = '?';
+					}
+
+					if(val <= 0x7F)
+					{
+						if(val > 0)
+							*(ptr++) = val;
+					}
+					else if(val <= 0x7FF)
+					{
+						*(ptr++) = 0xC0 | (val>>6);
+						*(ptr++) = 0x80 | (val&0x3F);
+					}
+					else if(val <= 0xFFFF)
+					{
+						*(ptr++) = 0xE0 | (val>>12);
+						*(ptr++) = 0x80 | ((val>>6)&0x3F);
+						*(ptr++) = 0x80 | (val&0x3F);
+					}
+					else if(val <= 0x10FFFF)
+					{
+						*(ptr++) = 0xF0 | (val>>18);
+						*(ptr++) = 0x80 | ((val>>12)&0x3F);
+						*(ptr++) = 0x80 | ((val>>6)&0x3F);
+						*(ptr++) = 0x80 | (val&0x3F);
+					}
+
+					if(end != ptr)
+						memmove(ptr, end, strlen(end)+1);
+					continue;
+				}
+			}
 			else if(*ptr == '"' || *ptr == '\'')
 			{
 				if(!in_quotes || in_quotes == *ptr)
@@ -383,105 +588,16 @@ static char *expand_string(char *str, const char *stp, size_t len,
 		}
 
 		last_pos = ptr;
-		++ptr;
+		*(ptr++) = 0;
 
-		/* Insert the environment var named between the {} */
-		if(*ptr == '{')
-		{
-			int use_hard_quotes = 0;
-			char *end = "}";
-			int i;
-
-			*(ptr-1) = 0;
-			++ptr;
-
-			if(*ptr == '\'')
-			{
-				use_hard_quotes = 1;
-				++ptr;
-				end = "'}";
-			}
-
-			end = expand_string(ptr, end, len+str-end, fillmore);
-			if(*end == '\'')
-			{
-				*(end++) = 0;
-				++end;
-			}
-			else if(*end)
-				*(end++) = 0;
-
-			if(use_hard_quotes)
-				i = snprintf(buf, BUF_SIZE, "%s'", str);
-			else
-				i = snprintf(buf, BUF_SIZE, "%s", str);
-
-			if(*ptr >= '0' && *ptr <= '9')
-			{
-				const char *val = "";
-				int idx = atoi(ptr);
-				if(idx < argc && idx >= 0)
-					val = argv[idx];
-				snprintf(buf+i, BUF_SIZE-i, "%s", val);
-			}
-			else if(strcmp("*", ptr) == 0 || (use_hard_quotes &&
-			                                  strcmp("@", ptr) == 0))
-			{
-				int idx = 1;
-				int inc = i;
-				while(idx < argc)
-				{
-					inc += snprintf(buf+inc, BUF_SIZE-inc, "%s", argv[idx]);
-					++idx;
-					if(idx < argc)
-						inc += snprintf(buf+inc, BUF_SIZE-inc, " ");
-				}
-			}
-			else if(strcmp("@", ptr) == 0)
-			{
-				int idx = 1;
-				while(idx < argc)
-				{
-					i += snprintf(buf+i, BUF_SIZE-i, "${'%d'}", idx);
-
-					++idx;
-					if(idx < argc)
-						i += snprintf(buf+i, BUF_SIZE-i, " ");
-				}
-				snprintf(buf+i, BUF_SIZE-i, "%s", end);
-				strcpy(str, buf);
-				continue;
-			}
-			else
-				snprintf(buf+i, BUF_SIZE-i, "%s", getvar(ptr));
-
-			while(buf[i])
-			{
-				if(buf[i] == '\'' || buf[i] == '"' || buf[i] == '\\')
-				{
-					memmove(buf+i+1, buf+i, BUF_SIZE-i-1);
-					buf[i] = '\\';
-					++i;
-				}
-				++i;
-			}
-
-			if(use_hard_quotes)
-				snprintf(buf+i, BUF_SIZE-i, "'%s", end);
-			else
-				snprintf(buf+i, BUF_SIZE-i, "%s", end);
-			strcpy(str, buf);
-			continue;
-		}
+		use_hard_quotes = 0;
 
 		/* Run a special command, replacing the section */
 		if(*ptr == '(')
 		{
-			int i, use_hard_quotes = 0;
-			char *next;
+			char *next = NULL;
 			char *opt;
 
-			*(ptr-1) = 0;
 			++ptr;
 
 			if(*ptr == '*')
@@ -491,14 +607,19 @@ static char *expand_string(char *str, const char *stp, size_t len,
 			}
 
 			opt = expand_string(ptr, " )", len+str-ptr, fillmore);
-			if(isspace(*opt) && *opt)
+			if(!(*opt) || !isspace(*opt))
 			{
-				*(opt++) = 0;
-				while(isspace(*opt) && *opt)
-					++opt;
-			}
-			else
 				*opt = 0;
+				printf("\n\n!!! %s error, line %d !!!\n"
+				       "Malformed '%s' sub-command!\n\n", fname,
+				       curr_line, ptr);
+				free(buf);
+				strcpy(linebuf, "exit -1\n");
+				longjmp(jmpbuf, 1);
+			}
+			*(opt++) = 0;
+			while(isspace(*opt) && *opt)
+				++opt;
 
 			if(use_hard_quotes)
 				i = snprintf(buf, BUF_SIZE, "%s'", str);
@@ -511,14 +632,6 @@ static char *expand_string(char *str, const char *stp, size_t len,
 			{
 				const char *val = "";
 				int optlen, idx;
-
-				if(!(*opt))
-				{
-					printf("\n\n!!! %s error, line %d !!!\n"
-					       "Malformed '%s' sub-command!\n\n", fname,
-					       curr_line, ptr);
-					exit(1);
-				}
 
 				next = expand_string(opt, ")", len+str-opt, fillmore);
 				if(*next) *(next++) = 0;
@@ -540,7 +653,66 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				snprintf(buf+i, BUF_SIZE-i, "%s", val);
 			}
 
-			else if(strcasecmp(ptr, "popfront") == 0)
+			else if(strcasecmp(ptr, "word") == 0)
+			{
+				unsigned long val;
+				char *sep = expand_string(opt, ",)", len+str-opt, fillmore);
+				if(*sep != ',')
+				{
+					printf("\n\n!!! %s error, line %d !!!\n"
+					       "Malformed '%s' sub-command!\n\n", fname,
+					       curr_line, ptr);
+					free(buf);
+					strcpy(linebuf, "exit -1\n");
+					longjmp(jmpbuf, 1);
+				}
+				*(sep++) = 0;
+				val = strtoul(opt, NULL, 0);
+
+				opt = sep;
+				while(isspace(*opt))
+					++opt;
+
+				while(1)
+				{
+					char *next_word = expand_string(opt, " )", len+str-opt,
+					                                fillmore);
+					if(isspace(*opt))
+					{
+						while(isspace(*opt))
+							++opt;
+						continue;
+					}
+					if(isspace(*next_word) && *next_word)
+					{
+
+						*(next_word++) = 0;
+						while(isspace(*next_word) && *next_word)
+							++next_word;
+					}
+					else
+					{
+						next = next_word;
+						if(*next) *(next++) = 0;
+						if(val == 1)
+							snprintf(buf+i, BUF_SIZE-i, "%s", opt);
+						break;
+					}
+					--val;
+
+					if(val == 0)
+					{
+						snprintf(buf+i, BUF_SIZE-i, "%s", opt);
+						opt = next_word;
+						next = expand_string(opt, ")", len+str-opt, fillmore);
+						if(*next) *(next++) = 0;
+						break;
+					}
+					opt = next_word;
+				}
+			}
+
+/*			else if(strcasecmp(ptr, "popfront") == 0)
 			{
 				char *front_word;
 				char *varstr;
@@ -551,6 +723,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				varstr = malloc(65536);
 				if(!varstr)
 				{
+					free(buf);
 					exit(-1);
 				}
 				strncpy(varstr, getvar(opt), 65536);
@@ -569,7 +742,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				setenv(opt, varstr, 1);
 
 				free(front_word);
-			}
+			}*/
 
 			else if(strcasecmp(ptr, "add")==0 || strcasecmp(ptr, "sub") == 0 ||
 			        strcasecmp(ptr, "mult")==0 || strcasecmp(ptr, "div") == 0)
@@ -581,7 +754,9 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					printf("\n\n!!! %s error, line %d !!!\n"
 					       "Malformed '%s' sub-command!\n\n", fname,
 					       curr_line, ptr);
-					exit(1);
+					free(buf);
+					strcpy(linebuf, "exit -1\n");
+					longjmp(jmpbuf, 1);
 				}
 				*(sep++) = 0;
 
@@ -604,7 +779,9 @@ static char *expand_string(char *str, const char *stp, size_t len,
 						printf("\n\n!!! %s error, line %d !!!\n"
 						       "Divide-by-0 attempted!\n\n", fname,
 						       curr_line);
-						exit(1);
+						free(buf);
+						strcpy(linebuf, "exit -1\n");
+						longjmp(jmpbuf, 1);
 					}
 					val1 /= val2;
 				}
@@ -628,28 +805,37 @@ static char *expand_string(char *str, const char *stp, size_t len,
 			else if(strcasecmp(ptr, "findsrc") == 0)
 			{
 				int inc = i;
+				int loop = 1;
 
-				while(*opt)
+				while(loop)
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
+					if(isspace(*opt))
+					{
+						while(isspace(*opt))
+							++opt;
+						continue;
+					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						if(isspace(*next_word) && *next_word)
+						while(isspace(*next_word) && *next_word)
 							++next_word;
 					}
 					else
-						*next_word = 0;
+					{
+						if(*next_word) *(next_word++) = 0;
+						loop = 0;
+					}
 
-					inc += snprintf(buf+inc, BUF_SIZE-inc, "%s ", find_src(opt));
+					inc += snprintf(buf+inc, BUF_SIZE-inc, "%s ",
+					                find_src(opt));
 
 					opt = next_word;
 				}
 				if(inc > i) buf[inc-1] = 0;
-
-				next = expand_string(opt, ")", len+str-opt, fillmore);
-				if(*next) *(next++) = 0;
+				next = opt;
 			}
 
 			/* Returns the string, lower-cased */
@@ -696,7 +882,9 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					printf("\n\n!!! %s error, line %d !!!\n"
 					       "Malformed 'ifeq' sub-command!\n\n",
 					       fname, curr_line);
-					exit(1);
+					free(buf);
+					strcpy(linebuf, "exit -1\n");
+					longjmp(jmpbuf, 1);
 				}
 				*(var2++) = 0;
 				val = expand_string(var2, ",)", len+str-var2, fillmore);
@@ -705,7 +893,9 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					printf("\n\n!!! %s error, line %d !!!\n"
 					       "Malformed 'ifeq' sub-command!\n\n",
 					       fname, curr_line);
-					exit(1);
+					free(buf);
+					strcpy(linebuf, "exit -1\n");
+					longjmp(jmpbuf, 1);
 				}
 				*(val++) = 0;
 				if(strcmp(opt, var2) == 0)
@@ -732,19 +922,29 @@ static char *expand_string(char *str, const char *stp, size_t len,
 			{
 				char *val;
 				int inc = i;
+				int loop = 1;
 
-				while(*opt)
+				while(loop)
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
+					if(isspace(*opt))
+					{
+						while(isspace(*opt))
+							++opt;
+						continue;
+					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						if(isspace(*next_word) && *next_word)
+						while(isspace(*next_word) && *next_word)
 							++next_word;
 					}
 					else
-						*next_word = 0;
+					{
+						if(*next_word) *(next_word++) = 0;
+						loop = 0;
+					}
 
 					val = strrchr(opt, '/');
 					if(!val)
@@ -755,28 +955,36 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					opt = next_word;
 				}
 				if(inc > i) buf[inc-1] = 0;
-
-				next = expand_string(opt, ")", len+str-opt, fillmore);
-				if(*next) *(next++) = 0;
+				next = opt;
 			}
 
 			else if(strcasecmp("basename", ptr) == 0)
 			{
 				char *val;
 				int inc = i;
+				int loop = 1;
 
-				while(*opt)
+				while(loop)
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
+					if(isspace(*opt))
+					{
+						while(isspace(*opt))
+							++opt;
+						continue;
+					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						if(isspace(*next_word) && *next_word)
+						while(isspace(*next_word) && *next_word)
 							++next_word;
 					}
 					else
-						*next_word = 0;
+					{
+						if(*next_word) *(next_word++) = 0;
+						loop = 0;
+					}
 
 					val = strrchr(opt, '/');
 					if(!val)
@@ -788,9 +996,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					opt = next_word;
 				}
 				if(inc > i) buf[inc-1] = 0;
-
-				next = expand_string(opt, ")", len+str-opt, fillmore);
-				if(*next) *(next++) = 0;
+				next = opt;
 			}
 
 
@@ -798,6 +1004,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 			{
 				char *val;
 				int inc = i;
+				int loop = 1;
 
 				val = opt;
 				opt = expand_string(opt, ",)", len+str-opt, fillmore);
@@ -806,24 +1013,35 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					printf("\n\n!!! %s error, line %d !!!\n"
 					       "Malformed 'addprefix' sub-command!\n\n",
 					       fname, curr_line);
-					exit(1);
+					free(buf);
+					strcpy(linebuf, "exit -1\n");
+					longjmp(jmpbuf, 1);
 				}
 				*(opt++) = 0;
 				while(isspace(*opt) && *opt)
 					++opt;
 
-				while(*opt)
+				while(loop)
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
+					if(isspace(*opt))
+					{
+						while(isspace(*opt))
+							++opt;
+						continue;
+					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						if(isspace(*next_word) && *next_word)
+						while(isspace(*next_word) && *next_word)
 							++next_word;
 					}
 					else
-						*next_word = 0;
+					{
+						if(*next_word) *(next_word++) = 0;
+						loop = 0;
+					}
 
 					inc += snprintf(buf+inc, BUF_SIZE-inc, "%s%s ", val,
 					                opt);
@@ -831,15 +1049,14 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					opt = next_word;
 				}
 				if(inc > i) buf[inc-1] = 0;
-
-				next = expand_string(opt, ")", len+str-opt, fillmore);
-				if(*next) *(next++) = 0;
+				next = opt;
 			}
 
 			else if(strcasecmp("addsuffix", ptr) == 0)
 			{
 				char *val;
 				int inc = i;
+				int loop = 1;
 
 				val = opt;
 				opt = expand_string(opt, ",)", len+str-opt, fillmore);
@@ -848,24 +1065,35 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					printf("\n\n!!! %s error, line %d !!!\n"
 					       "Malformed 'addprefix' sub-command!\n\n",
 					       fname, curr_line);
-					exit(1);
+					free(buf);
+					strcpy(linebuf, "exit -1\n");
+					longjmp(jmpbuf, 1);
 				}
 				*(opt++) = 0;
 				while(isspace(*opt) && *opt)
 					++opt;
 
-				while(*opt)
+				while(loop)
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
+					if(isspace(*opt))
+					{
+						while(isspace(*opt))
+							++opt;
+						continue;
+					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						if(isspace(*next_word) && *next_word)
+						while(isspace(*next_word) && *next_word)
 							++next_word;
 					}
 					else
-						*next_word = 0;
+					{
+						if(*next_word) *(next_word++) = 0;
+						loop = 0;
+					}
 
 					inc += snprintf(buf+inc, BUF_SIZE-inc, "%s%s ", opt,
 					                val);
@@ -873,9 +1101,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					opt = next_word;
 				}
 				if(inc > i) buf[inc-1] = 0;
-
-				next = expand_string(opt, ")", len+str-opt, fillmore);
-				if(*next) *(next++) = 0;
+				next = opt;
 			}
 
 /*			else if(strcasecmp("join", ptr) == 0)
@@ -890,7 +1116,9 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					printf("\n\n!!! %s error, line %d !!!\n"
 					       "Malformed 'addprefix' sub-command!\n\n",
 					       fname, curr_line);
-					exit(1);
+					free(buf);
+					strcpy(linebuf, "exit -1\n");
+					longjmp(jmpbuf, 1);
 				}
 				*(opt++) = 0;
 				while(isspace(*opt) && *opt)
@@ -917,19 +1145,29 @@ static char *expand_string(char *str, const char *stp, size_t len,
 			{
 				char *val;
 				int inc = i;
+				int loop = 1;
 
-				while(*opt)
+				while(loop)
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
+					if(isspace(*opt))
+					{
+						while(isspace(*opt))
+							++opt;
+						continue;
+					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						if(isspace(*next_word) && *next_word)
+						while(isspace(*next_word) && *next_word)
 							++next_word;
 					}
 					else
-						*next_word = 0;
+					{
+						if(*next_word) *(next_word++) = 0;
+						loop = 0;
+					}
 
 					val = strrchr(opt, '/');
 					if(val)
@@ -943,28 +1181,36 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					opt = next_word;
 				}
 				if(inc > i) buf[inc-1] = 0;
-
-				next = expand_string(opt, ")", len+str-opt, fillmore);
-				if(*next) *(next++) = 0;
+				next = opt;
 			}
 
 			else if(strcasecmp("notdir", ptr) == 0)
 			{
 				char *val;
 				int inc = i;
+				int loop = 1;
 
-				while(*opt)
+				while(loop)
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
+					if(isspace(*opt))
+					{
+						while(isspace(*opt))
+							++opt;
+						continue;
+					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						if(isspace(*next_word) && *next_word)
+						while(isspace(*next_word) && *next_word)
 							++next_word;
 					}
 					else
-						*next_word = 0;
+					{
+						if(*next_word) *(next_word++) = 0;
+						loop = 0;
+					}
 
 					val = strrchr(opt, '/');
 					if(!val)
@@ -976,9 +1222,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 						inc += snprintf(buf+inc, BUF_SIZE-inc, "%s ", val);
 				}
 				if(inc > i) buf[inc-1] = 0;
-
-				next = expand_string(opt, ")", len+str-opt, fillmore);
-				if(*next) *(next++) = 0;
+				next = opt;
 			}
 
 			/* Finds an executable command by searching the PATH and
@@ -1028,23 +1272,33 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				struct stat st;
 				int inc = i;
 				int show_hidden = 0;
+				int loop = 1;
 
 				if(strcasecmp("lsa", ptr) == 0)
 					show_hidden = 1;
 
-				while(*opt)
+				while(loop)
 				{
 					DIR *dp;
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
+					if(isspace(*opt))
+					{
+						while(isspace(*opt))
+							++opt;
+						continue;
+					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						if(isspace(*next_word) && *next_word)
+						while(isspace(*next_word) && *next_word)
 							++next_word;
 					}
 					else
-						*next_word = 0;
+					{
+						if(*next_word) *(next_word++) = 0;
+						loop = 0;
+					}
 
 					dp = opendir(opt);
 					if(dp)
@@ -1086,36 +1340,114 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					opt = next_word;
 				}
 				if(inc > i) buf[inc-1] = 0;
-
-				next = expand_string(opt, ")", len+str-opt, fillmore);
-				if(*next) *(next++) = 0;
+				next = opt;
 			}
 
 			else
 			{
 				printf("\n\n!!! %s error, line %d !!!\n"
 				       "Unknown sub-command '%s'\n\n", fname, curr_line, ptr);
-				exit(1);
+				free(buf);
+				strcpy(linebuf, "exit -1\n");
+				longjmp(jmpbuf, 1);
 			}
 
-			while(buf[i])
+			end = next;
+		}
+		else
+		{
+			/* Insert the named environment var (in the form $FOO or ${FOO}) */
+			if(*ptr == '{')
 			{
-				if(buf[i] == '\'' || buf[i] == '"' || buf[i] == '\\')
+				++ptr;
+
+				if(*ptr == '\'')
 				{
-					memmove(buf+i+1, buf+i, BUF_SIZE-i-1);
-					buf[i] = '\\';
-					++i;
+					use_hard_quotes = 1;
+					++ptr;
+					end = "'}";
 				}
-				++i;
+				else
+					end = "}";
+
+				end = expand_string(ptr, end, len+str-ptr, fillmore);
+				if(*end == '\'')
+				{
+					*(end++) = 0;
+					end = expand_string(end, "}", len+str-ptr, fillmore);
+				}
+				if(*end)
+					*(end++) = 0;
 			}
+			else
+				end = expand_string(ptr, "^", len+str-ptr, fillmore);
 
 			if(use_hard_quotes)
-				snprintf(buf+i, BUF_SIZE-i, "'%s", next);
+				i = snprintf(buf, BUF_SIZE, "%s'", str);
 			else
-				snprintf(buf+i, BUF_SIZE-i, "%s", next);
-			strcpy(str, buf);
-			continue;
+				i = snprintf(buf, BUF_SIZE, "%s", str);
+
+			if(*ptr >= '0' && *ptr <= '9')
+			{
+				const char *val = "";
+				int idx = atoi(ptr);
+				if(idx < argc && idx >= 0)
+					val = argv[idx];
+				snprintf(buf+i, BUF_SIZE-i, "%s", val);
+			}
+			else if(strncmp("*", ptr, end-ptr) == 0 ||
+			        (use_hard_quotes && strncmp("@", ptr, end-ptr) == 0))
+			{
+				int idx = 1;
+				int inc = i;
+				while(idx < argc)
+				{
+					inc += snprintf(buf+inc, BUF_SIZE-inc, "%s ", argv[idx]);
+					++idx;
+				}
+				if(inc > i) buf[inc-1] = 0;
+			}
+			else if(strncmp("@", ptr, end-ptr) == 0)
+			{
+				int idx = 1;
+				while(idx < argc)
+				{
+					i += snprintf(buf+i, BUF_SIZE-i, "${'%d'}", idx);
+
+					++idx;
+					if(idx < argc)
+						i += snprintf(buf+i, BUF_SIZE-i, " ");
+				}
+				snprintf(buf+i, BUF_SIZE-i, "%s", end);
+				strcpy(str, buf);
+				continue;
+			}
+			else
+			{
+				char c = *end;
+				*end = 0;
+				snprintf(buf+i, BUF_SIZE-i, "%s", getvar(ptr));
+				*end = c;
+			}
 		}
+
+		while(buf[i])
+		{
+			if(buf[i] == '&' || buf[i] == '\'' || buf[i] == '"' ||
+			   buf[i] == '\\')
+			{
+				memmove(buf+i+1, buf+i, BUF_SIZE-i-1);
+				buf[i] = '\\';
+				++i;
+			}
+			++i;
+		}
+
+		if(use_hard_quotes)
+			snprintf(buf+i, BUF_SIZE-i, "'%s", end);
+		else
+			snprintf(buf+i, BUF_SIZE-i, "%s", end);
+		strcpy(str, buf);
 	} while(1);
 }
 
@@ -1224,33 +1556,24 @@ static int check_obj_deps(char *base, char *src, time_t obj_time)
 		free(buf);
 		return 1;
 	}
-	++ptr;
-	while(1)
-	{
-		char *stp;
-		while(*ptr && *ptr != '\n' && isspace(*ptr))
-		{
-			if(ptr[0] == '\\' && ptr[1] == '\n')
-			{
-				memmove(ptr, ptr+1, strlen(ptr));
-				ptr[0] = ' ';
-			}
-			++ptr;
-		}
-		if(!(*ptr) || *ptr == '\n')
-		{
-			free(buf);
-			return 0;
-		}
 
-		stp = ptr;
+	++ptr;
+	while(*ptr && *ptr != '\n' && isspace(*ptr))
+		++ptr;
+
+	while(*ptr)
+	{
+		char *stp = ptr;
+
 		while(*stp && !isspace(*stp))
 		{
-			if(stp[0] == '\\' && stp[1] != 0)
+			if(*stp == '\\')
 				memmove(stp, stp+1, strlen(stp));
-			++stp;
+			if(*stp) ++stp;
 		}
-		*(stp++) = 0;
+		if(*stp) *(stp++) = 0;
+		while(*stp && isspace(*stp))
+			++stp;
 
 		if(strcmp(ptr, "\n") != 0 && (stat(ptr, &statbuf) != 0 ||
 		                              statbuf.st_mtime > obj_time))
@@ -1258,8 +1581,39 @@ static int check_obj_deps(char *base, char *src, time_t obj_time)
 			free(buf);
 			return 1;
 		}
+
 		ptr = stp;
 	}
+	free(buf);
+
+	buf = (char*)getvar("EXTRA_SRC_DEPS");
+	if(*buf)
+	{
+		char *ptr = malloc(BUF_SIZE);
+		strncpy(ptr, buf, BUF_SIZE);
+		buf = ptr;
+
+		while(*ptr)
+		{
+			char *next = expand_string(ptr, " ", BUF_SIZE+ptr-buf, 0);
+			if(*next) *(next++) = 0;
+			while(*next && isspace(*next))
+				++next;
+
+			if(strcmp(ptr, "\n") != 0 && (stat(ptr, &statbuf) != 0 ||
+			                              statbuf.st_mtime > obj_time))
+			{
+				free(buf);
+				return 1;
+			}
+
+			ptr = next;
+		}
+
+		free(buf);
+	}
+
+	return 0;
 }
 
 /* copy_file: Copies the source file 'sf' to 'df', preserving the source's
@@ -1349,7 +1703,8 @@ static void add_association(const char *ext, const char *cmd)
 		void *tmp = realloc(associations, (i+1)*sizeof(*associations));
 		if(!tmp)
 		{
-			exit(-1);
+			strcpy(linebuf, "exit -1\n");
+			longjmp(jmpbuf, 1);
 		}
 
 		associations = tmp;
@@ -1364,7 +1719,8 @@ static void add_association(const char *ext, const char *cmd)
 	associations[i].cmd = strdup(cmd);
 	if(!associations[i].ext || !associations[i].cmd)
 	{
-		exit(-1);
+		strcpy(linebuf, "exit -1\n");
+		longjmp(jmpbuf, 1);
 	}
 }
 
@@ -1528,22 +1884,20 @@ void cleanup(void)
 }
 
 
+unsigned int do_level = 0;
+unsigned int did_cmds = 0, did_else = 0;
+unsigned int wait_for_done = 0;
+int ret = 0, tmp = 0;
+int ignored_errors = 0;
+int verbose = 0;
+int shh = 0;
+int ignore_err = 0;
+int has_do = 0;
+
 int main(int _argc, char **_argv)
 {
-	unsigned int do_level = 0;
-	unsigned int did_cmds = 0, did_else = 0;
-	unsigned int wait_for_done = 0;
-	char *ptr, *nextcmd = NULL;
-	int ret = 0, tmp = 0, i;
-	int ignored_errors = 0;
-	int verbose = 0;
-	int shh = 0;
-
-	argc = _argc;
-	argv = _argv;
-	infile = stdin;
-
-	atexit(cleanup);
+	char *ptr;
+	int i;
 
 	setenv("CC", "gcc", 0);
 	setenv("CXX", "g++", 0);
@@ -1574,39 +1928,30 @@ int main(int _argc, char **_argv)
 	f = fopen(fname, "r");
 	if(!f)
 	{
-		free(fname);
-		fname = strdup("default.bat");
-		f = fopen(fname, "r");
-		if(!f)
-		{
-			fprintf(stderr, "\n\n\n*** Critical Error ***\n"
-			                "Could not open default.cbd or default.bat!\n\n");
-			exit(1);
-		}
+		fprintf(stderr, "\n\n\n*** Critical Error ***\n"
+		                "Could not open default.cbd!\n\n");
+		exit(1);
+	}
+
+	argc = _argc;
+	argv = _argv;
+	infile = stdin;
+
+	atexit(cleanup);
+
+	if(setjmp(jmpbuf))
+	{
+		free(nextline);
+		nextline = NULL;
+		goto reparse;
 	}
 
 main_loop_start:
 	while(1)
 	{
-		int ignore_err = 0;
-		int has_do = 0;
 		int reverse;
-
-		if(nextcmd)
-		{
-			memmove(linebuf, nextcmd, strlen(nextcmd)+1);
-			nextcmd = NULL;
-			goto reparse;
-		}
-
-/*		for(i = 0;(size_t)i < cmd_argc;++i)
-		{
-			free(cmd_argv[i]);
-			cmd_argv[i] = NULL;
-		}
-		cmd_argc = 0;
-		argv = _argv;
-		argc = _argc;*/
+		ignore_err = 0;
+		has_do = 0;
 
 		if(nextline)
 		{
@@ -1650,12 +1995,23 @@ reparse:
 		if(isspace(linebuf[0]))
 			goto reparse;
 
-		if(!linebuf[0] || ptr == linebuf)
+		if(!linebuf[0] || ptr == linebuf || linebuf[0] == ':')
+		{
+			extract_line(linebuf, sizeof(linebuf));
 			continue;
+		}
 
-		if(*ptr && *ptr != '=') *(ptr++) = 0;
 		while(*ptr && isspace(*ptr))
-			++ptr;
+		{
+			if(*ptr == '\n')
+			{
+				*ptr = 0;
+				if(ptr[1] != 0)
+					nextline = strdup(ptr+1);
+				break;
+			}
+			*(ptr++) = 0;
+		}
 
 		/* Check for special 'leveling' commands */
 
@@ -1670,7 +2026,8 @@ reparse:
 				printf("\n\n!!! %s error, line %d !!!\n"
 				       "Too many 'do' commands enountered (max: %ud)!\n\n",
 				       fname, curr_line, sizeof(int)*8 - 1);
-				exit(1);
+				snprintf(linebuf, sizeof(linebuf), "exit -1\n");
+				goto reparse;
 			}
 			has_do = 1;
 			memmove(linebuf, ptr, strlen(ptr)+1);
@@ -1735,7 +2092,8 @@ value_check:
 				{
 					printf("\n\n!!! %s error, line %d !!!\n"
 					       "Malformed 'if' command!\n\n", fname, curr_line);
-					exit(1);
+					snprintf(linebuf, sizeof(linebuf), "exit 1\n");
+					goto reparse;
 				}
 				*(var2++) = 0;
 				while(*var2 && isspace(*var2))
@@ -1744,13 +2102,15 @@ value_check:
 			else
 				next = extract_word(var2, sizeof(linebuf)+linebuf-var2);
 
-			if(strcmp(ptr, var2) == 0)
-				nextcmd = next;
+			if((strcmp(ptr, var2) == 0) != !!reverse)
+			{
+				memmove(linebuf, next, strlen(next)+1);
+				goto reparse;
+			}
 
-			if(reverse)
-				nextcmd = (char*)((long)nextcmd ^ (long)next);
 			if(has_do)
-				wait_for_done |= (nextcmd?0:1)<<(do_level-1);
+				wait_for_done |= 1 << (do_level-1);
+			extract_line(next, sizeof(linebuf)+linebuf-next);
 			continue;
 		}
 		/* Same as above, except if the comparison is false or it equates 0 */
@@ -1768,13 +2128,15 @@ retval_check:
 			char *next;
 			next = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
 
-			if(atoi(ptr) == ret)
-				nextcmd = next;
+			if((atoi(ptr) == ret) != !!reverse)
+			{
+				memmove(linebuf, next, strlen(next)+1);
+				goto reparse;
+			}
 
-			if(reverse)
-				nextcmd = (char*)((long)nextcmd ^ (long)next);
 			if(has_do)
-				wait_for_done |= (nextcmd?0:1)<<(do_level-1);
+				wait_for_done |= 1 << (do_level-1);
+			extract_line(next, sizeof(linebuf)+linebuf-next);
 			continue;
 		}
 		if(strcasecmp("ifnret", linebuf) == 0 )
@@ -1788,173 +2150,188 @@ retval_check:
 		if(strcasecmp("ifplat", linebuf) == 0)
 platform_check:
 		{
-			char *next;
-			next = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
+			char *next = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
+			int pass = 0;
 
 			/* Throw in a dummy if() so the following ifs can use else if and
 			 * avoid multiple checks for platforms where multiple targets apply
 			 */
 			if(0 == 1)
-				nextcmd = NULL;
+				pass = 0;
 
 #if defined(_AIX) || defined(__TOS_AIX__)
 			else if(strcasecmp("aix", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(AMIGA) || defined(__amigaos__)
 			else if(strcasecmp("amigaos", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(__BEOS__)
 			else if(strcasecmp("beos", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(_UNICOS)
 			else if(strcasecmp("unicos", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(DGUX) || defined(__DGUX__) || defined(__dgux__)
 			else if(strcasecmp("dgux", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(_SEQUENT_) || defined(sequent)
 			else if(strcasecmp("dynix", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #ifdef __FreeBSD__
 			else if(strcasecmp("freebsd", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(__GNU__)
 			else if(strcasecmp("gnuhurd", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(hpux) || defined (_hpux) || defined(_HPUX_SOURCE)
 			else if(strcasecmp("hpux", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(sgi) || defined(__sgi) || defined(mips) || defined(_SGI_SOURCE)
 			else if(strcasecmp("irix", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(linux) || defined(__linux)
 			else if(strcasecmp("linux", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(__MACOSX__) || defined(__APPLE__)
 			else if(strcasecmp("macosx", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(mpeix) || defined(__mpexl)
 			else if(strcasecmp("mpeix", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(MSDOS) || defined(__MSDOS__) || defined(_MSDOS) || defined(__DOS__)
 			else if(strcasecmp("msdos", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(__NetBSD__)
 			else if(strcasecmp("netbsd", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(__OpenBSD__)
 			else if(strcasecmp("openbsd", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(OS2) || defined(_OS2) || defined(__OS2__) || defined(__TOS_OS2__)
 			else if(strcasecmp("os2", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(pyr)
 			else if(strcasecmp("pyramiddc", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(__QNX__)
 			else if(strcasecmp("qnx4", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(__QNXNTO__)
 			else if(strcasecmp("qnx6", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(sinix)
 			else if(strcasecmp("reliantunix", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(M_I386) || defined(M_XENIX) || defined(_SCO_DS) || defined(_SCO_C_DIALECT)
 			else if(strcasecmp("scoopenserver", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(sun) || defined(__sun)
 # if defined(__SVR4) || defined(__svr4__)
 			else if(strcasecmp("solaris", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 # else
 			else if(strcasecmp("sunos", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 # endif
 #elif defined(__SUNPRO_C)
 			else if(strcasecmp("solaris", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(__SYMBIAN32__)
 			else if(strcasecmp("symbian", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(__osf__) || defined(__osf)
 			else if(strcasecmp("osf1", ptr) == 0 ||
 			        strcasecmp("tru64", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(ultrix) || defined(__ultrix) || defined(__ultrix__) || (defined(unix) && defined(vax))
 			else if(strcasecmp("ultrix", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(sco) || defined(_UNIXWARE7)
 			else if(strcasecmp("unixware", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(VMS) || defined(__VMS)
 			else if(strcasecmp("vms", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN32__)
 			else if(strcasecmp("win32", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__bsdi__) || defined(_SYSTYPE_BSD)
 			else if(strcasecmp("bsd", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(__sysv__) || defined(__SVR4) || defined(__svr4__) || defined(_SYSTYPE_SVR4)
 			else if(strcasecmp("svr4", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(unix) || defined(__unix) || defined(__unix__)
 			else if(strcasecmp("unix", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(_UWIN)
 			else if(strcasecmp("uwin", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 #if defined(_WINDU_SOURCE)
 			else if(strcasecmp("windu", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
 #endif
 
-
-#ifdef __i386__
+#if defined(__i386__) || defined(__i386) || (_M_IX86 > 300)
 			else if(strcasecmp("i386", ptr) == 0)
-				nextcmd = next;
+				pass = 1;
+#endif
+#if defined(__ia64__) || defined(_M_IA64)
+			else if(strcasecmp("ia64", ptr) == 0)
+				pass = 1;
+#endif
+#if defined(__powerpc__) || defined(_M_PPC)
+			else if(strcasecmp("powerpc", ptr) == 0)
+				pass = 1;
+#endif
+#if defined(__sparc__) || defined(__sparc)
+			else if(strcasecmp("sparc", ptr) == 0)
+				pass = 1;
 #endif
 
+			if((pass != 0) != !!reverse)
+			{
+				memmove(linebuf, next, strlen(next)+1);
+				goto reparse;
+			}
 
-			if(reverse)
-				nextcmd = (char*)((long)nextcmd ^ (long)next);
 			if(has_do)
-				wait_for_done |= (nextcmd?0:1)<<(do_level-1);
+				wait_for_done |= 1 << (do_level-1);
+			extract_line(next, sizeof(linebuf)+linebuf-next);
 			continue;
 		}
 		if(strcasecmp("ifnplat", linebuf) == 0)
@@ -1968,8 +2345,8 @@ platform_check:
 		if(strcasecmp("ifopt", linebuf) == 0)
 option_check:
 		{
-			char *next;
-			next = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
+			char *next = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
+			int pass = 0;
 
 			for(i = 1;i < argc;++i)
 			{
@@ -1981,15 +2358,20 @@ option_check:
 
 				if(strncasecmp(ptr, argv[i], len) == 0)
 				{
-					nextcmd = next;
+					pass = 1;
 					break;
 				}
 			}
 
-			if(reverse)
-				nextcmd = (char*)((long)nextcmd ^ (long)next);
+			if((pass != 0) != !!reverse)
+			{
+				memmove(linebuf, next, strlen(next)+1);
+				goto reparse;
+			}
+
 			if(has_do)
-				wait_for_done |= (nextcmd?0:1)<<(do_level-1);
+				wait_for_done |= 1 << (do_level-1);
+			extract_line(next, sizeof(linebuf)+linebuf-next);
 			continue;
 		}
 		if(strcasecmp("ifnopt", linebuf) == 0)
@@ -2006,13 +2388,15 @@ file_dir_check:
 			char *next;
 
 			next = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
-			if(stat(ptr, &statbuf) == 0)
-				nextcmd = next;
+			if((stat(ptr, &statbuf) == 0) != !!reverse)
+			{
+				memmove(linebuf, next, strlen(next)+1);
+				goto reparse;
+			}
 
-			if(reverse)
-				nextcmd = (char*)((long)nextcmd ^ (long)next);
 			if(has_do)
-				wait_for_done |= (nextcmd?0:1)<<(do_level-1);
+				wait_for_done |= 1 << (do_level-1);
+			extract_line(next, sizeof(linebuf)+linebuf-next);
 			continue;
 		}
 		if(strcasecmp("ifnexist", linebuf) == 0)
@@ -2020,6 +2404,54 @@ file_dir_check:
 			reverse = 1;
 			goto file_dir_check;
 		}
+
+		/* Checks if we have write permissions to the specified file or
+		 * directory */
+		if(strcasecmp("ifwrite", linebuf) == 0)
+dir_write_check:
+		{
+			char *next = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
+			int val = 1;
+
+#ifdef __unix__
+			{
+				struct stat stbuf;
+				val = 0;
+				if(stat(ptr, &stbuf) == 0)
+				{
+					if(stbuf.st_uid == getuid())
+					{
+						if((stbuf.st_mode&S_IWUSR))
+							val = 1;
+					}
+					else if(stbuf.st_gid == getgid())
+					{
+						if((stbuf.st_mode&S_IWGRP))
+							val = 1;
+					}
+					else if((stbuf.st_mode&S_IWOTH))
+						val = 1;
+				}
+			}
+#endif
+
+			if((val != 0) != !!reverse)
+			{
+				memmove(linebuf, next, strlen(next)+1);
+				goto reparse;
+			}
+
+			if(has_do)
+				wait_for_done |= 1 << (do_level-1);
+			extract_line(next, sizeof(linebuf)+linebuf-next);
+			continue;
+		}
+		if(strcasecmp("ifnwrite", linebuf) == 0)
+		{
+			reverse = 1;
+			goto dir_write_check;
+		}
+
 
 
 		/* Set an environment variable. The value is space sensitive, so if you
@@ -2037,16 +2469,24 @@ file_dir_check:
 
 			if(*(val-1) == '+')
 			{
+				int i;
+
 				*(val-1) = 0;
 				++val;
 				while(*val && isspace(*val))
 					++val;
-				extract_line(val, sizeof(linebuf)+linebuf-val);
+				i = snprintf(buffer, sizeof(buffer), "%s", getvar(ptr));
 				if(*val)
 				{
-					snprintf(buffer, sizeof(buffer), "%s%s", getvar(ptr), val);
-					setenv(ptr, buffer, 1);
+					do {
+						char *next_word = extract_word(val, sizeof(linebuf)+
+						                                    linebuf-val);
+						i += snprintf(buffer+i, sizeof(buffer)-i, "%s ", val);
+						val = next_word;
+					} while(*val);
+					buffer[i-1] = 0;
 				}
+				setenv(ptr, buffer, 1);
 				continue;
 			}
 
@@ -2088,9 +2528,19 @@ file_dir_check:
 			++val;
 			while(*val && isspace(*val))
 				++val;
-			extract_line(val, sizeof(linebuf)+linebuf-val);
 			if(*val)
-				setenv(ptr, val, ovr);
+			{
+				int i = 0;
+				do {
+					char *next_word = extract_word(val, sizeof(linebuf)+
+					                                    linebuf-val);
+					i += snprintf(buffer+i, sizeof(buffer)-i, "%s ", val);
+					val = next_word;
+				} while(*val);
+				if(i > 0) buffer[i-1] = 0;
+			}
+			if(buffer[0])
+				setenv(ptr, buffer, ovr);
 			else if(ovr)
 				unsetenv(ptr);
 			continue;
@@ -2099,7 +2549,7 @@ file_dir_check:
 
 		/* Reset the return value and 'do' status */
 		has_do = 0;
-		ret = 0;
+//		ret = 0;
 
 		/* Don't display normal output */
 		if(linebuf[0] == '@')
@@ -2134,7 +2584,10 @@ file_dir_check:
 			if((ret=system(ptr)) != 0)
 			{
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 				{
 					printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
@@ -2160,7 +2613,10 @@ file_dir_check:
 					       "'reinvoke' returned with exitcode %d!\n",
 					       fname, ++ignored_errors, ret);
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 					printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
 				fflush(stdout);
@@ -2192,7 +2648,8 @@ file_dir_check:
 				if(!ignore_err)
 				{
 					printf("Could not open script '%s'!\n", ptr);
-					exit(ret);
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
 				}
 				if(ignore_err < 2)
 				{
@@ -2203,6 +2660,7 @@ file_dir_check:
 				}
 				continue;
 			}
+			ret = 0;
 			fname = strdup(ptr);
 
 			for(i = 0;i < INVOKE_BKP_SIZE;++i)
@@ -2233,6 +2691,39 @@ file_dir_check:
 
 			continue;
 		}
+
+		if(strcasecmp(linebuf, "popfront") == 0)
+		{
+			char *front_word;
+			char *varstr;
+			char *next;
+
+			next = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
+			extract_word(next, sizeof(linebuf)+linebuf-next);
+
+			varstr = malloc(65536);
+			if(!varstr)
+			{
+				snprintf(linebuf, sizeof(linebuf), "exit -1\n");
+				goto reparse;
+			}
+			strncpy(varstr, getvar(ptr), 65536);
+			front_word = varstr;
+			while(*varstr && isspace(*varstr))
+				++varstr;
+			if(front_word != varstr)
+				memmove(front_word, varstr, strlen(varstr)+1);
+
+			varstr = expand_string(front_word, " ", 65536, 0);
+			while(isspace(*varstr))
+				++varstr;
+
+			setenv(ptr, varstr, 1);
+
+			free(front_word);
+			continue;
+		}
+
 
 		if(strcasecmp("define", linebuf) == 0)
 		{
@@ -2271,7 +2762,8 @@ file_dir_check:
 						fprintf(stderr, "\n\n\n*** Critical Error ***\n"
 						                "Out of memory allocating %ud defines!\n\n",
 						                num_defines+1);
-						exit(-1);
+						snprintf(linebuf, sizeof(linebuf), "exit -1\n");
+						goto reparse;
 					}
 					++num_defines;
 					defines = tmp;
@@ -2282,7 +2774,8 @@ file_dir_check:
 						fprintf(stderr, "\n\n\n*** Critical Error ***\n"
 						                "Out of memory duplicating string '%s'!!\n\n",
 						                val);
-						exit(-1);
+						snprintf(linebuf, sizeof(linebuf), "exit -1\n");
+						goto reparse;
 					}
 				}
 
@@ -2293,7 +2786,8 @@ file_dir_check:
 					fprintf(stderr, "\n\n\n*** Critical Error ***\n"
 					                "Out of memory duplicating string '%s'!!\n\n",
 					                val);
-					exit(-1);
+					snprintf(linebuf, sizeof(linebuf), "exit -1\n");
+					goto reparse;
 				}
 			}
 
@@ -2317,7 +2811,8 @@ file_dir_check:
 				fprintf(stderr, "\n\n\n** Critical Error **\n"
 				                "Out of memory duplicating string '%s'\n\n",
 				                ptr);
-				exit(-1);
+				snprintf(linebuf, sizeof(linebuf), "exit -1\n");
+				goto reparse;
 			}
 compile_more_sources:
 			tmp = 0;
@@ -2390,7 +2885,10 @@ compile_it:
 				{
 					tmp = ret;
 					if(!ignore_err)
-						exit(ret);
+					{
+						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+						goto reparse;
+					}
 					if(ignore_err < 2)
 					{
 						printf("--- Error %d ignored. ---\n\n",
@@ -2424,12 +2922,22 @@ next_src_file:
 				fprintf(stderr, "\n\n\n** Critical Error **\n"
 				                "Out of memory appending string '%s'\n\n",
 				                ptr);
-				exit(-1);
+				snprintf(linebuf, sizeof(linebuf), "exit -1\n");
+				goto reparse;
 			}
 			sources = t;
 			sources[pos] = ' ';
 			strcpy(sources+pos+1, ptr);
 			ptr = sources+pos+1;
+
+			for(i = 0;isspace(sources[i]);++i)
+				;
+			if(i > 0)
+			{
+				memmove(sources, sources+i, strlen(sources+i)+1);
+				ptr -= i;
+			}
+
 			goto compile_more_sources;
 		}
 
@@ -2449,12 +2957,16 @@ next_src_file:
 					                "Trying to build %s with undefined "
 					                "sources!\n\n", fname, curr_line, ptr);
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 					printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
 				fflush(stdout);
 				continue;
 			}
+			ret = 0;
 
 			extract_line(ptr, sizeof(linebuf)+linebuf-ptr);
 
@@ -2475,7 +2987,40 @@ next_src_file:
 			                    &do_link);
 
 			if(!do_link)
-				continue;
+			{
+				char *buf = (char*)getvar("EXTRA_LD_DEPS");
+				if(*buf)
+				{
+					char *ptr = malloc(BUF_SIZE);
+					strncpy(ptr, buf, BUF_SIZE);
+					buf = ptr;
+
+					while(*ptr)
+					{
+						char *next = expand_string(ptr, " ", BUF_SIZE+ptr-buf, 0);
+						if(*next) *(next++) = 0;
+						while(*next && isspace(*next))
+							++next;
+
+						if(strcmp(ptr, "\n") != 0 && (stat(ptr, &statbuf) != 0 ||
+						                              statbuf.st_mtime > exe_time))
+						{
+							free(buf);
+							buf = NULL;
+
+							do_link = 1;
+							break;
+						}
+
+						ptr = next;
+					}
+
+					free(buf);
+				}
+
+				if(!do_link)
+					continue;
+			}
 
 			i += snprintf(buffer+i, sizeof(buffer)-i, " ${LDFLAGS}");
 			expand_string(buffer, "", sizeof(buffer), 0);
@@ -2491,7 +3036,10 @@ next_src_file:
 			if((ret=system(buffer)) != 0)
 			{
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 				{
 					printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
@@ -2519,12 +3067,16 @@ next_src_file:
 					                "Trying to build %s with undefined "
 					                "sources!\n\n", fname, curr_line, ptr);
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 					printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
 				fflush(stdout);
 				continue;
 			}
+			ret = 0;
 
 			extract_line(ptr, sizeof(linebuf)+linebuf-ptr);
 
@@ -2559,7 +3111,10 @@ next_src_file:
 			if((ret=system(buffer)) != 0)
 			{
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 				{
 					printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
@@ -2582,7 +3137,8 @@ next_src_file:
 				fprintf(stderr, "\n\n\n** Critical Error **\n"
 				                "Out of memory duplicating string '%s'\n\n",
 				                ptr);
-				exit(-1);
+				snprintf(linebuf, sizeof(linebuf), "exit -1\n");
+				goto reparse;
 			}
 			continue;
 		}
@@ -2600,12 +3156,16 @@ next_src_file:
 					       "'loadexec' called with no list!\n\n", fname,
 					       curr_line);
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 					printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
 				fflush(stdout);
 				continue;
 			}
+			ret = 0;
 
 			next = loaded_files;
 			tmp = 0;
@@ -2647,7 +3207,10 @@ next_src_file:
 				{
 					tmp = ret;
 					if(!ignore_err)
-						exit(ret);
+					{
+						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+						goto reparse;
+					}
 					if(ignore_err < 2)
 						printf("--- Error %d ignored. ---\n\n",
 						       ++ignored_errors);
@@ -2698,7 +3261,8 @@ next_src_file:
 				if(!ignore_err)
 				{
 					printf("Could not create file '%s'!\n", ptr);
-					exit(ret);
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
 				}
 				if(ignore_err < 2)
 				{
@@ -2709,6 +3273,7 @@ next_src_file:
 				}
 				continue;
 			}
+			ret = 0;
 
 			extract_line(str, sizeof(linebuf)+linebuf-str);
 			fprintf(o, "%s\n", str);
@@ -2730,7 +3295,8 @@ next_src_file:
 				if(!ignore_err)
 				{
 					printf("Could not create file '%s'!\n", ptr);
-					exit(ret);
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
 				}
 				if(ignore_err < 2)
 				{
@@ -2741,6 +3307,7 @@ next_src_file:
 				}
 				continue;
 			}
+			ret = 0;
 
 			extract_line(str, sizeof(linebuf)+linebuf-str);
 			fprintf(o, "%s\n", str);
@@ -2763,7 +3330,8 @@ next_src_file:
 				fprintf(stderr, "\n\n\n** Critical Error **\n"
 				                "Out of memory duplicating string '%s'\n\n",
 				                lbl);
-				exit(-1);
+				snprintf(linebuf, sizeof(linebuf), "exit -1\n");
+				goto reparse;
 			}
 
 			rewind(f);
@@ -2776,24 +3344,32 @@ next_src_file:
 			while(fgets(linebuf, sizeof(linebuf), f) != NULL)
 			{
 				++curr_line;
-				if(linebuf[0] == '#' && linebuf[1] == ':')
+				while(linebuf[0])
 				{
-					ptr = strpbrk(linebuf, "\r\n");
-					if(ptr) *ptr = 0;
-					if(strcasecmp(linebuf+2, lbl) == 0)
+					int i;
+					extract_line(linebuf, sizeof(linebuf));
+
+					for(i = 0;isspace(linebuf[i]);++i)
+						;
+					memmove(linebuf, &linebuf[i], strlen(&linebuf[i])+1);
+					if(linebuf[0] == ':' && strcasecmp(linebuf+1, lbl) == 0)
 					{
 						free(lbl);
-						free(nextline);
-						nextline = NULL;
 						goto main_loop_start;
 					}
+					if(!nextline)
+						break;
+					strcpy(linebuf, nextline);
+					free(nextline);
+					nextline = NULL;
 				}
 			}
 			fprintf(stderr, "\n\n!!! %s error, line %d !!!\n"
 			                "Label target '%s' not found!\n\n", fname,
 			                src_line, lbl);
 			free(lbl);
-			exit(1);
+			snprintf(linebuf, sizeof(linebuf), "exit 1\n");
+			goto reparse;
 		}
 
 
@@ -2819,7 +3395,8 @@ next_src_file:
 					printf("\n\n!!! %s error, line %d !!!\n"
 					       "Too many source paths specified!\n\n", fname,
 					       curr_line);
-					exit(-1);
+					snprintf(linebuf, sizeof(linebuf), "exit 1\n");
+					goto reparse;
 				}
 
 				next = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
@@ -2832,7 +3409,8 @@ next_src_file:
 					fprintf(stderr, "\n\n\n** Critical Error **\n"
 					                "Out of memory duplicating string "
 					                "'%s'\n\n", ptr);
-					exit(-1);
+					snprintf(linebuf, sizeof(linebuf), "exit -1\n");
+					goto reparse;
 				}
 				++count;
 				ptr = next;
@@ -2863,9 +3441,12 @@ next_src_file:
 				if((ret=remove(buffer)) != 0)
 				{
 					if(ignore_err < 2)
-						printf("!!! Could not delete file !!!\n");
+						printf("!!! Could not delete '%s'!!!\n", buffer);
 					if(!ignore_err)
-						exit(ret);
+					{
+						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+						goto reparse;
+					}
 					if(ignore_err < 2)
 						printf("--- Error %d ignored. ---\n\n",
 						       ++ignored_errors);
@@ -2898,9 +3479,12 @@ next_src_file:
 				if((ret=remove(buffer)) != 0)
 				{
 					if(ignore_err < 2)
-						printf("!!! Could not delete file !!!\n");
+						printf("!!! Could not delete '%s'!!!\n", buffer);
 					if(!ignore_err)
-						exit(ret);
+					{
+						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+						goto reparse;
+					}
 					if(ignore_err < 2)
 						printf("--- Error %d ignored. ---\n\n",
 						       ++ignored_errors);
@@ -2941,9 +3525,13 @@ next_src_file:
 					if((ret=remove(buffer)) != 0)
 					{
 						if(ignore_err < 2)
-							printf("!!! Could not delete file !!!\n");
+							printf("!!! Could not delete '%s'!!!\n", buffer);
 						if(!ignore_err)
-							exit(ret);
+						{
+							snprintf(linebuf, sizeof(linebuf), "exit %d\n",
+							         ret);
+							goto reparse;
+						}
 						if(ignore_err < 2)
 							printf("--- Error %d ignored. ---\n\n",
 							       ++ignored_errors);
@@ -2968,9 +3556,12 @@ next_src_file:
 				if((ret=remove(buffer)) != 0)
 				{
 					if(ignore_err < 2)
-						printf("!!! Could not delete file !!!\n");
+						printf("!!! Could not delete '%s'!!!\n", buffer);
 					if(!ignore_err)
-						exit(ret);
+					{
+						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+						goto reparse;
+					}
 					if(ignore_err < 2)
 						printf("--- Error %d ignored. ---\n\n",
 						       ++ignored_errors);
@@ -2983,6 +3574,9 @@ next_src_file:
 		/* Removes a list of files or empty directories */
 		if(strcasecmp("rm", linebuf) == 0)
 		{
+#ifdef _WIN32
+			struct stat sbuf;
+#endif
 			char *next = ptr;
 			while(*(ptr=next))
 			{
@@ -2997,12 +3591,21 @@ next_src_file:
 					else        printf("Deleting %s...\n", ptr);
 					fflush(stdout);
 				}
-				if((ret=remove(ptr)) != 0)
+#ifdef _WIN32
+				if(stat(ptr, &sbuf) == 0 && S_ISDIR(sbuf.st_mode))
+					ret = rmdir(ptr);
+				else
+#endif
+				ret = remove(ptr);
+				if(ret != 0)
 				{
 					if(ignore_err < 2)
-						printf("!!! Could not delete !!!\n");
+						printf("!!! Could not delete '%s'!!!\n", ptr);
 					if(!ignore_err)
-						exit(ret);
+					{
+						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+						goto reparse;
+					}
 					if(ignore_err < 2)
 						printf("--- Error %d ignored. ---\n\n",
 						       ++ignored_errors);
@@ -3035,7 +3638,10 @@ next_src_file:
 				if(ignore_err < 2)
 					printf("!!! Could not create directory !!!\n");
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 					printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
 				fflush(stdout);
@@ -3060,7 +3666,10 @@ next_src_file:
 			extract_line(ptr, sizeof(linebuf)+linebuf-ptr);
 			ret = atoi(ptr);
 			if(!invoke_backup[0].f)
-				exit(ret);
+			{
+				snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+				goto reparse;
+			}
 
 			for(i = 1;i <= INVOKE_BKP_SIZE;++i)
 			{
@@ -3092,7 +3701,10 @@ next_src_file:
 			if(ret != 0)
 			{
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 					printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
 				fflush(stdout);
@@ -3110,24 +3722,30 @@ next_src_file:
 			dfile = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
 			if(!(*dfile))
 			{
+				ret = 1;
 				if(ignore_err < 2)
 					printf("\n\n!!! %s error, line %d !!! \n"
 					       "Improper arguments to 'copy'!\n", fname,
 					        curr_line);
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 					printf("--- Error %d ignored. ---\n", ++ignored_errors);
 				fflush(stdout);
 				continue;
 			}
+			ret = 0;
 			end = extract_word(dfile, sizeof(linebuf)+linebuf-dfile);
 			if(dfile[strlen(dfile)-1] == '/' || (stat(dfile, &st) == 0 &&
 			                                     S_ISDIR(st.st_mode)))
 			{
 				char *fn = strrchr(ptr, '/');
 				snprintf(obj, sizeof(obj), "%s%s%s", dfile,
-				         ((dfile[strlen(dfile)-1]=='/')?"":"/"), (fn?(fn+1):ptr));
+				         ((dfile[strlen(dfile)-1]=='/')?"":"/"),
+				         (fn?(fn+1):ptr));
 				dfile = obj;
 			}
 			if(!shh)
@@ -3141,7 +3759,10 @@ next_src_file:
 				if(ignore_err < 2)
 					printf("!!! Could not copy !!!\n");
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 					printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
 				fflush(stdout);
@@ -3159,17 +3780,22 @@ next_src_file:
 			dfile = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
 			if(!(*dfile))
 			{
+				ret = 1;
 				if(ignore_err < 2)
 					printf("\n\n!!! %s error, line %d !!! \n"
 					       "Improper arguments to 'copylib'!\n", fname,
 					       curr_line);
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 					printf("--- Error %d ignored. ---\n", ++ignored_errors);
 				fflush(stdout);
 				continue;
 			}
+			ret = 0;
 			end = extract_word(dfile, sizeof(linebuf)+linebuf-dfile);
 			if(dfile[strlen(dfile)-1] == '/')
 			{
@@ -3193,7 +3819,10 @@ next_src_file:
 				if(ignore_err < 2)
 					printf("!!! Could not copy !!!\n");
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 					printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
 				fflush(stdout);
@@ -3217,7 +3846,10 @@ next_src_file:
 				if(ignore_err < 2)
 					printf("!!! Could not change directory !!!\n");
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 					printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
 				fflush(stdout);
@@ -3256,13 +3888,105 @@ next_src_file:
 			continue;
 		}
 
-		/* Our "special" rem command. Using this, you can make a cbuild script
-		 * double as a DOS/Windows .bat file. */
-		if(strcasecmp("rem", linebuf) == 0)
+		/* Sets an alternate file for stdout */
+		if(strcasecmp("setstdout", linebuf) == 0)
 		{
-			memmove(linebuf, ptr, strlen(ptr)+1);
-			goto reparse;
+			char *end = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
+			extract_line(end, sizeof(linebuf)+linebuf-end);
+
+			ret = 0;
+			if(*ptr)
+			{
+				int fp = open(ptr, O_WRONLY|O_APPEND|O_CREAT|O_TRUNC, S_IRWXU);
+				if(fp == -1)
+				{
+					ret = 1;
+					if(ignore_err < 2)
+						printf("!!! Could not open %s !!!\n", ptr);
+					if(!ignore_err)
+					{
+						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+						goto reparse;
+					}
+					if(ignore_err < 2)
+						printf("--- Error %d ignored. ---\n\n",
+						       ++ignored_errors);
+					fflush(stdout);
+					continue;
+				}
+				fflush(stdout);
+
+				if(stdo_bak == -1)
+					stdo_bak = dup(STDOUT_FILENO);
+
+				close(STDOUT_FILENO);
+				dup2(fp, STDOUT_FILENO);
+
+				close(fp);
+				continue;
+			}
+
+			fflush(stdout);
+			if(stdo_bak == -1)
+				continue;
+
+			close(STDOUT_FILENO);
+			dup2(stdo_bak, STDOUT_FILENO);
+
+			close(stdo_bak);
+			stdo_bak = -1;
+			continue;
 		}
+
+		/* Sets an alternate file for stderr */
+		if(strcasecmp("setstderr", linebuf) == 0)
+		{
+			char *end = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
+			extract_line(end, sizeof(linebuf)+linebuf-end);
+
+			ret = 0;
+			if(*ptr)
+			{
+				int fp = open(ptr, O_WRONLY|O_APPEND|O_CREAT|O_TRUNC, S_IRWXU);
+				if(fp == -1)
+				{
+					ret = 1;
+					if(ignore_err < 2)
+						printf("!!! Could not open %s !!!\n", ptr);
+					if(!ignore_err)
+					{
+						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+						goto reparse;
+					}
+					if(ignore_err < 2)
+						printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
+					fflush(stdout);
+					continue;
+				}
+				fflush(stderr);
+
+				if(stde_bak == -1)
+					stde_bak = dup(STDERR_FILENO);
+
+				close(STDERR_FILENO);
+				dup2(fp, STDERR_FILENO);
+
+				close(fp);
+				continue;
+			}
+
+			fflush(stderr);
+			if(stde_bak == -1)
+				continue;
+
+			close(STDERR_FILENO);
+			dup2(stde_bak, STDERR_FILENO);
+
+			close(stde_bak);
+			stde_bak = -1;
+			continue;
+		}
+
 
 		/* Changes the file to read input from. Pass nothing to switch to
 		 * stdin. */
@@ -3273,6 +3997,7 @@ next_src_file:
 			if(infile != stdin)
 				fclose(infile);
 
+			ret = 0;
 			if(*ptr)
 			{
 				infile = fopen(ptr, "r");
@@ -3283,7 +4008,10 @@ next_src_file:
 						printf("!!! Could not open file '%s' to read !!!\n",
 						       ptr);
 					if(!ignore_err)
-						exit(ret);
+					{
+						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+						goto reparse;
+					}
 					if(ignore_err < 2)
 						printf("--- Error %d ignored. ---\n\n",
 						       ++ignored_errors);
@@ -3308,15 +4036,39 @@ next_src_file:
 					printf("!!! No storage specified for read (line %d) !!!\n",
 					       curr_line);
 				if(!ignore_err)
-					exit(ret);
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
 				if(ignore_err < 2)
 					printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
 				fflush(stdout);
 			}
+			ret = 0;
 
 			buffer[0] = 0;
-			if(!infile || fgets(buffer, sizeof(buffer), infile) == NULL)
-				ret = 1;
+#ifdef _WIN32
+			if(infile == stdin)
+			{
+				size_t i = 0;
+				while(1)
+				{
+					int c = fgetc(stdin);
+					if(c == '\n')
+						break;
+					if(c && i+1 < sizeof(buffer))
+					{
+						buffer[i++] = c;
+						buffer[i] = 0;
+					}
+				}
+			}
+			else
+#endif
+			{
+				if(!infile || fgets(buffer, sizeof(buffer), infile) == NULL)
+					ret = 1;
+			}
 
 			while(strlen(buffer) > 0 && (buffer[strlen(buffer)-1] == '\n' ||
 			                             buffer[strlen(buffer)-1] == '\r'))
@@ -3334,13 +4086,48 @@ next_src_file:
 		/* Exits the script with the specified exitcode */
 		if(strcasecmp("exit", linebuf) == 0)
 		{
+			static int already_exited = 0;
+			int inc = 0;
+			int retval;
+
+			if(already_exited)
+			{
+				printf("\n\n*** Critical error ***\n"
+				       "Recursive exit call, aborting now!\n\n");
+				exit(-1);
+			}
+			already_exited = 1;
+
 			extract_line(ptr, sizeof(linebuf)+linebuf-ptr);
-			exit(atoi(ptr));
+			retval = atoi(ptr);
+
+			for(i = num_defines-1;(size_t)i < num_defines;--i)
+			{
+				if(strncasecmp(defines[i].name, "atexit_", 7) == 0)
+					inc += snprintf(linebuf+inc, sizeof(linebuf)-inc, "%s\n",
+					                defines[i].val);
+			}
+			snprintf(linebuf+inc, sizeof(linebuf)-inc, "__really_exit %d\n",
+			         retval);
+
+			free(nextline);
+			nextline = NULL;
+			goto reparse;
+		}
+
+
+		/* Does nothing. Ignores the line */
+		if(strcasecmp("noop", linebuf) == 0)
+		{
+			extract_line(ptr, sizeof(linebuf)+linebuf-ptr);
+			continue;
 		}
 
 
 		if(strcasecmp("__reset_cmd_args__", linebuf) == 0)
 		{
+			extract_line(ptr, sizeof(linebuf)+linebuf-ptr);
+
 			for(i = 0;(size_t)i < cmd_argc;++i)
 			{
 				free(cmd_argv[i]);
@@ -3350,6 +4137,13 @@ next_src_file:
 			argv = _argv;
 			argc = _argc;
 			continue;
+		}
+
+		/* Exits the script with the specified exitcode */
+		if(strcasecmp("__really_exit", linebuf) == 0)
+		{
+			extract_line(ptr, sizeof(linebuf)+linebuf-ptr);
+			exit(atoi(ptr));
 		}
 
 
@@ -3382,7 +4176,8 @@ next_src_file:
 
 		printf("\n\n!!! %s error, line %d !!!\n"
 		       "Unknown command '%s'\n\n", fname, curr_line, linebuf);
-		break;
+		snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+		goto reparse;
 	}
 
 	return ret;
