@@ -10,7 +10,7 @@ ifopt configure configure = "true"
 do ifopt help
 	echo "This builds the OpenLayer 2.0 library. 
 Pass verbose to get verbose output.
-To compile just run ./cbuild.c (linux) or cbuild.exe (windows).
+To compile just run ./cbuild.c (linux) or buildme.bat (windows).
 If you want to force configuration prompts pass configure.
 To remove object files and other resources pass clean. 
 Please check out the documentation for more information.
@@ -60,6 +60,12 @@ do ifexist options
 	goto build
 done
 
+# Platform precheck
+ifplat linux target='linux'
+ifplat win32 target='msys'
+ifplat macosx target='macosx'
+ifnot ${'target'}='' goto targetfine
+
 # Prompt user for target
 :checktarget
 echo "Please specify a build target.
@@ -67,6 +73,7 @@ Available targets are:
 linux, msys, msvc, and macosx (case insensitive)
 Enter exit or cancel if you don't want to compile"
 read target
+:targetfine
 do if $(tolower ${'target'})=''
 	goto checktarget
 else if $(tolower ${'target'})='exit' exit 0

@@ -17,58 +17,50 @@ Before compiling ensure you have the following installed and in your path:
 	- The library is included in the utils directory run 'make loadpng' to build it and follow the instructions to install
 - Zlib library
 
-GNU/MINGW
+BUILDING:
+
+*Note that the makefile is being depricated for a better build system known as cbuild.
+*For more information on cbuild please check: http://awiki.tomasu.org/bin/view/Main/CBUILD
+
+For those on windows without msys, but have mingw please use the batch file "buildme.bat" instead.
+Substitute 'buildme' for './cbuild.c' below.
+
+To print help:
+Type './cbuild.c help' in the root directory of OpenLayer
+
+To override previous configuration:
+Append 'configuration' when you are calling 'cbuild.c'
+
+To disable supressed output:
+Append 'verbose' when you are calling 'cbuild.c'
 
 To compile:
-Type 'make TARGET=platform' in the root directory of OpenLayer
-You must specify the target platform like:
-	LINUX
-	make TARGET=LINUX
-	
-	WINDOWS
-	make TARGET=WINDOWS
-	
-	MACOSX
-	make TARGET=MACOSX
-	
+Type './cbuild.c' in the root directory of OpenLayer
 This will do the following:
+	- Prompt you for your desired platform
+        - Prompt for support options
+	- Saves previous configuration for use later
 	- Create the library and place it in the lib folder  (lib/libopenlayer.a)
-	- Create several demos of the library in the demos folder
+	- Create several demos of the library in the demos folder (need to fix)
 
-To clean up resources and remove the built library and demos:
-Type 'make clean' in the root directory of OpenLayer
+To clean up resources and remove the built library and resources:
+Type './cbuild.c clean' in the root directory of OpenLayer
 
 To install:
-Type 'make install LOCATION=/path' in the root directory of OpenLayer
-You must specify "LOCATION" with the path to where a lib and include directory exist
-or else it will not install.
-EXAMPLES:
-	LINUX (must be root or with write permissions)
-	make TARGET=LINUX install LOCATION=/usr
-	
-	WINDOWS
-	make TARGET=WINDOWS install LOCATION=c:\dev-cpp
-	
-	MACOSX
-	make TARGET=MACOSX install LOCATION=/usr
+Type './cbuild.c install' in the root directory of OpenLayer
+This will prompt you for a location for install.
 
 To uninstall:
-Type 'make uninstall INSTALL_LOCATION' in the root directory of OpenLayer
-You must specify "INSTALL_LOCATION" with the path to where OpenLayer was installed.
-EXAMPLES:
-	LINUX (must be root or with write permissions)
-	make TARGET=LINUX uninstall INSTALL_LOCATION=/usr
-	
-	WINDOWS
-	make TARGET=WINDOWS uninstall INSTALL_LOCATION=c:\dev-cpp
-	
-	MACOSX
-	make TARGET=MACOSX uninstall INSTALL_LOCATION=/usr
+Type './cbuild.c uninstall' in the root directory of OpenLayer
+This should automatically uninstall the previous install.
+If no installation data is found, it will prompt you for the installation location.
 
 FOR COMPILERS OTHER THAN GCC
- 
+
+- MSVC compilation support should be added later on
+
 - For precompiled versions of the library please see 
-  http://www.sourceforge.net/projects/openlayer/ for more info.
+  http://openlayer.berlios.de for more info.
 
 - If no package exists for your compiler you'll have to compile OpenLayer's source files and
   include them in the same archive. Also download the required external libraries and follow the
