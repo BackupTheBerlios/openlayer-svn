@@ -1,4 +1,10 @@
-# OpenLayer Makefile
+# OpenLayer Makefile (Deprecated please use the cbuild script)
+OVERRIDEDEPRICATED=0
+
+ifeq ($(OVERRIDEDEPRICATED) ,0)
+TARGET=LINUX
+DEPREQ=deprecated
+endif
 
 ifeq ($(TARGET) ,WINDOWS)
 ENVIRONMENT=WINDOWS
@@ -236,14 +242,8 @@ endif
 endif
 endif
 
-
-
-
-
-
-
 #Build the library and the demos
-all: $(LIB_SOURCES) lib/$(LIB) demos
+all: $(DEPREQ) $(LIB_SOURCES) lib/$(LIB) demos
 	@echo 
 	@echo *****************************[Compilation complete]*****************************
 	@echo Run "make install" to install the library.
@@ -259,7 +259,7 @@ obj/%.o: src/%.cpp
 	
 
 
-.PHONY: all clean demos install installme noinstall uninstall uninstallme nouninstall textdemo renderbitmap linestripdemo gameloop gamedemo loadpng install-loadpng
+.PHONY: all clean demos install installme noinstall uninstall uninstallme nouninstall textdemo renderbitmap linestripdemo gameloop gamedemo loadpng install-loadpng deprecated notify
 
 clean: removefiles
 	@echo Removing unused directories
@@ -334,3 +334,14 @@ ldpngin:
 noldpngin:
 	@echo $(LDPNG_LOC)
 	@echo $(LDPNG_MSG)
+
+deprecated: notify
+	$(error Finished.)
+
+notify:
+	@echo The makefile has been deprecated.
+	@echo Please use the cbuild script that is provided.
+	@echo For more information please read INSTALL.
+	@echo If you insist on using the makefile edit Makefile and
+	@echo change OVERRIDEDEPRICATED to equal 1
+	

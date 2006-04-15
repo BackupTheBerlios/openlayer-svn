@@ -10,7 +10,7 @@ ifopt configure configure = "true"
 do ifopt help
 	echo "This builds the OpenLayer 2.0 library. 
 Pass verbose to get verbose output.
-To compile just run ./cbuild.c (linux) or buildme.bat (windows).
+To compile just run ./cbuild.c (linux/macosx/msys) or buildme.bat (windows).
 If you want to force configuration prompts pass configure.
 To remove object files and other resources pass clean. 
 Please check out the documentation for more information.
