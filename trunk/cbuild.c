@@ -712,7 +712,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				}
 			}
 
-/*			else if(strcasecmp(ptr, "popfront") == 0)
+			else if(strcasecmp(ptr, "popfront") == 0)
 			{
 				char *front_word;
 				char *varstr;
@@ -742,7 +742,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				setenv(opt, varstr, 1);
 
 				free(front_word);
-			}*/
+			}
 
 			else if(strcasecmp(ptr, "add")==0 || strcasecmp(ptr, "sub") == 0 ||
 			        strcasecmp(ptr, "mult")==0 || strcasecmp(ptr, "div") == 0)
