@@ -180,12 +180,13 @@ Enter exit or cancel if you don't want to install at this time."
 		LIB_HEADERS = $(ls include/OpenLayer/)
 		
 		-mkdir ${'LOCATION'}/include/OpenLayer
+		-call chmod 755 ${'LOCATION'}/include/OpenLayer
 :copystart
-		HEADER = $(popfront LIB_HEADERS)
+		HEADER = $(word 1, ${LIB_HEADERS})
+		popfront LIB_HEADERS
 		if ${'HEADER'}='' goto copyend
 		copy ${'HEADER'} ${'LOCATION'}/include/OpenLayer/
-		goto copystart
-		
+		goto copystart	
 :copyend
 		copy include/OpenLayer.hpp ${'LOCATION'}/include/
 		copy lib/libopenlayer.a ${'LOCATION'}/lib/
@@ -232,10 +233,11 @@ echo "Uninstalling OpenLayer from ${'LOCATION'}"
 HEADERS = $(ls ${'LOCATION'}/include/OpenLayer/)
 
 :uninststart
-HEADER = $(popfront HEADERS)
-		if ${'HEADER'}='' goto uninstend
-		-rm ${'HEADER'}
-		goto uninststart
+	HEADER = $(word 1, ${HEADERS})
+	popfront HEADERS
+	if ${'HEADER'}='' goto uninstend
+	-rm ${'HEADER'}
+	goto uninststart
 :uninstend
 -rm ${'LOCATION'}/include/OpenLayer
 -rm installdir
