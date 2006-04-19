@@ -15,6 +15,19 @@ ToString() const {
 }
 
 
+std::vector< Vec2D > ol::Ellipse::
+ToPolygon() const {
+   std::vector< Vec2D > vertices;
+   vertices.reserve( int( 2.0 * AL_PI / angleIncrement ));
+   
+   for( float a = 0.0; a <= 2.0 * AL_PI; a += angleIncrement ) {
+      vertices.push_back( pos + Vec2D( cos(a) * xRad, sin(a) * yRad ));
+   }
+   
+   return vertices;
+}
+
+
 void ol::Ellipse::
 ExecDraw() const {
    glPushMatrix();
@@ -24,7 +37,7 @@ ExecDraw() const {
    glBegin( GL_TRIANGLE_FAN );
       glVertex2f( 0.0, 0.0 );
       
-      for( float a = 0.0; a <= 2 * AL_PI; a += angleIncrement ) {
+      for( float a = 0.0; a <= 2.0 * AL_PI; a += angleIncrement ) {
          glVertex2f( cos(a) * xRad, sin(a) * yRad );
       }
       

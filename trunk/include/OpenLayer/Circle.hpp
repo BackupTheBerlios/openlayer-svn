@@ -7,6 +7,7 @@
 #include "Rgba.hpp"
 #include "Placement.hpp"
 #include <cmath>
+#include <vector>
 
 
 namespace ol {
@@ -89,7 +90,9 @@ public:
    void DrawArc( const Rgba &innerColor, const Rgba &outerColor,
                  float startAngle, float angleSweep,
                  float innerXRadius, float innerYRadius ) const;
-
+   
+   std::vector< Vec2D > ToPolygon() const;
+   
    // Moves the circle by the specified amount //
    virtual void MoveBy( const Vec2D &amount ) {
       pos += amount;
