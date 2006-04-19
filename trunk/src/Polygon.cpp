@@ -36,6 +36,17 @@ ExecDrawOutline() const {
 
 
 void ol::Poly::
+SetVertex( int index, const Vec2D &newValue ) {
+   if( index < 0 || index >= data.GetVertices().size()) {
+      OlError( "Invalid vertex index: " + VarToString( index )
+         + " ( Number of vertices: " + VarToString( data.GetVertices().size()) + " )" );
+   }
+   
+   data.GetVertices()[index] = newValue;
+}
+
+
+void ol::Poly::
 ExecDraw() const {
    const vector< Vec2D > &vertices = data.GetVertices();
    

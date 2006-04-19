@@ -32,6 +32,8 @@ public:
    
    virtual void Add( Vec2D vec );
    
+   virtual void SetVertex( int index, const Vec2D &newValue );
+   
    virtual void SetTexture( const Bitmap &texture );
    
    void Construct();

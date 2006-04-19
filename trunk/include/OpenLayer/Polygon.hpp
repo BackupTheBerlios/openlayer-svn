@@ -37,6 +37,8 @@ public:
    // Adds a vertex to the polygon //
    virtual void Add( Vec2D vec );
    
+   virtual void SetVertex( int index, const Vec2D &newValue );
+   
    // Returns a reference to the vertex with the given index //
    inline const Vec2D &GetVertex( unsigned int index ) const {
       static Vec2D dummyValue;
@@ -46,7 +48,7 @@ public:
             + " ( Number of vertices: " + VarToString( data.GetVertices().size()) + " )" );
          return dummyValue;
       }
-
+      
       return data.GetVertices()[index];
    }
    

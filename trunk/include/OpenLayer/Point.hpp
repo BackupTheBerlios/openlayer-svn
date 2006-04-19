@@ -12,11 +12,10 @@ class Point : public Shape {
 public:
    Point( Vec2D pos )
       : pos( pos ) {}
-
+   
    Point( float x, float y )
       : pos( x, y ) {}
-
-
+   
    // Draws the shape with the specified color //
    inline void Draw( const Rgba &color ) {
       OL_SHAPE_START_RENDERING()
@@ -24,7 +23,7 @@ public:
       ExecDraw();
       OL_SHAPE_FINISH_RENDERING()
    }
-
+   
    // Draws the outline of the shape with the specified color //
    inline void DrawOutline( const Rgba &color ) {
       Draw( color );
@@ -50,9 +49,7 @@ public:
    	pos = position;
    }
    
-   virtual void TransformBy( const Placement &placement ) {
-      pos += placement.GetPosition();
-   }
+   virtual void TransformBy( const Placement &placement );
    
    virtual std::string ToString() const;
    
