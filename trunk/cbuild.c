@@ -55,6 +55,7 @@ exit $?
 #ifdef _WIN32
 
 #include <io.h>
+#include <windows.h>
 
 #ifdef _MSC_VER
 // MSVC Sucks
@@ -175,12 +176,14 @@ void rewinddir(DIR *dir)
 
 static int setenv(const char *env, const char *val, int overwrite)
 {
-	static char buf[64*1024];
-	if(!overwrite && getenv(env))
-		return 0;
-
-	snprintf(buf, sizeof(buf), "%s=%s", env, (val?val:""));
-	return _putenv(buf);
+	if(!overwrite)
+	{
+		char buf[2];
+		if(GetEnvironmentVariable(env, buf, sizeof(buf)) != 0 ||
+		   GetLastError() != ERROR_ENVVAR_NOT_FOUND)
+			return 0;
+	}
+	return !SetEnvironmentVariable(env, (val&&*val)?val:NULL);
 }
 
 static int unsetenv(const char *env)
@@ -220,8 +223,8 @@ static char *src_paths[SRC_PATH_SIZE];
 static int curr_line = 0;
 static char *nextline;
 
-static int stdo_bak;
-static int stde_bak;
+static int stdo_bak = -1;
+static int stde_bak = -1;
 
 static jmp_buf jmpbuf;
 
@@ -348,20 +351,6 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				}
 			}
 
-			if(!in_quotes)
-			{
-				i = 0;
-				do {
-					if((stp[i] == ' ' &&  isspace(*ptr)) ||
-					   (stp[i] == '^' && !isalpha(*ptr)) ||
-					   *ptr == stp[i])
-					{
-						free(buf);
-						return ptr;
-					}
-				} while(stp[i++]);
-			}
-
 
 			if(*ptr == '$')
 			{
@@ -378,7 +367,25 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					continue;
 				}
 			}
-			else if(*ptr == '&')
+
+
+			if(!in_quotes)
+			{
+				i = 0;
+				do {
+					if((stp[i] == ' ' &&  isspace(*ptr)) ||
+					   (stp[i] == '!' && !isspace(*ptr)) ||
+					   (stp[i] == '^' && !isalpha(*ptr)) ||
+					   *ptr == stp[i])
+					{
+						free(buf);
+						return ptr;
+					}
+				} while(stp[i++]);
+			}
+
+
+			if(*ptr == '&')
 			{
 				if(in_quotes != '\'')
 				{
@@ -669,18 +676,20 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				*(sep++) = 0;
 				val = strtoul(opt, NULL, 0);
 
-				opt = sep;
-				while(isspace(*opt))
-					++opt;
+//				opt = sep;
+//				while(isspace(*opt))
+//					++opt;
+				opt = expand_string(sep, "!", len+str-sep, fillmore);
 
 				while(1)
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt))
+					if(isspace(*opt) && next_word == opt)
 					{
-						while(isspace(*opt))
-							++opt;
+						opt = expand_string(opt, "!", len+str-opt, fillmore);
+//						while(isspace(*opt))
+//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
@@ -711,38 +720,6 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					opt = next_word;
 				}
 			}
-
-/*			else if(strcasecmp(ptr, "popfront") == 0)
-			{
-				char *front_word;
-				char *varstr;
-
-				next = expand_string(opt, ")", len+str-opt, fillmore);
-				if(*next) *(next++) = 0;
-
-				varstr = malloc(65536);
-				if(!varstr)
-				{
-					free(buf);
-					exit(-1);
-				}
-				strncpy(varstr, getvar(opt), 65536);
-				front_word = varstr;
-				while(*varstr && isspace(*varstr))
-					++varstr;
-				if(front_word != varstr)
-					memmove(front_word, varstr, strlen(varstr)+1);
-
-				varstr = expand_string(front_word, " ", 65536, 0);
-				if(*varstr) *(varstr++) = 0;
-				while(*varstr && isspace(*varstr))
-					++varstr;
-
-				snprintf(buf+i, BUF_SIZE-i, "%s", front_word);
-				setenv(opt, varstr, 1);
-
-				free(front_word);
-			}*/
 
 			else if(strcasecmp(ptr, "add")==0 || strcasecmp(ptr, "sub") == 0 ||
 			        strcasecmp(ptr, "mult")==0 || strcasecmp(ptr, "div") == 0)
@@ -811,16 +788,17 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt))
+					if(isspace(*opt) && next_word == opt)
 					{
-						while(isspace(*opt))
-							++opt;
+						opt = expand_string(opt, "!", len+str-opt, fillmore);
+//						while(isspace(*opt))
+//							++opt;
 						continue;
 					}
-					if(isspace(*next_word) && *next_word)
+					if(isspace(*next_word))
 					{
 						*(next_word++) = 0;
-						while(isspace(*next_word) && *next_word)
+						while(isspace(*next_word))
 							++next_word;
 					}
 					else
@@ -928,10 +906,11 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt))
+					if(isspace(*opt) && next_word == opt)
 					{
-						while(isspace(*opt))
-							++opt;
+						opt = expand_string(opt, "!", len+str-opt, fillmore);
+//						while(isspace(*opt))
+//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
@@ -968,10 +947,11 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt))
+					if(isspace(*opt) && next_word == opt)
 					{
-						while(isspace(*opt))
-							++opt;
+						opt = expand_string(opt, "!", len+str-opt, fillmore);
+//						while(isspace(*opt))
+//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
@@ -1025,10 +1005,11 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt))
+					if(isspace(*opt) && next_word == opt)
 					{
-						while(isspace(*opt))
-							++opt;
+						opt = expand_string(opt, "!", len+str-opt, fillmore);
+//						while(isspace(*opt))
+//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
@@ -1077,10 +1058,11 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt))
+					if(isspace(*opt) && next_word == opt)
 					{
-						while(isspace(*opt))
-							++opt;
+						opt = expand_string(opt, "!", len+str-opt, fillmore);
+//						while(isspace(*opt))
+//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
@@ -1151,10 +1133,11 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt))
+					if(isspace(*opt) && next_word == opt)
 					{
-						while(isspace(*opt))
-							++opt;
+						opt = expand_string(opt, "!", len+str-opt, fillmore);
+//						while(isspace(*opt))
+//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
@@ -1194,10 +1177,11 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt))
+					if(isspace(*opt) && next_word == opt)
 					{
-						while(isspace(*opt))
-							++opt;
+						opt = expand_string(opt, "!", len+str-opt, fillmore);
+//						while(isspace(*opt))
+//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
@@ -1282,10 +1266,11 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					DIR *dp;
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt))
+					if(isspace(*opt) && next_word == opt)
 					{
-						while(isspace(*opt))
-							++opt;
+						opt = expand_string(opt, "!", len+str-opt, fillmore);
+//						while(isspace(*opt))
+//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
@@ -1395,10 +1380,9 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					val = argv[idx];
 				snprintf(buf+i, BUF_SIZE-i, "%s", val);
 			}
-			else if(strncmp("*", ptr, end-ptr) == 0 ||
-			        (use_hard_quotes && strncmp("@", ptr, end-ptr) == 0))
+			else if(*ptr == '*' || (use_hard_quotes && *ptr == '@'))
 			{
-				int idx = 1;
+				int idx = ((ptr+1 >= end || !ptr[1]) ? 1 : atoi(ptr+1));
 				int inc = i;
 				while(idx < argc)
 				{
@@ -1407,9 +1391,9 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				}
 				if(inc > i) buf[inc-1] = 0;
 			}
-			else if(strncmp("@", ptr, end-ptr) == 0)
+			else if(*ptr == '@')
 			{
-				int idx = 1;
+				int idx = ((ptr+1 >= end || !ptr[1]) ? 1 : atoi(ptr+1));
 				while(idx < argc)
 				{
 					i += snprintf(buf+i, BUF_SIZE-i, "${'%d'}", idx);
@@ -1466,20 +1450,15 @@ static char *extract_word(char *str, size_t len)
 		return end;
 
 	end = expand_string(end, " \n", len+str-end, 1);
-
 	if(*end && *end != '\n')
 		*(end++) = 0;
 
-	while(*end && isspace(*end))
+	end = expand_string(end, "!\n", len+str-end, 1);
+	if(*end == '\n')
 	{
-		if(*end == '\n')
-		{
-			if(end[1] != 0)
-				nextline = strdup(end+1);
-			*end = 0;
-			break;
-		}
-		++end;
+		if(end[1] != 0)
+			nextline = strdup(end+1);
+		*end = 0;
 	}
 
 	return end;
@@ -1545,8 +1524,9 @@ static int check_obj_deps(char *base, char *src, time_t obj_time)
 	}
 
 	fseek(df, 0, SEEK_SET);
-	fread(buf, 1, bufsize, df);
-	buf[bufsize-1] = 0;
+	bufsize = fread(buf, 1, bufsize, df);
+	if(bufsize >= 0)
+		buf[bufsize] = 0;
 
 	fclose(df);
 
@@ -2575,13 +2555,22 @@ dir_write_check:
 		 * passed along as-is. */
 		if(strcasecmp("call", linebuf) == 0)
 		{
-			extract_line(ptr, sizeof(linebuf)+linebuf-ptr);
+			int i = 0;
+			char *wrd = ptr;
+			while(*wrd)
+			{
+				char *next = extract_word(wrd, linebuf+sizeof(linebuf)-wrd);
+				i += snprintf(buffer+i, sizeof(buffer)-i, "\"%s\" ", wrd);
+				wrd = next;
+			}
+			if(i > 0) buffer[i-1] = 0;
+
 			if(!shh)
 			{
-				printf("%s\n", ptr);
+				printf("%s\n", buffer);
 				fflush(stdout);
 			}
-			if((ret=system(ptr)) != 0)
+			if((ret=system(buffer)) != 0)
 			{
 				if(!ignore_err)
 				{
@@ -2603,9 +2592,15 @@ dir_write_check:
 		 * arguments */
 		if(strcasecmp("reinvoke", linebuf) == 0)
 		{
-			extract_line(ptr, sizeof(linebuf)+linebuf-ptr);
-			snprintf(buffer, sizeof(buffer), "%s %s", argv[0],
-			         ((strcmp(ptr, ".")==0)?"":ptr));
+			int i = snprintf(buffer, sizeof(buffer), "\"%s\" ", argv[0]);
+			while(*ptr)
+			{
+				char *next = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
+				i += snprintf(buffer+i, sizeof(buffer)-i, "\"%s\" ", ptr);
+				ptr = next;
+			}
+			if(i > 0)  buffer[i-1] = 0;
+
 			if((ret=system(buffer)) != 0)
 			{
 				if(ignore_err < 2)
@@ -3888,8 +3883,8 @@ next_src_file:
 			continue;
 		}
 
-		/* Sets an alternate file for stdout */
-		if(strcasecmp("setstdout", linebuf) == 0)
+		/* Sets an alternate file for normal output (stdout) */
+		if(strcasecmp("setoutput", linebuf) == 0)
 		{
 			char *end = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
 			extract_line(end, sizeof(linebuf)+linebuf-end);
@@ -3938,8 +3933,8 @@ next_src_file:
 			continue;
 		}
 
-		/* Sets an alternate file for stderr */
-		if(strcasecmp("setstderr", linebuf) == 0)
+		/* Sets an alternate file for error output (stderr) */
+		if(strcasecmp("seterror", linebuf) == 0)
 		{
 			char *end = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
 			extract_line(end, sizeof(linebuf)+linebuf-end);
@@ -3947,8 +3942,8 @@ next_src_file:
 			ret = 0;
 			if(*ptr)
 			{
-				int fp = open(ptr, O_WRONLY|O_APPEND|O_CREAT|O_TRUNC, S_IRWXU);
-				if(fp == -1)
+				int fd = open(ptr, O_WRONLY|O_APPEND|O_CREAT|O_TRUNC, S_IRWXU);
+				if(fd == -1)
 				{
 					ret = 1;
 					if(ignore_err < 2)
@@ -3959,7 +3954,8 @@ next_src_file:
 						goto reparse;
 					}
 					if(ignore_err < 2)
-						printf("--- Error %d ignored. ---\n\n", ++ignored_errors);
+						printf("--- Error %d ignored. ---\n\n",
+						       ++ignored_errors);
 					fflush(stdout);
 					continue;
 				}
@@ -3969,9 +3965,9 @@ next_src_file:
 					stde_bak = dup(STDERR_FILENO);
 
 				close(STDERR_FILENO);
-				dup2(fp, STDERR_FILENO);
+				dup2(fd, STDERR_FILENO);
 
-				close(fp);
+				close(fd);
 				continue;
 			}
 
@@ -3993,7 +3989,7 @@ next_src_file:
 		if(strcasecmp("setinput", linebuf) == 0)
 		{
 			extract_line(ptr, sizeof(linebuf)+linebuf-ptr);
-			
+
 			if(infile != stdin)
 				fclose(infile);
 
@@ -4024,8 +4020,8 @@ next_src_file:
 			continue;
 		}
 
-		/* Reads keyboard input and stores the string in the named var. The
-		 * trailing newline is stripped. */
+		/* Reads input and stores the string in the named var. The trailing
+		 * newline is stripped. */
 		if(strcasecmp("read", linebuf) == 0)
 		{
 			extract_line(ptr, sizeof(linebuf)+linebuf-ptr);
@@ -4083,6 +4079,125 @@ next_src_file:
 		}
 
 
+		/* Executes a command via the system shell and redirects its output to
+		 * a temp file, which is then read into the named variable. All
+		 * trailing new-lines are stripped. */
+		if(strcasecmp("readexec", linebuf) == 0)
+		{
+			int fd, old_stdout;
+			char fname[PATH_MAX];
+			char *bufptr, *cmd;
+			off_t len;
+
+			ret = 0;
+
+			if(getenv("TEMP"))
+				snprintf(fname, sizeof(fname), "%s/cbXXXXXX", getenv("TEMP"));
+			else if(getenv("TMP"))
+				snprintf(fname, sizeof(fname), "%s/cbXXXXXX", getenv("TMP"));
+			else
+				snprintf(fname, sizeof(fname), "/tmp/cbXXXXXX");
+
+			fd = mkstemp(fname);
+			if(fd == -1)
+			{
+				snprintf(fname, sizeof(fname), "cbXXXXXX");
+				fd = mkstemp(fname);
+				if(fd == -1)
+				{
+					ret = 1;
+					if(ignore_err < 2)
+						printf("!!! Could not create temp file %s !!!\n",
+						       fname);
+					if(!ignore_err)
+					{
+						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+						goto reparse;
+					}
+					if(ignore_err < 2)
+						printf("--- Error %d ignored. ---\n\n",
+						       ++ignored_errors);
+					fflush(stdout);
+					continue;
+				}
+			}
+
+			len = 0;
+			cmd = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
+			while(*cmd)
+			{
+				char *next = extract_word(cmd, sizeof(linebuf)+linebuf-cmd);
+				len += snprintf(buffer+len, sizeof(buffer)-len, "\"%s\" ",
+				                cmd);
+				cmd = next;
+			}
+			if(len > 0)  buffer[len-1] = 0;
+
+			if(!shh)
+				printf("%s\n", buffer);
+			fflush(stdout);
+
+			old_stdout = dup(STDOUT_FILENO);
+
+			close(STDOUT_FILENO);
+			dup2(fd, STDOUT_FILENO);
+
+			ret |= system(buffer);
+			if(ret != 0)
+			{
+				if(!ignore_err)
+				{
+					close(fd);
+					close(STDOUT_FILENO);
+					remove(fname);
+
+					dup2(old_stdout, STDOUT_FILENO);
+					close(old_stdout);
+
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
+			}
+
+			len = lseek(fd, 0, SEEK_END);
+			lseek(fd, 0, SEEK_SET);
+			bufptr = buffer;
+			while(len > 0)
+			{
+				size_t b = read(fd, bufptr, len);
+				if(b <= 0)
+					break;
+				len -= b;
+				bufptr += b;
+			}
+			*(bufptr++) = 0;
+
+			close(fd);
+			close(STDOUT_FILENO);
+			remove(fname);
+
+			dup2(old_stdout, STDOUT_FILENO);
+			close(old_stdout);
+
+			while(strlen(buffer) > 0 && (buffer[strlen(buffer)-1] == '\n' ||
+			                             buffer[strlen(buffer)-1] == '\r'))
+				buffer[strlen(buffer)-1] = 0;
+
+			if(*ptr)
+				ret |= setenv(ptr, buffer, 1);
+			if(ret != 0)
+			{
+				if(!ignore_err)
+				{
+					snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
+					goto reparse;
+				}
+				continue;
+			}
+
+			continue;
+		}
+
 		/* Exits the script with the specified exitcode */
 		if(strcasecmp("exit", linebuf) == 0)
 		{
@@ -4105,7 +4220,7 @@ next_src_file:
 			{
 				if(strncasecmp(defines[i].name, "atexit_", 7) == 0)
 					inc += snprintf(linebuf+inc, sizeof(linebuf)-inc, "%s\n",
-					                defines[i].val);
+					                defines[i].name);
 			}
 			snprintf(linebuf+inc, sizeof(linebuf)-inc, "__really_exit %d\n",
 			         retval);
