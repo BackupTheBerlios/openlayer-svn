@@ -10,7 +10,7 @@ for i in $@ ; do
    fi
 done
 
-gcc -W -Wall -Werror -o /tmp/$TRGT "$0" && { "/tmp/$TRGT" $@ ; RET=$? ; rm -f "/tmp/$TRGT" ; exit $RET ; }
+gcc -W -o /tmp/$TRGT "$0" && { "/tmp/$TRGT" $@ ; RET=$? ; rm -f "/tmp/$TRGT" ; exit $RET ; }
 exit $?
 */
 
@@ -47,9 +47,14 @@ exit $?
 #ifdef __unix__
 #include <unistd.h>
 #endif
+
 #if defined(__unix__) || defined(__GNUC__)
 #include <sys/param.h>
 #include <dirent.h>
+#endif
+
+#ifdef __MACH__
+#include <unistd.h>
 #endif
 
 #ifdef _WIN32
@@ -183,7 +188,7 @@ static int setenv(const char *env, const char *val, int overwrite)
 		   GetLastError() != ERROR_ENVVAR_NOT_FOUND)
 			return 0;
 	}
-	return !SetEnvironmentVariable(env, (val&&*val)?val:NULL);
+	return (!SetEnvironmentVariable(env, (val&&*val)?val:NULL)) * -1;
 }
 
 static int unsetenv(const char *env)
@@ -207,6 +212,7 @@ struct {
 
 static char **argv;
 static int argc;
+
 static FILE *infile;
 
 static FILE *f;
@@ -676,9 +682,6 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				*(sep++) = 0;
 				val = strtoul(opt, NULL, 0);
 
-//				opt = sep;
-//				while(isspace(*opt))
-//					++opt;
 				opt = expand_string(sep, "!", len+str-sep, fillmore);
 
 				while(1)
@@ -688,16 +691,13 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					if(isspace(*opt) && next_word == opt)
 					{
 						opt = expand_string(opt, "!", len+str-opt, fillmore);
-//						while(isspace(*opt))
-//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
 					{
-
 						*(next_word++) = 0;
-						while(isspace(*next_word) && *next_word)
-							++next_word;
+						next_word = expand_string(next_word, "!",
+						                          len+str-next_word, fillmore);
 					}
 					else
 					{
@@ -791,15 +791,13 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					if(isspace(*opt) && next_word == opt)
 					{
 						opt = expand_string(opt, "!", len+str-opt, fillmore);
-//						while(isspace(*opt))
-//							++opt;
 						continue;
 					}
 					if(isspace(*next_word))
 					{
 						*(next_word++) = 0;
-						while(isspace(*next_word))
-							++next_word;
+						next_word = expand_string(next_word, "!",
+						                          len+str-next_word, fillmore);
 					}
 					else
 					{
@@ -909,15 +907,13 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					if(isspace(*opt) && next_word == opt)
 					{
 						opt = expand_string(opt, "!", len+str-opt, fillmore);
-//						while(isspace(*opt))
-//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						while(isspace(*next_word) && *next_word)
-							++next_word;
+						next_word = expand_string(next_word, "!",
+						                          len+str-next_word, fillmore);
 					}
 					else
 					{
@@ -950,15 +946,13 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					if(isspace(*opt) && next_word == opt)
 					{
 						opt = expand_string(opt, "!", len+str-opt, fillmore);
-//						while(isspace(*opt))
-//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						while(isspace(*next_word) && *next_word)
-							++next_word;
+						next_word = expand_string(next_word, "!",
+						                          len+str-next_word, fillmore);
 					}
 					else
 					{
@@ -1008,15 +1002,13 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					if(isspace(*opt) && next_word == opt)
 					{
 						opt = expand_string(opt, "!", len+str-opt, fillmore);
-//						while(isspace(*opt))
-//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						while(isspace(*next_word) && *next_word)
-							++next_word;
+						next_word = expand_string(next_word, "!",
+						                          len+str-next_word, fillmore);
 					}
 					else
 					{
@@ -1061,15 +1053,13 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					if(isspace(*opt) && next_word == opt)
 					{
 						opt = expand_string(opt, "!", len+str-opt, fillmore);
-//						while(isspace(*opt))
-//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						while(isspace(*next_word) && *next_word)
-							++next_word;
+						next_word = expand_string(next_word, "!",
+						                          len+str-next_word, fillmore);
 					}
 					else
 					{
@@ -1136,15 +1126,13 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					if(isspace(*opt) && next_word == opt)
 					{
 						opt = expand_string(opt, "!", len+str-opt, fillmore);
-//						while(isspace(*opt))
-//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						while(isspace(*next_word) && *next_word)
-							++next_word;
+						next_word = expand_string(next_word, "!",
+						                          len+str-next_word, fillmore);
 					}
 					else
 					{
@@ -1180,15 +1168,13 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					if(isspace(*opt) && next_word == opt)
 					{
 						opt = expand_string(opt, "!", len+str-opt, fillmore);
-//						while(isspace(*opt))
-//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						while(isspace(*next_word) && *next_word)
-							++next_word;
+						next_word = expand_string(next_word, "!",
+						                          len+str-next_word, fillmore);
 					}
 					else
 					{
@@ -1269,15 +1255,13 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					if(isspace(*opt) && next_word == opt)
 					{
 						opt = expand_string(opt, "!", len+str-opt, fillmore);
-//						while(isspace(*opt))
-//							++opt;
 						continue;
 					}
 					if(isspace(*next_word) && *next_word)
 					{
 						*(next_word++) = 0;
-						while(isspace(*next_word) && *next_word)
-							++next_word;
+						next_word = expand_string(next_word, "!",
+						                          len+str-next_word, fillmore);
 					}
 					else
 					{
@@ -1903,21 +1887,45 @@ int main(int _argc, char **_argv)
 	setenv("CXXFLAGS", "", 0);
 	setenv("LDFLAGS", "", 0);
 
-	/* Open the default file */
-	fname = strdup("default.cbd");
-	f = fopen(fname, "r");
-	if(!f)
+	atexit(cleanup);
+
+	if(_argc > 1)
 	{
-		fprintf(stderr, "\n\n\n*** Critical Error ***\n"
-		                "Could not open default.cbd!\n\n");
-		exit(1);
+		char *ext = strrchr(_argv[1], '.');
+		if(ext && strcasecmp(ext, ".cbd") == 0)
+		{
+			fname = strdup(_argv[1]);
+			f = fopen(fname, "r");
+			if(!f)
+			{
+				fprintf(stderr, "\n\n\n*** Critical Error ***\n"
+				                "Could not open %s!\n\n", fname);
+				exit(1);
+			}
+
+			i = 1;
+			while((_argv[i]=_argv[i+1]) != NULL)
+				++i;
+			--_argc;
+		}
+	}
+
+	/* Open the default file */
+	if(!fname)
+	{
+		fname = strdup("default.cbd");
+		f = fopen(fname, "r");
+		if(!f)
+		{
+			fprintf(stderr, "\n\n\n*** Critical Error ***\n"
+			                "Could not open %s!\n\n", fname);
+			exit(1);
+		}
 	}
 
 	argc = _argc;
 	argv = _argv;
 	infile = stdin;
-
-	atexit(cleanup);
 
 	if(setjmp(jmpbuf))
 	{
@@ -2004,7 +2012,7 @@ reparse:
 			if(do_level >= sizeof(int)*8)
 			{
 				printf("\n\n!!! %s error, line %d !!!\n"
-				       "Too many 'do' commands enountered (max: %ud)!\n\n",
+				       "Too many 'do' commands enountered (max: %u)!\n\n",
 				       fname, curr_line, sizeof(int)*8 - 1);
 				snprintf(linebuf, sizeof(linebuf), "exit -1\n");
 				goto reparse;
@@ -2755,7 +2763,7 @@ dir_write_check:
 					if(!tmp)
 					{
 						fprintf(stderr, "\n\n\n*** Critical Error ***\n"
-						                "Out of memory allocating %ud defines!\n\n",
+						                "Out of memory allocating %u defines!\n\n",
 						                num_defines+1);
 						snprintf(linebuf, sizeof(linebuf), "exit -1\n");
 						goto reparse;
@@ -3436,7 +3444,7 @@ next_src_file:
 				if((ret=remove(buffer)) != 0)
 				{
 					if(ignore_err < 2)
-						printf("!!! Could not delete '%s'!!!\n", buffer);
+						printf("!!! Could not delete '%s' !!!\n", buffer);
 					if(!ignore_err)
 					{
 						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
@@ -3474,7 +3482,7 @@ next_src_file:
 				if((ret=remove(buffer)) != 0)
 				{
 					if(ignore_err < 2)
-						printf("!!! Could not delete '%s'!!!\n", buffer);
+						printf("!!! Could not delete '%s' !!!\n", buffer);
 					if(!ignore_err)
 					{
 						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
@@ -3520,7 +3528,7 @@ next_src_file:
 					if((ret=remove(buffer)) != 0)
 					{
 						if(ignore_err < 2)
-							printf("!!! Could not delete '%s'!!!\n", buffer);
+							printf("!!! Could not delete '%s' !!!\n", buffer);
 						if(!ignore_err)
 						{
 							snprintf(linebuf, sizeof(linebuf), "exit %d\n",
@@ -3551,7 +3559,7 @@ next_src_file:
 				if((ret=remove(buffer)) != 0)
 				{
 					if(ignore_err < 2)
-						printf("!!! Could not delete '%s'!!!\n", buffer);
+						printf("!!! Could not delete '%s' !!!\n", buffer);
 					if(!ignore_err)
 					{
 						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
@@ -3595,7 +3603,7 @@ next_src_file:
 				if(ret != 0)
 				{
 					if(ignore_err < 2)
-						printf("!!! Could not delete '%s'!!!\n", ptr);
+						printf("!!! Could not delete '%s' !!!\n", ptr);
 					if(!ignore_err)
 					{
 						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
@@ -4071,7 +4079,7 @@ next_src_file:
 				buffer[strlen(buffer)-1] = 0;
 
 			if(!strlen(buffer))
-				ret |= unsetenv(ptr);
+				unsetenv(ptr);
 			else
 				ret |= setenv(ptr, buffer, 1);
 
