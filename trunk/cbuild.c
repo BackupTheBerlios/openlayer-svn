@@ -181,14 +181,12 @@ void rewinddir(DIR *dir)
 
 static int setenv(const char *env, const char *val, int overwrite)
 {
-	if(!overwrite)
-	{
-		char buf[2];
-		if(GetEnvironmentVariable(env, buf, sizeof(buf)) != 0 ||
-		   GetLastError() != ERROR_ENVVAR_NOT_FOUND)
-			return 0;
-	}
-	return (!SetEnvironmentVariable(env, (val&&*val)?val:NULL)) * -1;
+	static char buf[64*1024];
+	if(!overwrite && getenv(env))
+		return 0;
+
+	snprintf(buf, sizeof(buf), "%s=%s", env, (val?val:""));
+	return _putenv(buf);
 }
 
 static int unsetenv(const char *env)
