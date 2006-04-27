@@ -23,7 +23,7 @@ Collision( const Line &aSegment, const Line &bSegment )
 
 Collision::
 Collision( const std::vector< std::pair< Line, Line > *> &segmentLists )
-   : segmentLists( segmentLists ) {
+   : isCollision( true ), segmentLists( segmentLists ) {
    
 	normals[(int) OBJ_A] = 0;
 	normals[(int) OBJ_B] = 0;
