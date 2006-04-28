@@ -83,7 +83,7 @@ static inline void ExtractColor( unsigned char *&pixelPtr, int color, int format
    *pixelPtr++ = getg( color );
    *pixelPtr++ = getb( color );
 
-   if( format == GL_RGBA ) {
+   if( format == GL_RGBA8 ) {
       *pixelPtr++ = geta( color );
    }
 }
@@ -149,7 +149,7 @@ UploadTexture( OL_MEMORY_IMG *bmp, bool isSolid ) {
 
    bool useExtendedDimensions = expandH || expandW;
 
-   int format = isSolid? GL_RGB : GL_RGBA;
+   int format = isSolid? GL_RGB8 : GL_RGBA8;
    int bpp = isSolid? 3 : 4;
    int bitmapBpp = bitmap_color_depth( bmp )/8;
 

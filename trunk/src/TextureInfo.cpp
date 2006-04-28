@@ -131,9 +131,9 @@ OlTextureInfo()
 int OlTextureInfo::
 GetBytesPerPixel() const {
    switch( format ) {
-      case GL_RGBA:
+      case GL_RGBA8:
          return 4;
-      case GL_RGB:
+      case GL_RGB8:
          return 3;
       case GL_ALPHA:
          return 1;
@@ -148,9 +148,9 @@ GetBytesPerPixel() const {
 bool OlTextureInfo::
 HasAlphaChannel() const {
    switch( format ) {
-      case GL_RGBA:
+      case GL_RGBA8:
          return true;
-      case GL_RGB:
+      case GL_RGB8:
          return false;
       case GL_ALPHA:
          return true;
