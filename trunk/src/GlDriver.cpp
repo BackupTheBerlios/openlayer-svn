@@ -83,7 +83,7 @@ static inline void ExtractColor( unsigned char *&pixelPtr, int color, int format
    *pixelPtr++ = getg( color );
    *pixelPtr++ = getb( color );
 
-   if( format == GL_RGBA8 ) {
+   if( format == GL_RGBA ) {
       *pixelPtr++ = geta( color );
    }
 }
