@@ -305,15 +305,7 @@ ToString() const {
 Collision Rect::
 DoCollisionTest( const ol::Poly &other, const Placement &thisPlacement,
                  const Placement &otherPlacement, bool getResults ) const {
-   std::vector< Vec2D > vertices;
-   vertices.reserve(4);
-   
-   vertices.push_back( pos );
-   vertices.push_back( Vec2D( pos.x + size.x, pos.y ));
-   vertices.push_back( Vec2D( pos.x, pos.y + size.y ));
-   vertices.push_back( pos+size );
-   
-   return LineStripCollision( vertices, other.GetVertices(), thisPlacement, otherPlacement,
+   return LineStripCollision( GetVertices(), other.GetVertices(), thisPlacement, otherPlacement,
                               getResults, true, true );
 }
 

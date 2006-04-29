@@ -116,7 +116,23 @@ public:
 	inline Collision GetCollision( const Poly &other ) const {
 		return DoCollisionTest( other, Placement(), other.GetPlacement(), true );
 	}
-
+	
+	inline Poly ToPoly() const {
+      return Poly( GetVertices() );
+   }
+   
+   inline std::vector< Vec2D > GetVertices() const {
+      std::vector< Vec2D > vertices;
+      vertices.reserve(4);
+      
+      vertices.push_back( pos );
+      vertices.push_back( Vec2D( pos.x + size.x, pos.y ));
+      vertices.push_back( Vec2D( pos.x, pos.y + size.y ));
+      vertices.push_back( pos+size );
+      
+      return vertices;
+   }
+   
    // Returns the common area of this rectangle and an another one //
    Rect ClippedTo( const Rect &other ) const;
    

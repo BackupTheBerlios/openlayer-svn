@@ -83,34 +83,34 @@ OlTextureInfo( const OlTextureInfo &other, OlRect clipRect )
      xMul( other.xMul ), yMul( other.yMul ) {
 
    clipRect.y = other.imgHeight - clipRect.y - clipRect.h;
-
+   /*
    printf( "Other rect: %f %f %f %f\n", clipRect.x, clipRect.y,
-      clipRect.w, clipRect.h );
+      clipRect.w, clipRect.h );*/
 
    float xRectMul = other.xMul / other.fullImgWidth;
    float yRectMul = other.yMul / other.fullImgHeight;
 
-   printf( "Mul: %f, %f\n", xRectMul, yRectMul );
+   //printf( "Mul: %f, %f\n", xRectMul, yRectMul );
 
    OlRect convClipRect( xRectMul * clipRect.x, yRectMul * clipRect.y,
                         xRectMul * clipRect.w, yRectMul * clipRect.h );
-
+   /*
    printf( "Converted rect: %f %f %f %f\n", convClipRect.x, convClipRect.y,
       convClipRect.w, convClipRect.h );
 
    printf( "Rect: %f %f %f %f\n", other.rect.x, other.rect.y,
-      other.rect.w, other.rect.h );
+      other.rect.w, other.rect.h );*/
 
    rect = other.rect.ClippedTo( convClipRect );
-
+   /*
    printf( "Clipped rect: %f %f %f %f\n", rect.x, rect.y,
       rect.w, rect.h );
-
-
+   */
+   
    float sizeXMul = rect.w / other.rect.w;
    float sizeYMul = rect.h / other.rect.h;
 
-   printf( "SizeMul: %f, %f\n", sizeXMul, sizeYMul );
+   //printf( "SizeMul: %f, %f\n", sizeXMul, sizeYMul );
 
    imgWidth = int(sizeXMul * other.imgWidth);
    imgHeight = int(sizeYMul * other.imgHeight);
@@ -131,9 +131,9 @@ OlTextureInfo()
 int OlTextureInfo::
 GetBytesPerPixel() const {
    switch( format ) {
-      case GL_RGBA8:
+      case GL_RGBA:
          return 4;
-      case GL_RGB8:
+      case GL_RGB:
          return 3;
       case GL_ALPHA:
          return 1;
@@ -148,9 +148,9 @@ GetBytesPerPixel() const {
 bool OlTextureInfo::
 HasAlphaChannel() const {
    switch( format ) {
-      case GL_RGBA8:
+      case GL_RGBA:
          return true;
-      case GL_RGB8:
+      case GL_RGB:
          return false;
       case GL_ALPHA:
          return true;

@@ -149,7 +149,7 @@ UploadTexture( OL_MEMORY_IMG *bmp, bool isSolid ) {
 
    bool useExtendedDimensions = expandH || expandW;
 
-   int format = isSolid? GL_RGB8 : GL_RGBA8;
+   int format = isSolid? GL_RGB : GL_RGBA;
    int bpp = isSolid? 3 : 4;
    int bitmapBpp = bitmap_color_depth( bmp )/8;
 
