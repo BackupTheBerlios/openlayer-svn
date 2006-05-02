@@ -1,6 +1,7 @@
 #include "TexturedPoly.hpp"
 #include "Bitmap.hpp"
 #include "Circle.hpp"
+#include "Rectangle.hpp"
 
 
 #ifdef OL_DEBUG_TEXTURED_POLY
@@ -175,6 +176,11 @@ Construct() {
       }
    }
    
+   #ifdef OL_DEBUG_TEXTURED_POLY
+      Circle( *leftmost, 20 ).Draw( Rgba::YELLOW );
+      Circle( *rightmost, 20 ).Draw( Rgba( 0.0, 1.0, 1.0 ));
+   #endif // OL_DEBUG_TEXTURED_POLY
+   
    // Cut the polygon to vertical slices, starting from minX and ending at maxX
    
    float bmpW = texture->Width();
@@ -281,6 +287,7 @@ Construct() {
             // Construct the SlicePart
             hslice->AddPart( new SlicePart( top, bottom, sliceX, x, y, texture ));
          }
+         
          slices.push_back( hslice );
       }
    }
@@ -333,8 +340,12 @@ ProcessSide( std::vector< Vec2D > ::const_iterator start, std::vector< Vec2D > :
       ret.vertices.push_back( *start );
    }
    else {
+      // Find the first vertex which is inside the polygon area
+      
       while( iter != end ) {
          if(( leftToRight && iter->x >= x ) || ( !leftToRight && iter->x <= x + bmpW )) {
+            AddEdgePoints( ret.vertices, Line( *beforeIter, *iter ), textureEdges, leftToRight );
+            //cout << "first last: \n" << ret.vertices.back().ToString() << endl;
             break;
          }
          
@@ -350,13 +361,18 @@ ProcessSide( std::vector< Vec2D > ::const_iterator start, std::vector< Vec2D > :
    bool shouldEnd = false;
    std::vector< Vec2D > ::const_iterator beforeBeforeIter = vertices.end();
    
+   // Process all vertices inside the polygon area
+   
    while( !shouldEnd ) {
       if( iter == end ) {
          shouldEnd = true;
       }
       
       if (( !leftToRight && iter->x < x ) || ( leftToRight && iter->x > x + bmpW )) {
-         AddEdgePoints( ret.vertices, Line( *beforeIter, *iter ), textureEdges, leftToRight );
+         // Add the point where the side leaves the texture area
+         if( inside ) {
+            AddEdgePoints( ret.vertices, Line( *beforeIter, *iter ), textureEdges, leftToRight );
+         }
          break;
       }
       
@@ -382,8 +398,9 @@ ProcessSide( std::vector< Vec2D > ::const_iterator start, std::vector< Vec2D > :
       }
    }
    
-   // Add vertices in the case if the only crossing line crosses both the lower and upper sides of the region
-   if( ret.vertices.empty() && ( beforeIter->y - iter->y > 0 ) == isUpper && beforeBeforeIter != vertices.end() ) {
+   // Add vertex in the case if the only crossing line crosses both the lower and upper sides of the region
+   if( ret.vertices.empty() && beforeBeforeIter != vertices.end() ) {
+      cout << "A1: " << Line( *beforeBeforeIter, *beforeIter ).ToString() << endl;
       AddEdgePoints( ret.vertices, Line( *beforeBeforeIter, *beforeIter ), textureEdges, leftToRight );
    }
    
@@ -391,10 +408,16 @@ ProcessSide( std::vector< Vec2D > ::const_iterator start, std::vector< Vec2D > :
       delete textureEdges[i];
    }
    
+   // Add a suitable first vertex if it's needed
    if( !ret.vertices.empty() && (( leftToRight && ret.vertices.front().x > x + OL_NEAR_ZERO )
        || ( !leftToRight && ret.vertices.front().x < x + bmpW - OL_NEAR_ZERO ))) {
       vector< Vec2D > newRet;
-      newRet.push_back( Vec2D( leftToRight? x : x + bmpW, ret.vertices.front().y ));
+      if( leftToRight ) {
+         newRet.push_back( Vec2D( x, ret.vertices.front().y ));
+      }
+      else {
+         newRet.push_back( Vec2D( x + bmpW, ret.vertices.front().y ));
+      }
       
       for( vector< Vec2D > ::iterator iter = ret.vertices.begin(); iter != ret.vertices.end(); iter++ ) {
          newRet.push_back( *iter );
@@ -405,11 +428,13 @@ ProcessSide( std::vector< Vec2D > ::const_iterator start, std::vector< Vec2D > :
    
    bool wasNoFirst = false;
    
+   // If no vertices exist, we need to find suitable start and end vertices
    if( ret.vertices.empty() ) {
       wasNoFirst = true;
       ret.vertices.push_back( Vec2D( leftToRight? x : x+bmpW, isUpper? y : y+bmpH ));
    }
    
+   // Add the last vertex if the side has not collided with the left or the right side
    if((( leftToRight && ret.vertices.back().x < x + bmpW - OL_NEAR_ZERO )
        || ( !leftToRight && ret.vertices.back().x > x + OL_NEAR_ZERO ))) {
       ret.vertices.push_back( Vec2D( leftToRight? x+bmpW : x, ret.vertices.back().y ));
