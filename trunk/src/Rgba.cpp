@@ -1,5 +1,8 @@
 #include "Rgba.hpp"
+#include "Internal.hpp"
+
 using namespace ol;
+using namespace std;
 
 // STATIC CLASS VARIABLES //
 
@@ -12,7 +15,48 @@ Rgba Rgba::BLUE = Rgba( 0.0, 0.0, 1.0, 1.0 );
 Rgba Rgba::INVISIBLE = Rgba( 0.0, 0.0, 0.0, 0.0 );
 
 
+static string HEX_CHARS = "0123456789abcdef";
+static string HEX_CHARS_UPPER = "0123456789ABCDEF";
+
+
 // GENERAL FUNCTIONS //
+
+
+Rgba::
+Rgba( const string &hex ) {
+   if( hex.length() != 6 && hex.length() != 8 ) {
+      OlError( "Cannot parse the color " + hex );
+      return;
+   }
+   
+   r = CompToF( parseHex( hex, 0 ));
+   g = CompToF( parseHex( hex, 2 ));
+   b = CompToF( parseHex( hex, 4 ));
+   
+   if( hex.length() == 8 ) {
+      a = CompToF( parseHex( hex, 6 ));
+   }
+   else {
+      a = 1.0;
+   }
+}
+
+
+inline static unsigned int GetHexValue( char ch ) {
+   string::size_type pos = HEX_CHARS.find( ch );
+   
+   if( pos != string::npos ) {
+      return pos;
+   }
+   
+   else return HEX_CHARS_UPPER.find( ch );
+}
+
+
+unsigned int Rgba::
+parseHex( const string &hex, int pos ) {
+   return ( GetHexValue( hex[pos] ) << 4 ) | GetHexValue( hex[pos+1] );
+}
 
 
 // Optimized version by Leniuch //

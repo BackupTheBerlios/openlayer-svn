@@ -16,12 +16,25 @@ ToString() const {
 
 
 std::vector< Vec2D > ol::Ellipse::
-ToPolygon() const {
+ToPolygon( float startAngle, float angleSweep ) const {
    std::vector< Vec2D > vertices;
    vertices.reserve( int( 2.0 * AL_PI / angleIncrement ));
    
-   for( float a = 0.0; a <= 2.0 * AL_PI; a += angleIncrement ) {
+   float endAngle = startAngle - angleSweep; 
+   
+   if( endAngle < startAngle ) {
+     float temp = startAngle;
+     startAngle = endAngle;
+     endAngle = temp;
+   }
+   
+   
+   for( float a = startAngle; a <= endAngle; a += angleIncrement ) {
       vertices.push_back( pos + Vec2D( cos(a) * xRad, sin(a) * yRad ));
+   }
+   
+   if( angleSweep < 2.0 * AL_PI ) {
+      vertices.push_back( pos + Vec2D( cos(endAngle) * xRad, sin(endAngle) * yRad ));
    }
    
    return vertices;
@@ -251,11 +264,13 @@ DrawArc( const Rgba &innerColor, const Rgba &outerColor, float startAngle, float
          prevOY = newOY;
       }
       
-      glVertex2f( pos.x + cos( endAngle ) * innerXRad, pos.y + sin( endAngle ) * innerXRad );
+      innerColor.Select();
+      glVertex2f( pos.x + cos( endAngle ) * innerXRad, pos.y + sin( endAngle ) * innerYRad );
       glVertex2f( prevIX, prevIY );
       
+      outerColor.Select();
       glVertex2f( prevOX, prevOY );
-      glVertex2f( pos.x + cos( endAngle ) * xRad, pos.y + sin( endAngle ) * xRad ); 
+      glVertex2f( pos.x + cos( endAngle ) * xRad, pos.y + sin( endAngle ) * yRad ); 
    glEnd();
    
 #ifdef OL_NO_STATE_CHANGE

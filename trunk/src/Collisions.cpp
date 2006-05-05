@@ -73,6 +73,8 @@ GetSegment( CollidingObject objectID ) {
       Vec2D s = Vec2D( -normal->y, normal->x ) * 0.5;
       return Line( GetPoint() - s, GetPoint() + s );
    }
+   
+   return DEFAULT_SEGMENT;
 }
 
 

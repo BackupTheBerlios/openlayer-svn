@@ -16,7 +16,7 @@ using namespace std;
 TextRenderer::
 TextRenderer( const char *filename, int width, int height, Rgba col, int italics, bool useHinting )
       : rend( 0 ), texture( 0 ), face( 0 ), italics( italics ), useHinting( useHinting ), col( col ),
-        loader( 0 ) {
+        useTags( true ), loader( 0 ) {
 
    AddToCollection();
 
@@ -30,7 +30,7 @@ TextRenderer( const char *filename, int width, int height, Rgba col, int italics
 TextRenderer::
 TextRenderer( const TextRenderer &otherRend, int width, int height, Rgba col, int italics )
       : GarbageCollected(), rend( 0 ), texture( 0 ), face( 0 ), italics( italics ),
-        useHinting( otherRend.useHinting ), col( col ), loader( 0 ) {
+        useHinting( otherRend.useHinting ), col( col ), useTags( true ), loader( 0 ) {
 
    AddToCollection();
 
@@ -44,7 +44,7 @@ TextRenderer( const TextRenderer &otherRend, int width, int height, Rgba col, in
 TextRenderer::
 TextRenderer( GLYPH_FACE *face, int width, int height, Rgba col, int italics, bool useHinting )
       : rend( 0 ), texture( 0 ), face( 0 ), italics( italics ),
-        useHinting( useHinting ), col( col ), loader( 0 ) {
+        useHinting( useHinting ), col( col ), useTags( true ), loader( 0 ) {
 
    AddToCollection();
 
@@ -57,8 +57,7 @@ TextRenderer( GLYPH_FACE *face, int width, int height, Rgba col, int italics, bo
 
 TextRenderer::
 TextRenderer()
-      : rend( 0 ), texture( 0 ), face( 0 ), italics( 0 ) {
-
+      : rend( 0 ), texture( 0 ), face( 0 ), italics( 0 ), useHinting( true ), useTags( true ), loader( 0 ) {
    AddToCollection();
 }
 
@@ -160,7 +159,7 @@ Load( GLYPH_FACE *face, int w, int h, Rgba col, int italics, bool useHinting ) {
 
 
 void TextRenderer::
-StartRendering() const {
+SelectColor( const Rgba &col ) const {
    Rgba channels = Transforms::GetColorChannels();
    Rgba affectedCol( col.r * channels.r, col.g * channels.g, col.b * channels.b, col.a * channels.a );
    gk_rend_set_text_alpha_color( rend, affectedCol.SpecialPacked() );
@@ -180,32 +179,83 @@ FinishRendering() const {
 
 
 
+const static char TAG_START = '[';
+const static string COLOR_START_TAG_BEGIN = "[color ";
+const static char TAG_END = ']';
+const static string COLOR_END_TAG = "[/color]";
+
+
 void TextRenderer::
 Print( const string &text, int x, int y ) const {
    if( !IsValid()) {
       return;
    }
-
+   
    StartRendering();
 
    int textHeight = gk_rend_ascender_pixels( rend );
    unsigned int start = 0;
-
-   for( unsigned int i = 0; i < text.length(); i++ ) {
+   
+   const Rgba originalColor = GetColor();
+   
+   int lineX = 0;
+   
+   for( unsigned int i = 0; i < text.length(); ) {
+      unsigned int newStart = start;
+      bool startNewLine = false;
+      bool changeColor = false;
+      Rgba newColor;
+      
       if( text[i] == '\n' ) {
+         newStart = i+1;
+         startNewLine = true;
+      }
+      else if( text[i] == TAG_START && useTags ) {
+         string::size_type tagStartLength = COLOR_START_TAG_BEGIN.length();
+         
+         if( text.substr( i, tagStartLength ) == COLOR_START_TAG_BEGIN ) {
+            string::size_type tagEndPos = text.find( TAG_END, i + tagStartLength );
+            
+            string colorStr = text.substr( i + tagStartLength, tagEndPos - ( i + tagStartLength ));
+            
+            changeColor = true;
+            newColor = Rgba( colorStr );
+            newStart = tagEndPos+1;
+         }
+         else if( text.substr( i, COLOR_END_TAG.length() ) == COLOR_END_TAG ) {
+            changeColor = true;
+            newColor = originalColor;
+            newStart = i + COLOR_END_TAG.length();
+         }
+      }
+      
+      if( newStart != start ) {
          string substr( text, start, i-start );
-
-         gk_render_line_gl_utf8( texture, substr.c_str(), x, y );
-
-         y += textHeight;
-         start = i+1;
+         gk_render_line_gl_utf8( texture, substr.c_str(), x + lineX, y );
+         
+         i = start = newStart;
+         
+         if( startNewLine ) {
+            y += textHeight;
+            lineX = 0;
+         }
+         else {
+            lineX += Width( substr );
+         }
+         
+         if( changeColor ) {
+            SelectColor( newColor );
+         }
+      }
+      else {
+         i++;
       }
    }
 
    if( start != text.length() ) {
       string substr( text, start, text.length()-start );
 
-      gk_render_line_gl_utf8( texture, substr.c_str(), x, y );
+      gk_render_line_gl_utf8( texture, substr.c_str(), x + lineX, y );
    }
 }
 
@@ -293,7 +343,7 @@ RenderLineAligned( const string &line, int x, int y,
          case LEFT: break;
          case RIGHT: textX += maxLineWidth - text_width_utf8( rend, line.c_str() ); break;
          case CENTER: textX += (maxLineWidth - text_width_utf8( rend, line.c_str() ))/2; break;
-	 case JUSTIFY: break; //nothing
+	      case JUSTIFY: break; //nothing
       }
 
       gk_render_line_gl_utf8( texture, line.c_str(), textX, y );
@@ -355,21 +405,46 @@ FirstLineHeight( const std::string &text ) const {
 
 
 
+string TextRenderer::
+GetColoredText( string str, Rgba color ) {
+   return COLOR_START_TAG_BEGIN + color.ToHex() + TAG_END + str + COLOR_END_TAG;
+}
+
+
 
 int TextRenderer::
 Width( const string &text ) const {
    int width = 0;
+   int currW = 0;
    unsigned int start = 0;
+   
    for( unsigned int i = 0; i < text.length(); i++ ) {
       if( text[i] == '\n' ) {
          string substr( text, start, i-start );
-         int currW = text_width_utf8( rend, substr.c_str() );
+         currW += text_width_utf8( rend, substr.c_str() );
          if( currW > width )
             width = currW;
+         
          start = i+1;
+         currW = 0;
+      }
+      else if( text[i] == TAG_START && useTags ) {
+         string::size_type tagEndPos = text.find( TAG_END, i + 1 );
+         
+         if( tagEndPos != string::npos ) {
+            string substr( text, i, tagEndPos - i );
+            
+            if( substr.substr( 0, COLOR_START_TAG_BEGIN.size() ) == COLOR_START_TAG_BEGIN
+                  || substr == COLOR_END_TAG ) {
+               string textThusFar( text, start, i-start );
+               currW += text_width_utf8( rend, substr.c_str() );
+               start = tagEndPos+1;
+               i = start-1;
+            }
+         }
       }
    }
-
+   
    if( start != text.length() ) {
       string substr( text, start, text.length()-start );
       int currW = text_width_utf8( rend, substr.c_str() );

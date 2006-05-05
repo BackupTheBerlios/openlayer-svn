@@ -5,6 +5,10 @@
 #include "Includes.hpp"
 #include "Transforms.hpp"
 
+#include <string>
+#include <sstream>
+#include <iomanip>
+
 
 
 namespace ol {
@@ -19,6 +23,8 @@ public:
    Rgba( double r, double g, double b, double a = 1.0 )              : r( r ), g( g ), b( b ), a( a ) {}
    Rgba( int    r, int    g, int    b, int    a = 255 )              : r( Rgba::CompToF(r)), g( Rgba::CompToF(g)), b( Rgba::CompToF(b)), a( Rgba::CompToF(a)) {}
    Rgba( int    col,                          int a )                { *this = Rgba( getr32( col ), getg32( col ), getb32( col ), a ); }
+   
+   Rgba( const std::string &hexPresentation );
    
    Rgba() : r( 0.0 ), g( 0.0 ), b( 0.0 ), a( 0.0 ) {}
    
@@ -64,7 +70,20 @@ public:
       
    #endif // NO_COLOR_CHANNELS
    
+   inline std::string ToString() const {
+      std::stringstream s;
+      s << "Color: ( " << r << ", " << g << ", " << b << ", " << a << " )";
+      return s.str();
+   }
    
+   inline std::string ToHex() const {
+      std::stringstream s;
+      s << std::hex << std::setw( 2 ) << std::setfill('0') << CompToI(r);
+      s << std::hex << std::setw( 2 ) << std::setfill('0') << CompToI(g);
+      s << std::hex << std::setw( 2 ) << std::setfill('0') << CompToI(b);
+      s << std::hex << std::setw( 2 ) << std::setfill('0') << CompToI(a);
+      return s.str();
+   }
    
    // Returns the color in a packed 32-bit integer //
    int Packed() const;
@@ -78,6 +97,7 @@ public:
    friend class TextRenderer;
    
 private:
+   unsigned int parseHex( const std::string &hex, int pos );
    
    Rgba( bool invalidiated );
    Rgba( int specialPackedColor, bool notUsed );

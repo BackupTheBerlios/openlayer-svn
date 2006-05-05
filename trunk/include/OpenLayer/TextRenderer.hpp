@@ -106,6 +106,13 @@ public:
    // The boolean operator returns the same as the IsValid-method //
    inline operator bool() { return IsValid(); }
    
+   inline void UseTags( bool turnedOn ) {
+      useTags = turnedOn;
+   }
+   
+   static std::string GetColoredText( std::string str, Rgba color );
+   
+   
    // ADVANCED FUNCTIONS //
    // (You don't usually need to call these) //
    
@@ -135,7 +142,8 @@ public:
     virtual void UnloadToMemory() { UnloadFromGPU(); }
    
 private:
-   void StartRendering() const;
+   void StartRendering() const { SelectColor( col ); }
+   void SelectColor( const Rgba &color ) const;
    void FinishRendering() const;
    void RenderLineAligned( const std::string &line, int x, int y,
                            int maxLineWidth, TextAlignment alignment ) const;
@@ -149,6 +157,8 @@ private:
    int italics;
    bool useHinting;
    Rgba col;
+   
+   bool useTags;
    
    // AUTO LOADER ROUTINES //
    

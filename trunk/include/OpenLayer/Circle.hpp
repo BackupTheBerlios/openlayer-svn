@@ -91,7 +91,11 @@ public:
                  float startAngle, float angleSweep,
                  float innerXRadius, float innerYRadius ) const;
    
-   std::vector< Vec2D > ToPolygon() const;
+   inline std::vector< Vec2D > ToPolygon() const {
+      return ToPolygon( 0.0, 2.0 * AL_PI );
+   }
+   
+   std::vector< Vec2D > ToPolygon( float startAngle, float angleSweep ) const;
    
    // Moves the circle by the specified amount //
    virtual void MoveBy( const Vec2D &amount ) {
@@ -129,10 +133,10 @@ public:
    // Sets the visual accuracy of the circle //
    void SetAccuracy( float accuracy ) {
       float radius = std::max( xRad, yRad );
-
+      
       angleIncrement = std::min(( 2.0 * asin( 1.0/radius )/accuracy ), 0.35 * AL_PI );
    }
-
+   
    Vec2D pos;
    float angle;
 
