@@ -188,11 +188,11 @@ DrawArc( const Rgba &color, float startAngle, float angleSweep, float innerXRad,
          prevOY = newOY;
       }
       
-      glVertex2f( pos.x + cos( endAngle ) * innerXRad, pos.y + sin( endAngle ) * innerXRad );
+      glVertex2f( pos.x + cos( endAngle ) * innerXRad, pos.y + sin( endAngle ) * innerYRad );
       glVertex2f( prevIX, prevIY );
       
       glVertex2f( prevOX, prevOY );
-      glVertex2f( pos.x + cos( endAngle ) * xRad, pos.y + sin( endAngle ) * xRad ); 
+      glVertex2f( pos.x + cos( endAngle ) * xRad, pos.y + sin( endAngle ) * yRad ); 
    glEnd();
    
 #ifdef OL_NO_STATE_CHANGE
