@@ -110,7 +110,11 @@ public:
       useTags = turnedOn;
    }
    
-   static std::string GetColoredText( std::string str, Rgba color );
+   static std::string GetColoredText( const std::string &str, Rgba color );
+   
+   inline Vec2D GetTextSize( const std::string str ) {
+      return Vec2D( Width( str ), Height( str ));
+   }
    
    
    // ADVANCED FUNCTIONS //

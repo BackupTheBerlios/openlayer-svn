@@ -132,7 +132,7 @@ Load( GLYPH_FACE *face, int w, int h, Rgba col, int italics, bool useHinting ) {
    this->col = col;
    this->face = face;
    this->useHinting = useHinting;
-
+   
    rend = create_renderer( face, 0 );
 
    if( !rend )
@@ -251,7 +251,7 @@ Print( const string &text, int x, int y ) const {
          i++;
       }
    }
-
+   
    if( start != text.length() ) {
       string substr( text, start, text.length()-start );
 
@@ -406,7 +406,7 @@ FirstLineHeight( const std::string &text ) const {
 
 
 string TextRenderer::
-GetColoredText( string str, Rgba color ) {
+GetColoredText( const std::string &str, Rgba color ) {
    return COLOR_START_TAG_BEGIN + color.ToHex() + TAG_END + str + COLOR_END_TAG;
 }
 
@@ -432,12 +432,12 @@ Width( const string &text ) const {
          string::size_type tagEndPos = text.find( TAG_END, i + 1 );
          
          if( tagEndPos != string::npos ) {
-            string substr( text, i, tagEndPos - i );
+            string substr( text, i, tagEndPos - i + 1 );
             
             if( substr.substr( 0, COLOR_START_TAG_BEGIN.size() ) == COLOR_START_TAG_BEGIN
                   || substr == COLOR_END_TAG ) {
                string textThusFar( text, start, i-start );
-               currW += text_width_utf8( rend, substr.c_str() );
+               currW += text_width_utf8( rend, textThusFar.c_str() );
                start = tagEndPos+1;
                i = start-1;
             }
@@ -447,11 +447,12 @@ Width( const string &text ) const {
    
    if( start != text.length() ) {
       string substr( text, start, text.length()-start );
-      int currW = text_width_utf8( rend, substr.c_str() );
+      
+      currW += text_width_utf8( rend, substr.c_str() );
       if( currW > width )
          width = currW;
    }
-
+   
    return width;
 }
 

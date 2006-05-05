@@ -82,9 +82,19 @@ public:
       angleIncrement = std::min(( 2.0 * asin( 1.0/roundness )/accuracy ), 0.35 * AL_PI );
    }
 
-   void SetRoundness( float roundness ) {
+   inline void SetRoundness( float roundness ) {
       this->roundness = roundness;
       SetAccuracy( Settings::GetCircleAccuracy() );
+   }
+   
+   
+   inline void Expand( float amount ) {
+      Expand( Vec2D( amount, amount ));
+   }
+   
+   inline void Expand( Vec2D amount ) {
+      pos -= amount;
+      size += 2.0 * amount;
    }
    
    //virtual Poly ToPolygon() const;
