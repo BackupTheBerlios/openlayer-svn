@@ -108,7 +108,8 @@ DrawSlice( const Rgba &color, float startAngle, float angleSweep ) const {
    glGetBooleanv( GL_TEXTURE_2D, &texturesEnabled );
 #endif
    glDisable( GL_TEXTURE_2D );
-   
+   color.Select();
+      
    glPushMatrix();
    glTranslatef( pos.x, pos.y, 0.0 );
    RotateMatrix( angle );
@@ -147,7 +148,6 @@ DrawArc( const Rgba &color, float startAngle, float angleSweep, float innerXRad,
    glGetBooleanv( GL_TEXTURE_2D, &texturesEnabled );
 #endif
    glDisable( GL_TEXTURE_2D );
-   
    color.Select();
    
    float endAngle = startAngle - angleSweep; 
