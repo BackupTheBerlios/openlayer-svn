@@ -411,7 +411,7 @@ IsExtensionAlvailable( std::string extensionName ) {
       nameStart = spaceIndex + 1;
    }
 
-   OlLog( std::string( "OpenGL extension " ) + extensionName + " was not found.");
+   //OlLog( std::string( "OpenGL extension " ) + extensionName + " was not found.");
    return false;
 }
 
