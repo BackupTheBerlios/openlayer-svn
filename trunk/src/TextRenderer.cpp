@@ -445,7 +445,7 @@ Width( const string &text ) const {
       }
    }
    
-   if( start != text.length() ) {
+   if( start != text.length() || currW != 0 ) {
       string substr( text, start, text.length()-start );
       
       currW += text_width_utf8( rend, substr.c_str() );
