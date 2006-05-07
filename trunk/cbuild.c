@@ -1,7 +1,7 @@
 #define foobarbaz /*
 # A shell script within a source file. Ugly, but it works...
 
-TRGT=${0/.c/.exe}
+TRGT=`basename ${0/.c/.exe}`
 for i in $@ ; do
    if [ "$i" = "--make-compiled" ] ; then
       echo "Compiling '$TRGT', please wait..."
@@ -10,7 +10,7 @@ for i in $@ ; do
    fi
 done
 
-gcc -W -o /tmp/$TRGT "$0" && { "/tmp/$TRGT" $@ ; RET=$? ; rm -f "/tmp/$TRGT" ; exit $RET ; }
+gcc -o /tmp/$TRGT "$0" && { "/tmp/$TRGT" $@ ; RET=$? ; rm -f "/tmp/$TRGT" ; exit $RET ; }
 exit $?
 */
 
@@ -67,6 +67,7 @@ exit $?
 #define strcasecmp stricmp
 #define strncasecmp strnicmp
 #define snprintf _snprintf
+#define fileno _fileno
 
 #define PATH_MAX _MAX_PATH
 #define lstat slat 
@@ -181,12 +182,24 @@ void rewinddir(DIR *dir)
 
 static int setenv(const char *env, const char *val, int overwrite)
 {
+#if 0
+	/* This doesn't set anything? */
+	if(!overwrite)
+	{
+		char buf[2];
+		if(GetEnvironmentVariable(env, buf, sizeof(buf)) != 0 ||
+		   GetLastError() != ERROR_ENVVAR_NOT_FOUND)
+			return 0;
+	}
+	return (!SetEnvironmentVariable(env, (val&&*val)?val:NULL)) * -1;
+#else
 	static char buf[64*1024];
 	if(!overwrite && getenv(env))
 		return 0;
 
 	snprintf(buf, sizeof(buf), "%s=%s", env, (val?val:""));
 	return _putenv(buf);
+#endif
 }
 
 static int unsetenv(const char *env)
@@ -238,8 +251,6 @@ static size_t argc;
 DECL_STATIC_LIST(char*, argv);
 
 
-static FILE *infile;
-
 static FILE *f;
 static char *fname;
 static struct stat statbuf;
@@ -258,11 +269,13 @@ static char *nextline;
 static jmp_buf jmpbuf;
 
 
+static int stdi_bak = -1;
 static int stdo_bak = -1;
 static int stde_bak = -1;
 static FILE *stde_stream = NULL;
 // Make a define so we'll always have access to the real stderr
 #define USEABLE_ERR ((stde_stream)?stde_stream:stderr)
+
 
 typedef struct {
 	char *name;
@@ -276,6 +289,15 @@ DECL_STATIC_LIST(DEF, defines);
 static inline void resize_list(void **ptr, size_t count, size_t type_size,
                                size_t *len, size_t *size)
 {
+	if(count == 0)
+	{
+		*size = 0;
+		*len = 0;
+		free(*ptr);
+		*ptr = NULL;
+		return;
+	}
+
 	if(count < (*len)/2 || count > *len)
 	{
 		void *tmp;
@@ -372,20 +394,25 @@ static char *expand_string(char *str, const char *stp, size_t len,
 		ptr = last_pos;
 		while(1)
 		{
-			if(!(*ptr))
+			if(fillmore)
 			{
-				if(fillmore)
+				if(!(*ptr))
 				{
-					if(fgets(ptr, len+str-ptr, f) == NULL)
+					if(nextline)
 					{
-						free(buf);
-						fprintf(USEABLE_ERR, "\n\n!!! Premature EOF !!!\n%s\n",
-						        (in_quotes?"!!! Unterminated string !!!\n":
-						                   ""));
-						strcpy(linebuf, "exit -1\n");
-						longjmp(jmpbuf, 1);
+						snprintf(ptr, len+str-ptr, "\n%s", nextline);
+						free(nextline);
+						nextline = NULL;
 					}
-					++curr_line;
+					else
+					{
+						if(fgets(ptr, len+str-ptr, f) == NULL)
+						{
+							free(buf);
+							return ptr;
+						}
+						++curr_line;
+					}
 				}
 			}
 
@@ -719,12 +746,19 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt) && next_word == opt)
+					if(next_word == opt)
 					{
-						opt = expand_string(opt, "!", len+str-opt, fillmore);
-						continue;
+						if(isspace(*opt))
+						{
+							opt = expand_string(opt, "!", len+str-opt,
+							                    fillmore);
+							continue;
+						}
+						*(next_word++) = 0;
+						next = next_word;
+						break;
 					}
-					if(isspace(*next_word) && *next_word)
+					if(isspace(*next_word))
 					{
 						*(next_word++) = 0;
 						next_word = expand_string(next_word, "!",
@@ -819,10 +853,17 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt) && next_word == opt)
+					if(next_word == opt)
 					{
-						opt = expand_string(opt, "!", len+str-opt, fillmore);
-						continue;
+						if(isspace(*opt))
+						{
+							opt = expand_string(opt, "!", len+str-opt,
+							                    fillmore);
+							continue;
+						}
+						*(next_word++) = 0;
+						opt  = next_word;
+						break;
 					}
 					if(isspace(*next_word))
 					{
@@ -832,7 +873,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					}
 					else
 					{
-						if(*next_word) *(next_word++) = 0;
+						*(next_word++) = 0;
 						loop = 0;
 					}
 
@@ -935,12 +976,19 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt) && next_word == opt)
+					if(next_word == opt)
 					{
-						opt = expand_string(opt, "!", len+str-opt, fillmore);
-						continue;
+						if(isspace(*opt))
+						{
+							opt = expand_string(opt, "!", len+str-opt,
+							                    fillmore);
+							continue;
+						}
+						*(next_word++) = 0;
+						opt  = next_word;
+						break;
 					}
-					if(isspace(*next_word) && *next_word)
+					if(isspace(*next_word))
 					{
 						*(next_word++) = 0;
 						next_word = expand_string(next_word, "!",
@@ -948,7 +996,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					}
 					else
 					{
-						if(*next_word) *(next_word++) = 0;
+						*(next_word++) = 0;
 						loop = 0;
 					}
 
@@ -974,12 +1022,19 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt) && next_word == opt)
+					if(next_word == opt)
 					{
-						opt = expand_string(opt, "!", len+str-opt, fillmore);
-						continue;
+						if(isspace(*opt))
+						{
+							opt = expand_string(opt, "!", len+str-opt,
+							                    fillmore);
+							continue;
+						}
+						*(next_word++) = 0;
+						opt  = next_word;
+						break;
 					}
-					if(isspace(*next_word) && *next_word)
+					if(isspace(*next_word))
 					{
 						*(next_word++) = 0;
 						next_word = expand_string(next_word, "!",
@@ -987,7 +1042,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					}
 					else
 					{
-						if(*next_word) *(next_word++) = 0;
+						*(next_word++) = 0;
 						loop = 0;
 					}
 
@@ -1029,12 +1084,19 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt) && next_word == opt)
+					if(next_word == opt)
 					{
-						opt = expand_string(opt, "!", len+str-opt, fillmore);
-						continue;
+						if(isspace(*opt))
+						{
+							opt = expand_string(opt, "!", len+str-opt,
+							                    fillmore);
+							continue;
+						}
+						*(next_word++) = 0;
+						opt  = next_word;
+						break;
 					}
-					if(isspace(*next_word) && *next_word)
+					if(isspace(*next_word))
 					{
 						*(next_word++) = 0;
 						next_word = expand_string(next_word, "!",
@@ -1042,7 +1104,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					}
 					else
 					{
-						if(*next_word) *(next_word++) = 0;
+						*(next_word++) = 0;
 						loop = 0;
 					}
 
@@ -1079,12 +1141,19 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt) && next_word == opt)
+					if(next_word == opt)
 					{
-						opt = expand_string(opt, "!", len+str-opt, fillmore);
-						continue;
+						if(isspace(*opt))
+						{
+							opt = expand_string(opt, "!", len+str-opt,
+							                    fillmore);
+							continue;
+						}
+						*(next_word++) = 0;
+						opt  = next_word;
+						break;
 					}
-					if(isspace(*next_word) && *next_word)
+					if(isspace(*next_word))
 					{
 						*(next_word++) = 0;
 						next_word = expand_string(next_word, "!",
@@ -1092,7 +1161,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					}
 					else
 					{
-						if(*next_word) *(next_word++) = 0;
+						*(next_word++) = 0;
 						loop = 0;
 					}
 
@@ -1162,6 +1231,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 								inc += snprintf(buf+inc, BUF_SIZE-inc, "%s ",
 								                words[p++]);
 						}
+						*(next_word++) = 0;
 						opt = next_word;
 						break;
 					}
@@ -1193,12 +1263,19 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt) && next_word == opt)
+					if(next_word == opt)
 					{
-						opt = expand_string(opt, "!", len+str-opt, fillmore);
-						continue;
+						if(isspace(*opt))
+						{
+							opt = expand_string(opt, "!", len+str-opt,
+							                    fillmore);
+							continue;
+						}
+						*(next_word++) = 0;
+						opt  = next_word;
+						break;
 					}
-					if(isspace(*next_word) && *next_word)
+					if(isspace(*next_word))
 					{
 						*(next_word++) = 0;
 						next_word = expand_string(next_word, "!",
@@ -1206,7 +1283,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					}
 					else
 					{
-						if(*next_word) *(next_word++) = 0;
+						*(next_word++) = 0;
 						loop = 0;
 					}
 
@@ -1235,12 +1312,19 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				{
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt) && next_word == opt)
+					if(next_word == opt)
 					{
-						opt = expand_string(opt, "!", len+str-opt, fillmore);
-						continue;
+						if(isspace(*opt))
+						{
+							opt = expand_string(opt, "!", len+str-opt,
+							                    fillmore);
+							continue;
+						}
+						*(next_word++) = 0;
+						opt  = next_word;
+						break;
 					}
-					if(isspace(*next_word) && *next_word)
+					if(isspace(*next_word))
 					{
 						*(next_word++) = 0;
 						next_word = expand_string(next_word, "!",
@@ -1248,7 +1332,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					}
 					else
 					{
-						if(*next_word) *(next_word++) = 0;
+						*(next_word++) = 0;
 						loop = 0;
 					}
 
@@ -1322,12 +1406,19 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					DIR *dp;
 					char *next_word = expand_string(opt, " )", len+str-opt,
 					                                fillmore);
-					if(isspace(*opt) && next_word == opt)
+					if(next_word == opt)
 					{
-						opt = expand_string(opt, "!", len+str-opt, fillmore);
-						continue;
+						if(isspace(*opt))
+						{
+							opt = expand_string(opt, "!", len+str-opt,
+							                    fillmore);
+							continue;
+						}
+						*(next_word++) = 0;
+						opt  = next_word;
+						break;
 					}
-					if(isspace(*next_word) && *next_word)
+					if(isspace(*next_word))
 					{
 						*(next_word++) = 0;
 						next_word = expand_string(next_word, "!",
@@ -1335,7 +1426,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 					}
 					else
 					{
-						if(*next_word) *(next_word++) = 0;
+						*(next_word++) = 0;
 						loop = 0;
 					}
 
@@ -1376,6 +1467,94 @@ static char *expand_string(char *str, const char *stp, size_t len,
 								                opt);
 						}
 					}
+					opt = next_word;
+				}
+				if(inc > i) buf[inc-1] = 0;
+				next = opt;
+			}
+
+			else if(strcasecmp("isdir", ptr) == 0)
+			{
+				struct stat st;
+				int inc = i;
+				int loop = 1;
+
+				while(loop)
+				{
+					char *next_word = expand_string(opt, " )", len+str-opt,
+					                                fillmore);
+					if(next_word == opt)
+					{
+						if(isspace(*opt))
+						{
+							opt = expand_string(opt, "!", len+str-opt,
+							                    fillmore);
+							continue;
+						}
+						*(next_word++) = 0;
+						opt  = next_word;
+						break;
+					}
+					if(isspace(*next_word))
+					{
+						*(next_word++) = 0;
+						next_word = expand_string(next_word, "!",
+						                          len+str-next_word, fillmore);
+					}
+					else
+					{
+						*(next_word++) = 0;
+						loop = 0;
+					}
+
+					if(stat(opt, &st) == 0 && S_ISDIR(st.st_mode))
+						inc += snprintf(buf+inc, BUF_SIZE-inc, "%s ",
+						                opt);
+
+					opt = next_word;
+				}
+				if(inc > i) buf[inc-1] = 0;
+				next = opt;
+			}
+
+			else if(strcasecmp("isfile", ptr) == 0)
+			{
+				struct stat st;
+				int inc = i;
+				int loop = 1;
+
+				while(loop)
+				{
+					char *next_word = expand_string(opt, " )", len+str-opt,
+					                                fillmore);
+					if(next_word == opt)
+					{
+						if(isspace(*opt))
+						{
+							opt = expand_string(opt, "!", len+str-opt,
+							                    fillmore);
+							continue;
+						}
+						*(next_word++) = 0;
+						opt  = next_word;
+						break;
+					}
+					if(isspace(*next_word))
+					{
+						*(next_word++) = 0;
+						next_word = expand_string(next_word, "!",
+						                          len+str-next_word, fillmore);
+					}
+					else
+					{
+						*(next_word++) = 0;
+						loop = 0;
+					}
+
+					if(stat(opt, &st) == 0 && !S_ISDIR(st.st_mode))
+						inc += snprintf(buf+inc, BUF_SIZE-inc, "%s ",
+						                opt);
+
 					opt = next_word;
 				}
 				if(inc > i) buf[inc-1] = 0;
@@ -1769,13 +1948,15 @@ static int build_command(char *buffer, size_t bufsize, char *barename,
 	if(i == associations_size)
 		return 1;
 
-	*ext = 0;
 	ptr = associations[i].cmd;
+	i = 0;
 	while(*ptr && i+1 < bufsize)
 	{
 		if(strncasecmp(ptr, "<*>", 3) == 0)
 		{
+			*ext = 0;
 			i += snprintf(buffer+i, bufsize-i, "'%s'", barename);
+			*ext = '.';
 			ptr += 3;
 		}
 		else if(strncasecmp(ptr, "<!>", 3) == 0)
@@ -1791,12 +1972,11 @@ static int build_command(char *buffer, size_t bufsize, char *barename,
 		else
 		{
 			if(ptr[0] == '\\' && ptr[1] != 0 && i+2 < bufsize)
-				buffer[i++] = *(ptr++);
+				ptr++;
 			buffer[i++] = *(ptr++);
 			buffer[i] = 0;
 		}
 	}
-	*ext = '.';
 	return 0;
 }
 
@@ -1901,10 +2081,6 @@ void cleanup(void)
 	if(f)
 		fclose(f);
 	f = NULL;
-
-	if(infile && infile != stdin)
-		fclose(infile);
-	infile = stdin;
 }
 
 
@@ -1987,7 +2163,6 @@ int main(int _argc, char **_argv)
 	}
 
 	setvbuf(stdin, NULL, _IOLBF, 0);
-	infile = stdin;
 	argc = _argc;
 	argv = _argv;
 
@@ -2019,6 +2194,17 @@ main_loop_start:
 		{
 			/* If end of file, implicitly uninvoke and continue */
 			snprintf(linebuf, sizeof(linebuf), "uninvoke 0\n");
+
+			if(do_level > 0)
+			{
+				fprintf(USEABLE_ERR, "\n\n!!! %s error !!!\n"
+				                     "Unbalanced do/done pair!\n\n", fname);
+				wait_for_done = 0;
+				did_else = 0;
+				did_cmds = 0;
+				do_level = 0;
+			}
+
 			goto reparse;
 		}
 		++curr_line;
@@ -2072,6 +2258,8 @@ reparse:
 				snprintf(linebuf, sizeof(linebuf), "exit -1\n");
 				goto reparse;
 			}
+			if(!*ptr)
+				continue;
 			has_do = 1;
 			memmove(linebuf, ptr, strlen(ptr)+1);
 			goto reparse;
@@ -2097,6 +2285,8 @@ reparse:
 				has_do = 1;
 			}
 
+			if(!*ptr)
+				continue;
 			memmove(linebuf, ptr, strlen(ptr)+1);
 			goto reparse;
 		}
@@ -2109,6 +2299,7 @@ reparse:
 				did_else &= ~(1<<do_level);
 				did_cmds &= ~(1<<do_level);
 			}
+			extract_line(ptr, sizeof(linebuf)+linebuf-ptr);
 			continue;
 		}
 
@@ -2510,15 +2701,16 @@ dir_write_check:
 			if(val[0] != '=')
 				++val;
 			ptr = linebuf;
+			buffer[0] = 0;
 
 			if(*(val-1) == '+')
 			{
 				int i;
 
 				*(val-1) = 0;
-				++val;
-				while(*val && isspace(*val))
-					++val;
+				if(isspace(*(++val)))
+					val = extract_word(val, sizeof(linebuf)+linebuf-val);
+
 				i = snprintf(buffer, sizeof(buffer), "%s", getvar(ptr));
 				if(*val)
 				{
@@ -2528,7 +2720,7 @@ dir_write_check:
 						i += snprintf(buffer+i, sizeof(buffer)-i, "%s ", val);
 						val = next_word;
 					} while(*val);
-					buffer[i-1] = 0;
+					if(i > 0) buffer[i-1] = 0;
 				}
 				setenv(ptr, buffer, 1);
 				continue;
@@ -2540,11 +2732,10 @@ dir_write_check:
 				int len;
 
 				*(val-1) = 0;
-				++val;
-				while(*val && isspace(*val))
-					++val;
+				if(isspace(*(++val)))
+					val = extract_word(val, sizeof(linebuf)+linebuf-val);
 
-				extract_line(val, sizeof(linebuf)+val-linebuf);
+				extract_line(val, sizeof(linebuf)+linebuf-val);
 				len = strlen(val);
 
 				if(len <= 0)
@@ -2560,18 +2751,21 @@ dir_write_check:
 				continue;
 			}
 
-			if(*(val-1) == '?')
 			{
-				*(val-1) = 0;
-				if(*getvar(ptr))
-					ovr = 0;
-			}
-			else
-				*val = 0;
+				char *next;
 
-			++val;
-			while(*val && isspace(*val))
-				++val;
+				if(*(val-1) == '?')
+				{
+					*(val-1) = 0;
+					if(*getvar(ptr))
+						ovr = 0;
+				}
+
+				*(val++) = 0;
+				if(isspace(*val))
+					val = extract_word(val, sizeof(linebuf)+linebuf-val);
+			}
+
 			if(*val)
 			{
 				int i = 0;
@@ -3144,7 +3338,6 @@ next_src_file:
 		/* Executes a command on the loaded file list */
 		if(strcasecmp("execlist", linebuf) == 0)
 		{
-			char *curr;
 			size_t p = 0;
 
 			if(loaded_files_size == 0)
@@ -3169,8 +3362,9 @@ next_src_file:
 			tmp = 0;
 			extract_line(ptr, sizeof(linebuf)+linebuf-ptr);
 
-			while(*(curr=loaded_files[p++]))
+			while(p < loaded_files_size)
 			{
+				char *curr = loaded_files[p++];
 				char *cmd_ptr = ptr;
 				int i;
 
@@ -3187,7 +3381,7 @@ next_src_file:
 					{
 						if(cmd_ptr[0] == '\\' && cmd_ptr[1] != 0 &&
 						   (size_t)i+2 < sizeof(buffer))
-							buffer[i++] = *(cmd_ptr++);
+							cmd_ptr++;
 						buffer[i++] = *(cmd_ptr++);
 						buffer[i] = 0;
 					}
@@ -3958,21 +4152,18 @@ next_src_file:
 		 * stdin. */
 		if(strcasecmp("setinput", linebuf) == 0)
 		{
-			extract_line(ptr, sizeof(linebuf)+linebuf-ptr);
-
-			if(infile != stdin)
-				fclose(infile);
+			char *end = extract_word(ptr, sizeof(linebuf)+linebuf-ptr);
+			extract_line(end, sizeof(linebuf)+linebuf-end);
 
 			ret = 0;
 			if(*ptr)
 			{
-				infile = fopen(ptr, "r");
-				if(!infile)
+				int fp = open(ptr, O_RDONLY, 0);
+				if(fp == -1)
 				{
 					ret = 1;
 					if(ignore_err < 2)
-						printf("!!! Could not open file '%s' to read !!!\n",
-						       ptr);
+						printf("!!! Could not open %s !!!\n", ptr);
 					if(!ignore_err)
 					{
 						snprintf(linebuf, sizeof(linebuf), "exit %d\n", ret);
@@ -3982,11 +4173,29 @@ next_src_file:
 						printf("--- Error %d ignored. ---\n\n",
 						       ++ignored_errors);
 					fflush(stdout);
+					continue;
 				}
-			}
-			else
-				infile = stdin;
+				fflush(stdin);
 
+				if(stdi_bak == -1)
+					stdi_bak = dup(STDIN_FILENO);
+
+				close(STDIN_FILENO);
+				dup2(fp, STDIN_FILENO);
+
+				close(fp);
+				continue;
+			}
+
+			fflush(stdin);
+			if(stdi_bak == -1)
+				continue;
+
+			close(STDIN_FILENO);
+			dup2(stdi_bak, STDIN_FILENO);
+
+			close(stdi_bak);
+			stdi_bak = -1;
 			continue;
 		}
 
@@ -4015,7 +4224,7 @@ next_src_file:
 			ret = 0;
 
 			buffer[0] = 0;
-			if(!infile || fgets(buffer, sizeof(buffer), infile) == NULL)
+			if(fgets(buffer, sizeof(buffer), stdin) == NULL)
 				ret = 1;
 
 			if(buffer[0] && buffer[strlen(buffer)-1] == '\n')
@@ -4236,7 +4445,7 @@ next_src_file:
 			/* If i == 0, then argv is the _argv given to main. We don't want
 			 * to be realloc'ing that. */
 			if(i > 0)
-				RESIZE_LIST(argv, argc-1);
+				RESIZE_LIST(argv, argc+1);
 			continue;
 		}
 
