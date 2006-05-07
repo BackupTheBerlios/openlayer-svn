@@ -180,7 +180,7 @@ Enter exit or cancel if you don't want to install at this time."
 		LIB_HEADERS = $(ls include/OpenLayer/)
 		
 		-mkdir ${'LOCATION'}/include/OpenLayer
-		-call chmod 755 ${'LOCATION'}/include/OpenLayer
+		ifnplat win32 -call chmod 755 ${'LOCATION'}/include/OpenLayer
 :copystart
 		HEADER = $(word 1, ${LIB_HEADERS})
 		popfront LIB_HEADERS
