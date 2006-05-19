@@ -40,7 +40,6 @@ namespace ol
 		faceLoaded = false;
 		italicized = false;
 		angled = false;
-		hinting = false;
 		kerning = false;
 		monoSpacing = false;
 		
@@ -62,7 +61,6 @@ namespace ol
 				
 		italicized = false;
 		angled = false;
-		hinting = false;
 		kerning = false;
 		monoSpacing = false;
 		
@@ -236,7 +234,7 @@ namespace ol
 		if (FT_Set_Char_Size(fontFace,height,width,72,72))
 		{
 			/* Send error to logs
-			"Error: gk_rend_set_size_sublixel(): Can't set font size to %.3fx%.3f pixels\n",((double)height)/64,((double)width)/64);*/
+			"Error: setPixelSize(): Can't set font size to %.3fx%.3f pixels\n",((double)height)/64,((double)width)/64);*/
 			return false;
 		}
 		hsize = height;
@@ -247,6 +245,13 @@ namespace ol
 		textHeightPixels = ((ascender()+63)>>6) - ((descender()+63)>>6);
 
 		return true;
+	}
+	
+	// Set hinting mode
+	void Glyph::setHintingMode(const unsigned mode)
+	{
+		hintingMode =  mode;
+		loadFlags = FT_LOAD_NO_BITMAP | hintingMode | hintingTarget;
 	}
 	
 	
@@ -301,17 +306,19 @@ namespace ol
 	
 	void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned height, const unsigned width)
 	{
-	
+		rend->glyphFace->setPixelSize(height<<6, width<<6);
 	}
 	
 	void rend_set_hinting_default( GLYPH_REND* const rend )
 	{
-	
+		rend->glyphFace->setHintingMode(FT_LOAD_DEFAULT);
 	}
+	
 	void gk_rend_set_hinting_off( GLYPH_REND* const rend )
 	{
-	
+		rend->glyphFace->setHintingMode(FT_LOAD_NO_HINTING);
 	}
+	
 	void rend_set_render_mode_normal( GLYPH_REND* const rend )
 	{
 	

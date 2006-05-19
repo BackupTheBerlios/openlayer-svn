@@ -65,7 +65,6 @@ namespace ol
 			bool 		angled;
 			double 		angle;
 			
-			bool 		hinting;
 			bool 		kerning;
 			bool 		monoSpacing;
 			
@@ -74,6 +73,10 @@ namespace ol
 			unsigned	lineSpacingPixels;
 			unsigned	textHeight;
 			unsigned	textHeightPixels;
+			unsigned	hintingMode;
+			unsigned	hintingTarget;
+			unsigned	loadFlags;
+			
 		protected:
 			
 			// Translate the face on its matrix
@@ -116,8 +119,9 @@ namespace ol
 			
 			bool setPixelSize(const unsigned height, const unsigned width);
 			
-			// Variables
+			void setHintingMode(const unsigned mode);
 			
+			// Variables
 	};
 	
 	/*

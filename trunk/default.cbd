@@ -146,7 +146,7 @@ echo "Do you wish to use FreeFont directly and drop GlypKeeper?(development only
 read NEWTTF
 do if $(tolower ${'NEWTTF'})='y'
 	CPPFLAGS += " -DUSE_NEW_TTF"
-	LDFLAGS -= "-lglyph-agl "
+	LDFLAGS -= "-lglyph-agl "	
 else if $(tolower ${'NEWTTF'})='yes'
 	CPPFLAGS += " -DUSE_NEW_TTF"
 	LDFLAGS -= "-lglyph-agl "
@@ -285,3 +285,4 @@ echo "Cleaning up."
 -rm obj
 -rm lib
 -rm dep
+exit 0
