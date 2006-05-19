@@ -6,19 +6,24 @@ ifopt verbose verbose 1
 # Lets force configuration
 ifopt configure configure = "true"
 
+# Enable developement options
+ifopt developer oldevelop = "true"
+
 # Display Help
 do ifopt help
 	echo "This builds the OpenLayer 2.0 library. 
-Pass verbose to get verbose output.
-To compile just run ./cbuild.c (linux/macosx/msys) or buildme.bat (windows).
-If you want to force configuration prompts pass configure.
-To remove object files and other resources pass clean. 
-Please check out the documentation for more information.
-examples:
-./cbuild.c configure (Forces configuration prompts)
-./cbuild.c install (Begins install process)
-./cbuild.c uninstall
-./cbuild.c clean (cleans up resources)"
+To compile depending on your platform run: 
+(linux/macosx/msys) cbuild.c [OPT]...
+or
+(Windows cmd.exe)   buildme.bat [OPT]...
+Valid options are:
+help      - Prints this information
+verbose   - Enable verbose output
+configure - Force configuration prompts
+clean     - Clean up resources
+install   - installs the library
+uninstall - uninstalls the library
+developer - Enables the developer configuration prompts"
 	exit 0
 done
 
@@ -86,11 +91,17 @@ else ifnot $(tolower ${'target'})='linux' ifnot $(tolower ${'target'})='msys' if
 done
 do if $(tolower ${'target'})='linux'
 	echo "Seting up for linux environment"
-	CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -fexpensive-optimizations
-	LDFLAGS=-lglyph-agl -lfreetype -lldpng -lpng -lz -lagl `allegro-config --libs` -lGL -lGLU
+	CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer `freetype-config --cflags` -fexpensive-optimizations
+	LDFLAGS=-lglyph-agl `freetype-config --libs` -lldpng -lpng -lz -lagl `allegro-config --libs` -lGL -lGLU
 else if $(tolower ${'target'})='msys'
 	echo "Seting up for msys environment"
-	CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -fexpensive-optimizations
+	do ifexist ${'MINGDIR'}/include/freetype2
+		CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -I%MINGDIR%/include/freetype2 -fexpensive-optimizations
+	else ifexist ${'MINGDIR'}/local/include/freetype2
+		CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -I%MINGDIR%/local/include/freetype2 -fexpensive-optimizations
+	else 
+		CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -fexpensive-optimizations
+	done
 	LDFLAGS=-lglyph-agl -lfreetype -lldpng -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32
 else if $(tolower ${'target'})='msvc'
 	echo "Seting up for msvc environment"
@@ -98,11 +109,12 @@ else if $(tolower ${'target'})='msvc'
 	exit 1
 else if $(tolower ${'target'})='macosx'
 	echo "Seting up for macosx environment"
-	CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -fexpensive-optimizations
-	LDFLAGS=-lglyph-agl -lfreetype -lldpng -lpng -lz -lagl `allegro-config --libs` -framework OpenGL -framework Carbon
+	CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer `freetype-config --cflags` -fexpensive-optimizations
+	LDFLAGS=-lglyph-agl `freetype-config --libs` -lldpng -lpng -lz -lagl `allegro-config --libs` -framework OpenGL -framework Carbon
 done
 
 # Prompt user for preprocessor support
+
 :NOPNG
 echo "Do you wish to drop PNG support? [y/N]"
 read PNG
@@ -112,6 +124,7 @@ else if $(tolower ${'PNG'})='yes'
 	CPPFLAGS += " -DOL_NO_PNG"
 else ifnot $(tolower ${'PNG'})='n' ifnot $(tolower ${'PNG'})='no' ifnot ${'PNG'}='' goto NOPNG
 done
+
 :NOTTF
 echo "Do you wish to drop TTF support? [y/N]"
 read TTF
@@ -121,6 +134,25 @@ else if $(tolower ${'TTF'})='yes'
 	CPPFLAGS += " -DOL_NO_TTF"
 else ifnot $(tolower ${'TTF'})='n' ifnot $(tolower ${'TTF'})='no' ifnot ${'TTF'}='' goto NOTTF
 done
+
+do if $(tolower ${'TTF'})='y'
+	goto NOOLDAPI
+else ifnot $(tolower ${'oldevelop'})='true'
+	goto NOOLDAPI
+done
+
+:NONEWTTF
+echo "Do you wish to use FreeFont directly and drop GlypKeeper?(development only) [y/N]"
+read NEWTTF
+do if $(tolower ${'NEWTTF'})='y'
+	CPPFLAGS += " -DUSE_NEW_TTF"
+	LDFLAGS -= "-lglyph-agl "
+else if $(tolower ${'NEWTTF'})='yes'
+	CPPFLAGS += " -DUSE_NEW_TTF"
+	LDFLAGS -= "-lglyph-agl "
+else ifnot $(tolower ${'NEWTTF'})='n' ifnot $(tolower ${'NEWTTF'})='no' ifnot ${'NEWTTF'}='' goto NONEWTTF
+done	
+	
 :NOOLDAPI
 echo "Do you wish to drop old API Support? [y/N]"
 read OLDAPI
@@ -160,8 +192,8 @@ linklib libopenlayer
 echo "
 Compilation completed.
 
-You can now install the lib by doing:
-./cbuild.c install"
+You can now install the lib by running:
+cbuild.c install or buildme.bat install"
 exit 0
 
 # Install library

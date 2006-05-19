@@ -9,9 +9,16 @@
 #include "GarbageCollector.hpp"
 #include "General.hpp"
 
+#ifdef USE_NEW_TTF
+
+#include "Glyph.hpp"
+
+#else
+
 #define GLYPH_TARGET GLYPH_TARGET_ALLEGGL
 #include <glyph.h>
 
+#endif /* USE_NEW_TTF */
 
 namespace ol {
 
