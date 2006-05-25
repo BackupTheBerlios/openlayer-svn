@@ -49,11 +49,11 @@ namespace ol
 		angle = 0;
 	}
 	
-	Glyph::Glyph(char const *filename,int faceIndex) : library()
+	Glyph::Glyph(const string filename,int faceIndex) : library()
 	{
-		if(FT_New_Face(library.libInstance,filename,faceIndex,&fontFace)==0)
+		if(FT_New_Face(library.libInstance,filename.c_str(),faceIndex,&fontFace)==0)
 		{
-			strcpy(currentFilename, filename);
+			currentFilename = filename;
 			currentIndex = faceIndex;
 			faceLoaded = true;
 		}
@@ -73,14 +73,14 @@ namespace ol
 	}
 	
 	// Loads a new face
-	bool Glyph::load(char const *filename, int faceIndex)
+	bool Glyph::load(const string filename, int faceIndex)
 	{
 		if(faceLoaded)
 		{
 			FT_Face tmpFace;
-			if(FT_New_Face(library.libInstance,filename,faceIndex,&tmpFace)==0)
+			if(FT_New_Face(library.libInstance,filename.c_str(),faceIndex,&tmpFace)==0)
 			{
-				strcpy(currentFilename, filename);
+				currentFilename = filename;
 				currentIndex = faceIndex;
 				FT_Done_Face(fontFace);
 				//fontFace = tmpFace;
@@ -95,9 +95,9 @@ namespace ol
 		}
 		else 
 		{
-			if(FT_New_Face(library.libInstance,filename,faceIndex,&fontFace)==0)
+			if(FT_New_Face(library.libInstance,filename.c_str(),faceIndex,&fontFace)==0)
 			{
-				strcpy(currentFilename, filename);
+				currentFilename = filename;
 				currentIndex = faceIndex;
 				faceLoaded = true;
 				return true;
@@ -129,7 +129,7 @@ namespace ol
 		if(faceLoaded)
 		{
 			FT_Face tmpFace;
-			if(FT_New_Face(library.libInstance,currentFilename,index,&tmpFace)==0)
+			if(FT_New_Face(library.libInstance,currentFilename.c_str(),index,&tmpFace)==0)
 			{
 				currentIndex =  index;
 				FT_Done_Face(fontFace);
@@ -183,26 +183,6 @@ namespace ol
 		}
 	}
 	
-	int Glyph::ascender()
-	{
-		return (size) ? size->metrics.ascender : 0;
-	}
-
-	int Glyph::ascenderPixels()
-	{
-		return (size) ? (size->metrics.ascender+63)>>6 : 0;
-	}
-
-	int Glyph::descender()
-	{
-		return (size) ? size->metrics.descender : 0;
-	}
-
-	int Glyph::descenderPixels()
-	{
-		return (size) ? (size->metrics.descender+63)>>6 : 0;
-	}
-	
 	// Italicized check
 	bool Glyph::isItalicized()
 	{
@@ -254,6 +234,30 @@ namespace ol
 		loadFlags = FT_LOAD_NO_BITMAP | hintingMode | hintingTarget;
 	}
 	
+	int Glyph::ascender()
+	{
+		return (size) ? size->metrics.ascender : 0;
+	}
+
+	int Glyph::ascenderPixels()
+	{
+		return (size) ? (size->metrics.ascender+63)>>6 : 0;
+	}
+
+	int Glyph::descender()
+	{
+		return (size) ? size->metrics.descender : 0;
+	}
+
+	int Glyph::descenderPixels()
+	{
+		return (size) ? (size->metrics.descender+63)>>6 : 0;
+	}
+	
+	int Glyph::textWidthUTF8(const string text)
+	{
+		return 0;
+	}
 	
 	/*
 	*	These items are so that we can maintain compatibility with Glyph Keeper
@@ -326,17 +330,17 @@ namespace ol
 	
 	void gk_rend_set_text_alpha_color( GLYPH_REND* const rend, const unsigned alpha_color)
 	{
-		
+		rend->glyphFace->textAlphaColor = alpha_color;
 	}
 	
 	int gk_rend_ascender_pixels( GLYPH_REND* const rend )
 	{
-		return 0;
+		return rend->glyphFace->ascenderPixels();
 	}
 	
 	int rend_ascender_pixels( GLYPH_REND* const rend )
 	{
-		return 0;
+		return rend->glyphFace->ascenderPixels();
 	}
 	
 	int text_width_utf8(GLYPH_REND* const rend,const char* const text)
