@@ -15,6 +15,13 @@ ToString() const {
 }
 
 
+void ol::Ellipse::
+RotateBy( float angle ) {
+   printf( "Angle: %f\n", angle );
+   this->angle += angle;
+}
+
+
 std::vector< Vec2D > ol::Ellipse::
 ToPolygon( float startAngle, float angleSweep ) const {
    std::vector< Vec2D > vertices;
@@ -67,6 +74,7 @@ ExecDrawOutline() const {
    glPushMatrix();
    glTranslatef( pos.x, pos.y, 0.0 );
    RotateMatrix( angle );
+   printf( "Angle : %f\n", angle );
    
    if( lineWidth > 1 + OL_NEAR_ZERO ) {
       DiskRender( Rgba::WHITE, Rgba::WHITE, xRad - lineWidth, yRad - lineWidth, false );
@@ -77,7 +85,7 @@ ExecDrawOutline() const {
    
    glBegin( GL_LINE_LOOP );
       for( float a = 0.0; a < 2 * AL_PI; a += angleIncrement ) {
-         glVertex2f( pos.x + cos(a) * xRad, pos.y + sin(a) * yRad );
+         glVertex2f( cos(a) * xRad, sin(a) * yRad );
       }
    glEnd();
    

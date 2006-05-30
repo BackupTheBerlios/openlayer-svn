@@ -129,7 +129,9 @@ public:
          case Y_AXIS: return yRad; break;
       }
    }
-
+   
+   virtual void RotateBy( float angle );
+   
    // Sets the visual accuracy of the circle //
    void SetAccuracy( float accuracy ) {
       float radius = std::max( xRad, yRad );
