@@ -64,6 +64,10 @@ ExecDraw() const {
 
 void ol::Ellipse::
 ExecDrawOutline() const {
+   glPushMatrix();
+   glTranslatef( pos.x, pos.y, 0.0 );
+   RotateMatrix( angle );
+   
    if( lineWidth > 1 + OL_NEAR_ZERO ) {
       DiskRender( Rgba::WHITE, Rgba::WHITE, xRad - lineWidth, yRad - lineWidth, false );
       return;
@@ -76,6 +80,8 @@ ExecDrawOutline() const {
          glVertex2f( pos.x + cos(a) * xRad, pos.y + sin(a) * yRad );
       }
    glEnd();
+   
+   glPopMatrix();
 }
 
 
