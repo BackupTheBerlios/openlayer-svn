@@ -137,8 +137,8 @@ public:
       
       vertices.push_back( pos );
       vertices.push_back( Vec2D( pos.x + size.x, pos.y ));
-      vertices.push_back( Vec2D( pos.x, pos.y + size.y ));
       vertices.push_back( pos+size );
+      vertices.push_back( Vec2D( pos.x, pos.y + size.y ));
       
       return vertices;
    }
