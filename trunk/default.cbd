@@ -12,11 +12,14 @@ ifopt developer oldevelop = "true"
 # Display Help
 do ifopt help
 	echo "This builds the OpenLayer 2.0 library. 
-To compile depending on your platform run: 
-(linux/macosx/msys) cbuild.c [OPT]...
-or
-(Windows cmd.exe)   buildme.bat [OPT]...
-Valid options are:
+To compile run:"
+	do ifplat win32
+		echo "buildme.bat [OPT] ..."
+	else
+		echo "cbuild.c [OPT] ..."
+	done
+	echo "
+[OPTIONS]
 help      - Prints this information
 verbose   - Enable verbose output
 configure - Force configuration prompts
@@ -180,29 +183,37 @@ goto build
 
 # Start building library
 :build
-echo "Creating required directories"
+echo "- Creating required directories -"
 -mkdir obj
 -mkdir dep
 -mkdir lib
-echo "Starting compilation"
+echo "- Starting compilation -"
 compile ${LIB_SOURCES}
-echo "Assembling library"
+echo "- Assembling library -"
 -rm lib/libopenlayer.a
 linklib libopenlayer
 echo "
-Compilation completed.
+- Compilation completed -
 
-You can now install the lib by running:
-cbuild.c install or buildme.bat install"
+You can now install the lib by running:"
+do ifplat win32
+	echo "buildme.bat install"
+else
+	echo "cbuild.c install"
+done
 exit 0
 
 # Install library
 :install
 do ifexist lib/libopenlayer.a
 :installask
-	echo "Where do you wish to install OpenLayer?
-example: /usr/local (make sure lib and include exist in the directory)
-Enter exit or cancel if you don't want to install at this time."
+	echo "Where do you wish to install OpenLayer?"
+	do ifplat win32
+		echo "example: c:\mingw (make sure lib and include exist in the directory)"
+	else
+		echo "example: /usr/local (make sure lib and include exist in the directory)"
+	done
+	echo "Enter exit or cancel if you don't want to install at this time."
 	read LOCATION
 	do if $(tolower ${'LOCATION'})='cancel' exit 0
 	else if $(tolower ${'LOCATION'})='exit' exit 0
@@ -277,7 +288,7 @@ exit 0
 
 # clean up library
 :clean
-echo "Cleaning up."
+echo "- Cleaning up -"
 -rmobj ${LIB_SOURCES}
 -rm lib/libopenlayer.a
 -rm options

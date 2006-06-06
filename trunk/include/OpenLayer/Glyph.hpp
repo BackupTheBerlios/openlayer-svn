@@ -8,8 +8,7 @@
 #include FT_FREETYPE_H
 #include FT_INTERNAL_OBJECTS_H
 #include "Includes.hpp"
-
-using namespace std;
+#include "Rgba.hpp"
 
 #define GLYPH_PI	3.14159265358979323846
 #define GLYPH_SQRT2	1.41421356237309504880
@@ -42,6 +41,7 @@ namespace ol
 			~GLYPH_REND();
 			
 			Glyph *glyphFace;
+				
 	};
 	
 	class GLYPH_TEXTURE
@@ -51,7 +51,26 @@ namespace ol
 			~GLYPH_TEXTURE();
 			
 			Glyph *glyphFace;
+			
 	};
+	
+	GLYPH_FACE *load_face_from_file(const char *filename, int index);
+	GLYPH_REND *create_renderer( GLYPH_FACE* const face, int index );
+	void rend_set_italic( GLYPH_REND* const rend, int italics );
+	void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned height, const unsigned width);
+	void rend_set_hinting_default( GLYPH_REND* const rend );
+	void gk_rend_set_hinting_off( GLYPH_REND* const rend );
+	void rend_set_render_mode_normal( GLYPH_REND* const rend );
+	Rgba colorConvert(const unsigned col);
+	void gk_rend_set_text_alpha_color( GLYPH_REND* const rend, const unsigned alpha_color);
+	int gk_rend_ascender_pixels( GLYPH_REND* const rend );
+	int rend_ascender_pixels( GLYPH_REND* const rend );
+	int text_width_utf8(GLYPH_REND* const rend,const char* const text);
+	GLYPH_TEXTURE *gk_create_texture( GLYPH_REND *rend, int rangeStart, int rangeLength );
+	void gk_unload_texture_from_gpu( GLYPH_TEXTURE *texture );
+	void gk_destroy_texture( GLYPH_TEXTURE *texture );
+	void gk_render_line_gl_utf8( GLYPH_TEXTURE *texture, const char *text, int x, int y );
+	void gk_send_texture_to_gpu( GLYPH_TEXTURE *texture );
 	
 	// A singleton of the freetype library to use with existing glyphs
 	class libFreeType
@@ -77,7 +96,7 @@ namespace ol
 			libFreeType library;
 			
 			// Current filename
-			string currentFilename;
+			std::string currentFilename;
 			
 			// Face
 			FT_Face fontFace;
@@ -112,8 +131,6 @@ namespace ol
 			unsigned	hintingTarget;
 			unsigned	loadFlags;
 			
-			unsigned	textAlphaColor;
-			
 			/*
 			*	These items are so that we can maintain compatibility with Glyph Keeper
 			*	until TextRender adopts the new system and replaces references to
@@ -123,22 +140,6 @@ namespace ol
 			friend class GLYPH_FACE;
 			friend class GLYPH_REND;
 			friend class GLYPH_TEXTURE;
-			friend GLYPH_FACE *load_face_from_file(const char *filename, int index);
-			friend GLYPH_REND *create_renderer( GLYPH_FACE* const face, int index );
-			friend void rend_set_italic( GLYPH_REND* const rend, int italics );
-			friend void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned height, const unsigned width);
-			friend void rend_set_hinting_default( GLYPH_REND* const rend );
-			friend void gk_rend_set_hinting_off( GLYPH_REND* const rend );
-			friend void rend_set_render_mode_normal( GLYPH_REND* const rend );
-			friend void gk_rend_set_text_alpha_color( GLYPH_REND* const rend, const unsigned alpha_color);
-			friend int gk_rend_ascender_pixels( GLYPH_REND* const rend );
-			friend int rend_ascender_pixels( GLYPH_REND* const rend );
-			friend int text_width_utf8(GLYPH_REND* const rend,const char* const text);
-			friend GLYPH_TEXTURE *gk_create_texture( GLYPH_REND *rend, int rangeStart, int rangeLength );
-			friend void gk_unload_texture_from_gpu( GLYPH_TEXTURE *texture );
-			friend void gk_destroy_texture( GLYPH_TEXTURE *texture );
-			friend void gk_render_line_gl_utf8( GLYPH_TEXTURE *texture, const char *text, int x, int y );
-			friend void gk_send_texture_to_gpu( GLYPH_TEXTURE *texture );
 			
 		protected:
 			
@@ -148,14 +149,14 @@ namespace ol
 		public:
 			// Constructors
 			Glyph();
-			Glyph(const string filename,int faceIndex = 0);
+			Glyph(const std::string filename,int faceIndex = 0);
 			
 			// Destructor
 			~Glyph();
 			// Face handling
 			
 			// Loads a new face into Glyph
-			bool load(const string filename, int faceIndex);
+			bool load(const std::string filename, int faceIndex);
 			
 			// This returns how many font faces avialable
 			long totalFaces();
@@ -188,9 +189,10 @@ namespace ol
 			
 			int descenderPixels();
 			
-			int textWidthUTF8(const string text);
+			int textWidthUTF8(const std::string text);
 			
 			// Variables
+			Rgba color;
 	};
 
 }

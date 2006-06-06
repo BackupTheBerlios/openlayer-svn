@@ -49,7 +49,7 @@ namespace ol
 		angle = 0;
 	}
 	
-	Glyph::Glyph(const string filename,int faceIndex) : library()
+	Glyph::Glyph(const std::string filename,int faceIndex) : library()
 	{
 		if(FT_New_Face(library.libInstance,filename.c_str(),faceIndex,&fontFace)==0)
 		{
@@ -73,7 +73,7 @@ namespace ol
 	}
 	
 	// Loads a new face
-	bool Glyph::load(const string filename, int faceIndex)
+	bool Glyph::load(const std::string filename, int faceIndex)
 	{
 		if(faceLoaded)
 		{
@@ -254,7 +254,7 @@ namespace ol
 		return (size) ? (size->metrics.descender+63)>>6 : 0;
 	}
 	
-	int Glyph::textWidthUTF8(const string text)
+	int Glyph::textWidthUTF8(const std::string text)
 	{
 		return 0;
 	}
@@ -328,9 +328,15 @@ namespace ol
 	
 	}
 	
+	Rgba colorConvert(const unsigned col)
+	{
+		return Rgba(((float)(( col >> 16 ) & 0xff))/255.0, ((float)(( col >> 8 ) & 0xff))/255.0,
+			      ((float)( col & 0xff))/255.0, ((float)(( col >> 24 ) & 0xff))/255.0);
+	}
+	
 	void gk_rend_set_text_alpha_color( GLYPH_REND* const rend, const unsigned alpha_color)
 	{
-		rend->glyphFace->textAlphaColor = alpha_color;
+		rend->glyphFace->color = colorConvert(alpha_color);
 	}
 	
 	int gk_rend_ascender_pixels( GLYPH_REND* const rend )
