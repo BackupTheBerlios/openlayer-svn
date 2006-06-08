@@ -39,6 +39,8 @@ public:
    Effect( float duration ) :
       duration( duration ) {}
    
+   virtual ~Effect(){}
+   
    // Applies the effect to the active canvas //
    virtual void Apply() = 0;
    
@@ -71,6 +73,8 @@ public:
    MotionBlur( float duration, float strength )
       : Effect( duration ), strength( strength ) {}
    
+   virtual ~MotionBlur(){}
+   
    virtual void Apply();
    
 private:
@@ -84,6 +88,8 @@ public:
    RadialBlur( float duration, float strength )
       : Effect( duration ), strength( strength ) {}
    
+   virtual ~RadialBlur(){}
+   
    virtual void Apply();
    
 private:
@@ -96,6 +102,8 @@ public:
    // Create a new swirl blur with the given strength, accuracy and angle spread //
    SwirlBlur( float duration, float strength, float accuracy, float spread )
       : Effect( duration ), strength( strength ), accuracy( accuracy ), spread( spread ) {}
+   
+   virtual ~SwirlBlur(){}
    
    virtual void Apply();
    

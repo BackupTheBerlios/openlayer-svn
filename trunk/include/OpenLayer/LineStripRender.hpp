@@ -54,7 +54,7 @@ LineStripRender( const Rgba *color1, const Rgba *color2, const Bitmap *texture, 
       lastSIter++;
       
       if( *lastSIter == last ) {
-   		int index = 2;
+   		unsigned int index = 2;
    		while( *lastSIter == last ) {
    			if( vertices.size() <= index )
    				return;

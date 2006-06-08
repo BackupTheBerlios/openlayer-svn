@@ -62,7 +62,7 @@ GetVertex( unsigned int index ) const {
    
    list< Vec2D > ::const_iterator iter = vertices.begin();
    
-   for( int i = 0; i < index && iter != vertices.end(); i++ ) {
+   for( unsigned int i = 0; i < index && iter != vertices.end(); i++ ) {
       iter++;
    }
    
