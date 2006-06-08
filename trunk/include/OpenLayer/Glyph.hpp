@@ -9,6 +9,8 @@
 #include FT_INTERNAL_OBJECTS_H
 #include "Includes.hpp"
 #include "Rgba.hpp"
+#include "Bitmap.hpp"
+#include "Internal.hpp"
 
 #define GLYPH_PI	3.14159265358979323846
 #define GLYPH_SQRT2	1.41421356237309504880
@@ -72,28 +74,12 @@ namespace ol
 	void gk_render_line_gl_utf8( GLYPH_TEXTURE *texture, const char *text, int x, int y );
 	void gk_send_texture_to_gpu( GLYPH_TEXTURE *texture );
 	
-	// A singleton of the freetype library to use with existing glyphs
-	class libFreeType
-	{
-		private:
-			// Used to setup the FreeType library
-			static FT_Library libInstance;
-			static int totalClients;
-			
-			// Allow Glyph to access the library
-			friend class Glyph;
-		protected:
-			libFreeType();
-			~libFreeType();
-	};
-	
-	
 	// This class handles face objects
 	class Glyph
 	{
 		private:
 			// FT_Library
-			libFreeType library;
+			FT_Library library;
 			
 			// Current filename
 			std::string currentFilename;
@@ -122,14 +108,14 @@ namespace ol
 			bool 		kerning;
 			bool 		monoSpacing;
 			
-			unsigned	hsize,vsize;
-			unsigned	lineSpacing;
-			unsigned	lineSpacingPixels;
-			unsigned	textHeight;
-			unsigned	textHeightPixels;
-			unsigned	hintingMode;
-			unsigned	hintingTarget;
-			unsigned	loadFlags;
+			int		hsize,vsize;
+			int		lineSpacing;
+			int		lineSpacingPixels;
+			int		textHeight;
+			int		textHeightPixels;
+			int		hintingMode;
+			int		hintingTarget;
+			int		loadFlags;
 			
 			/*
 			*	These items are so that we can maintain compatibility with Glyph Keeper
@@ -145,6 +131,7 @@ namespace ol
 			
 			// Translate the face on its matrix
 			void updateMatrix();
+			Bitmap getCharBitmap(FT_Face face, FT_ULong unicode);
 			
 		public:
 			// Constructors
@@ -190,6 +177,8 @@ namespace ol
 			int descenderPixels();
 			
 			int textWidthUTF8(const std::string text);
+			
+			void render(std::string text, float x, float y);
 			
 			// Variables
 			Rgba color;

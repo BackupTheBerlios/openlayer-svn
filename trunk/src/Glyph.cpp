@@ -7,36 +7,12 @@
 
 namespace ol
 {
-
-	// FreeType Library
-	
-	int libFreeType::totalClients = 0;
-	
-	libFreeType::libFreeType()
-	{
-		if(totalClients==0)
-		{
-			FT_Init_FreeType(&libInstance);
-			++totalClients;
-		}
-		else ++totalClients;
-	}
-	
-	libFreeType::~libFreeType()
-	{
-		if(totalClients>1)--totalClients;
-		else
-		{
-			FT_Done_FreeType(libInstance);
-			--totalClients;
-		}
-	}
-	
-	
 	// Face handler
 	
-	Glyph::Glyph() : library()
+	Glyph::Glyph()
 	{
+		// Load up the library
+		FT_Init_FreeType(&library);
 		faceLoaded = false;
 		italicized = false;
 		angled = false;
@@ -49,15 +25,25 @@ namespace ol
 		angle = 0;
 	}
 	
-	Glyph::Glyph(const std::string filename,int faceIndex) : library()
+	Glyph::Glyph(const std::string filename,int faceIndex)
 	{
-		if(FT_New_Face(library.libInstance,filename.c_str(),faceIndex,&fontFace)==0)
+		// Load up the library
+		FT_Init_FreeType(&library);
+		int error = FT_New_Face(library,filename.c_str(),faceIndex,&fontFace);
+		if(!error)
 		{
 			currentFilename = filename;
 			currentIndex = faceIndex;
 			faceLoaded = true;
+			OlLog( "Glyph::fontFace loaded properly" );
 		}
-		else faceLoaded=false;
+		else 
+		{
+			faceLoaded=false;
+			char buf[20];
+			sprintf(buf, "%d", error);
+			OlLog( std::string("Glyph::fontFace is " + filename + " is bad! Could not load. Error: " + buf));
+		}
 				
 		italicized = false;
 		angled = false;
@@ -70,6 +56,8 @@ namespace ol
 	
 	Glyph::~Glyph()
 	{
+		// Destroy the library
+		FT_Done_FreeType(library);
 	}
 	
 	// Loads a new face
@@ -78,7 +66,7 @@ namespace ol
 		if(faceLoaded)
 		{
 			FT_Face tmpFace;
-			if(FT_New_Face(library.libInstance,filename.c_str(),faceIndex,&tmpFace)==0)
+			if(FT_New_Face(library,filename.c_str(),faceIndex,&tmpFace)==0)
 			{
 				currentFilename = filename;
 				currentIndex = faceIndex;
@@ -95,7 +83,7 @@ namespace ol
 		}
 		else 
 		{
-			if(FT_New_Face(library.libInstance,filename.c_str(),faceIndex,&fontFace)==0)
+			if(FT_New_Face(library,filename.c_str(),faceIndex,&fontFace)==0)
 			{
 				currentFilename = filename;
 				currentIndex = faceIndex;
@@ -129,7 +117,7 @@ namespace ol
 		if(faceLoaded)
 		{
 			FT_Face tmpFace;
-			if(FT_New_Face(library.libInstance,currentFilename.c_str(),index,&tmpFace)==0)
+			if(FT_New_Face(library,currentFilename.c_str(),index,&tmpFace)==0)
 			{
 				currentIndex =  index;
 				FT_Done_Face(fontFace);
@@ -183,6 +171,66 @@ namespace ol
 		}
 	}
 	
+	Bitmap Glyph::getCharBitmap(FT_Face face, FT_ULong unicode)
+	{
+		int w, h, ew;
+		BITMAP *bmp;
+		int x, y;
+		unsigned char *line;
+		
+		FT_Load_Char(face, unicode, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT);
+
+		w = face->glyph->bitmap.width;
+		h = face->glyph->bitmap.rows;
+		ew = 0;
+
+		if (!w)
+			ew = 1;
+
+		if (!h)
+			h = 1;
+
+		bmp = create_bitmap_ex(8, w + ew, h);
+		clear_to_color(bmp, bitmap_mask_color(bmp));
+
+		line = face->glyph->bitmap.buffer;
+		for (y = 0; y < face->glyph->bitmap.rows; y++)
+		{
+			unsigned char *buffer = line;
+			for (x = 0; x < face->glyph->bitmap.width; x++)
+			{
+				putpixel(bmp, x, y, *buffer++);
+			}
+			line += face->glyph->bitmap.pitch;
+		}
+		
+		return Bitmap(bmp);
+		
+		/*
+		class loader {
+			private:
+				unsigned char *img;
+   
+			public:
+				loader( FT_Bitmap bmp) {
+					img = bmp.buffer;
+					width = bmp.width;
+					height = bmp.rows;
+				}
+   
+				Rgba operator() ( int x, int y ) {
+     					// The image is guranteed to be loaded top-to-bottom, left-to-right
+					return Rgba( (int)gets( (char *)img ), (int)gets( (char *)img ), (int)gets( (char *)img ), (int)gets( (char *)img ));
+				}
+   
+				int width, height;
+		};
+		
+		loader ld(face->glyph->bitmap);
+		
+		return Bitmap(ld.width,ld.height,ld);*/
+	}
+	
 	// Italicized check
 	bool Glyph::isItalicized()
 	{
@@ -204,7 +252,7 @@ namespace ol
 	
 	void Glyph::setAngle(double a)
 	{
-		
+		angle = ( a / 360 ) * GLYPH_PI * 2; 
 	}
 	
 	bool Glyph::setPixelSize(const unsigned height, const unsigned width)
@@ -257,6 +305,17 @@ namespace ol
 	int Glyph::textWidthUTF8(const std::string text)
 	{
 		return 0;
+	}
+	
+	void Glyph::render(std::string text, float x, float y)
+	{
+		float next_x = x;
+		for(unsigned int i=0;i<text.length();++i)
+		{
+			Bitmap temp = getCharBitmap(fontFace,text[i]);
+			temp.Blit(next_x,y);
+			next_x+=temp.Width();
+		}
 	}
 	
 	/*
@@ -325,7 +384,8 @@ namespace ol
 	
 	void rend_set_render_mode_normal( GLYPH_REND* const rend )
 	{
-	
+		// What to do?
+		
 	}
 	
 	Rgba colorConvert(const unsigned col)
@@ -375,22 +435,22 @@ namespace ol
 	
 	void gk_unload_texture_from_gpu( GLYPH_TEXTURE *texture )
 	{
-	
+		// Nothing
 	}
 	
 	void gk_destroy_texture( GLYPH_TEXTURE *texture )
 	{
-	
+		// De-Init the texture ? nothing yet
 	}		
 	
 	void gk_render_line_gl_utf8( GLYPH_TEXTURE *texture, const char *text, int x, int y )
 	{
-	
+		texture->glyphFace->render(text,x,y);
 	}
 	
 	void gk_send_texture_to_gpu( GLYPH_TEXTURE *texture )
 	{
-	
+		// Nothing to be done
 	}
 
 }

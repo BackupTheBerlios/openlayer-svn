@@ -177,8 +177,7 @@ private:
    public:
       Loader( int w, int h, int italics, Rgba col )
          : w( w ), h( h ), italics( italics ), col( col ) {}
-      
-      
+      virtual ~Loader(){}
       virtual OlLoadResult Load( TextRenderer &subject ) = 0;
       
    protected:
@@ -195,7 +194,7 @@ private:
    public:
       FileLoader( const char *filename, int w, int h, int italics, Rgba col )
          : Loader( w, h, italics, col ), filename( filename ) {}
-      
+      virtual ~FileLoader(){}
       virtual OlLoadResult Load( TextRenderer &subject );
       
    protected:
@@ -207,7 +206,7 @@ private:
    public:
       RendLoader( const TextRenderer &rend, int w, int h, int italics, Rgba col )
          : Loader( w, h, italics, col ), rend( rend ) {}
-      
+      virtual ~RendLoader(){}
       virtual OlLoadResult Load( TextRenderer &subject );
       
    protected:
