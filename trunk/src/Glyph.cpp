@@ -7,315 +7,342 @@
 
 namespace ol
 {
-	// Face handler
-	
+	// Static count of instances of fonts to track library
+	static int instances=0;
+	static FT_Library ftLibrary = NULL;
+
+	// Character ctor
+	character::character()
+	{
+	}
+	character::~character()
+	{
+	}
+	// Constructor
 	Glyph::Glyph()
 	{
-		// Load up the library
-		FT_Init_FreeType(&library);
-		faceLoaded = false;
-		italicized = false;
-		angled = false;
-		kerning = false;
-		monoSpacing = false;
+		//Load library
+		if(ftLibrary==NULL)
+		{
+			FT_Init_FreeType(&ftLibrary);
+			instances++;
+		}
+		ID = instances;
+		faceLoaded = kerning = false;
+		currentIndex=0;
+		size=0;
+		currentFilename="";
+		faceName="";
+		currentChar = new character;
+		workBitmap=NULL;
+	}
+	// Destructor
+	/*! Nothing yet */
+	Glyph::~Glyph()
+	{
+		FT_Done_Face(face);
 		
-		currentFilename = "";
-		currentIndex = 0;
-		italics = 0;
-		angle = 0;
+		if(instances>0)instances--;
+		if(instances==0)
+		{
+			FT_Done_FreeType(ftLibrary);
+		}
+		if(currentChar)delete currentChar;
 	}
 	
-	Glyph::Glyph(const std::string filename,int faceIndex)
+	// Comparison of IDs
+	bool Glyph::operator==(Glyph *f)
 	{
-		// Load up the library
-		FT_Init_FreeType(&library);
-		int error = FT_New_Face(library,filename.c_str(),faceIndex,&fontFace);
-		if(!error)
+		if(ID==f->ID)return true;
+		return false;
+	}
+	
+				
+	// Extract glyph
+	character Glyph::extractGlyph(signed long unicode)
+	{
+		int w, h, ew;
+		character tempChar;
+	
+		FT_Load_Char(face, unicode, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT);
+			
+		w = face->glyph->bitmap.width;
+		h = face->glyph->bitmap.rows;
+		ew = 0;
+		if (!w)ew = 1;
+		if (!h)h = 1;
+			
+		tempChar.width = (w + ew);
+		tempChar.height = h;
+			
+		tempChar.rows = face->glyph->bitmap.rows;
+		tempChar.grays = face->glyph->bitmap.num_grays;
+		tempChar.pitch = face->glyph->bitmap.pitch;
+		tempChar.line = new unsigned char[tempChar.rows * tempChar.pitch];
+		memcpy(tempChar.line,face->glyph->bitmap.buffer,tempChar.rows * tempChar.pitch);
+			
+		tempChar.left = face->glyph->bitmap_left;
+		tempChar.top = face->glyph->bitmap_top;
+		tempChar.right = face->glyph->advance.x >> 6;
+		tempChar.unicode = unicode;
+			
+		tempChar.length = (w + ew)+face->glyph->advance.x >> 6;
+			
+		return tempChar;
+	}
+	
+	// Create single index
+	void Glyph::createIndex(int i)
+	{
+		std::map<int, std::map<signed long, character> >::iterator p;
+		p = fontTable.find(i);
+		if(p==fontTable.end())
 		{
-			currentFilename = filename;
-			currentIndex = faceIndex;
+			FT_Set_Pixel_Sizes(face, i, i);
+			FT_UInt g;
+			FT_ULong unicode = FT_Get_First_Char(face, &g);
+			std::map<signed long, character>tempMap;
+			while (g)
+			{
+				tempMap.insert(std::make_pair(unicode,extractGlyph(unicode)));
+				unicode = FT_Get_Next_Char(face, unicode, &g);
+			}
+			fontTable.insert(std::make_pair(i,tempMap));
+		}
+	}
+	
+	// Render a character from the lookup table (utilizing the workBitmap)
+	void Glyph::drawCharacter(signed long unicode, double &x1, double &y1, Bitmap *bitmap, Rgba col)
+	{
+		std::map<int, std::map<signed long, character> >::iterator ft;
+		ft = fontTable.find(size);
+		if(ft!=fontTable.end())
+		{
+			std::map<signed long, character>::iterator p;
+			p = (ft->second).find(unicode);
+			if(p!=(ft->second).end())
+			{
+				character tempChar = p->second;
+				/*	
+				if(workBitmap==NULL)
+				{
+					workBitmap = (resourceManager::getInstance())->resourceFactory->createGfx();
+					systemName = (resourceManager::getInstance())->currentSystemName;
+				}
+				else if((resourceManager::getInstance())->currentSystemName!=systemName)
+				{
+					workBitmap = (resourceManager::getInstance())->resourceFactory->createGfx();
+					systemName = (resourceManager::getInstance())->currentSystemName;
+				}
+					
+				if((resourceManager::getInstance())->currentSystemName==systemName)
+				{
+					if(!workBitmap->isInitialized())workBitmap->createBmp(tempChar.width, tempChar.height);
+					else if(workBitmap->getBmpWidth()<tempChar.width || workBitmap->getBmpHeight()<tempChar.height)
+					{
+						workBitmap->createBmp(tempChar.width, tempChar.height);
+					}
+				}*/
+				//Rgba tempCol(255,0,255,255);
+				//workBitmap->clearBmp(&tempCol);
+				
+				unsigned char *line = tempChar.line;
+				for (int y = y1; y < tempChar.rows; y++)
+				{
+					unsigned char *buffer = line;
+					for (int x = x1; x < tempChar.width; x++)
+					{
+						Rgba col = colorConvert(buffer++,tempChar.grays);
+						Rgba tempCol(0,0,0,0);
+						if(col.r != tempCol.r && col.g != tempCol.g && col.b != tempCol.b && col.a != tempCol.a)
+						{
+							//workBitmap->placePixel(x, y, color);
+							ol::Point(float(x),float(y)).Draw( col );
+						}
+					}
+					line += tempChar.pitch;
+				}
+					
+				//workBitmap->renderBmpArea(0,0,x1,y1 - tempChar.top,tempChar.width,tempChar.height,bitmap);
+				x1+=tempChar.right;
+			}
+		}
+	}
+
+	
+	// Load font from memory
+	bool Glyph::loadFromMemory(const unsigned char *memoryFont, unsigned int length, int index, unsigned int fontSize)
+	{
+		if(!FT_New_Memory_Face(ftLibrary,memoryFont, length,index,&face))
+		{
+			currentFilename = "memoryFont";
+			currentIndex = index;
 			faceLoaded = true;
-			OlLog( "Glyph::fontFace loaded properly" );
+			setSize(fontSize);
+			if(FT_HAS_GLYPH_NAMES(face))
+			{
+				char buff[1024];
+				if(!FT_Get_Glyph_Name(face,currentIndex,buff,sizeof(buff)))
+				{
+					faceName = currentFilename;
+				}
+				else faceName = std::string(buff);
+			}
+			else
+			{
+				faceName = currentFilename;
+			}
+			if(FT_HAS_KERNING(face))kerning=true;
+			else kerning = false;
 		}
 		else 
 		{
 			faceLoaded=false;
-			char buf[20];
-			sprintf(buf, "%d", error);
-			OlLog( std::string("Glyph::fontFace is " + filename + " is bad! Could not load. Error: " + buf));
+			std::cout << "Load system font failed\n";
 		}
-				
-		italicized = false;
-		angled = false;
-		kerning = false;
-		monoSpacing = false;
-		
-		italics = 0;
-		angle = 0;
+					
+		return faceLoaded;
 	}
-	
-	Glyph::~Glyph()
+			
+	// Load font from file
+	bool Glyph::load(const std::string & filename, int index, unsigned int fontSize)
 	{
-		// Destroy the library
-		FT_Done_FreeType(library);
-	}
-	
-	// Loads a new face
-	bool Glyph::load(const std::string filename, int faceIndex)
-	{
-		if(faceLoaded)
+		if(!FT_New_Face(ftLibrary,filename.c_str(),index,&face))
 		{
-			FT_Face tmpFace;
-			if(FT_New_Face(library,filename.c_str(),faceIndex,&tmpFace)==0)
+			currentFilename = filename;
+			currentIndex = index;
+			faceLoaded = true;
+			setSize(fontSize);
+			if(FT_HAS_GLYPH_NAMES(face))
 			{
-				currentFilename = filename;
-				currentIndex = faceIndex;
-				FT_Done_Face(fontFace);
-				//fontFace = tmpFace;
-				memcpy(fontFace,tmpFace,sizeof &tmpFace);
-				return true;
+				char buff[1024];
+				if(!FT_Get_Glyph_Name(face,currentIndex,buff,sizeof(buff)))
+				{
+					faceName = currentFilename;
+				}
+				else faceName = std::string(buff);
 			}
 			else
 			{
-				FT_Done_Face(tmpFace);
-				return false;
+				faceName = currentFilename;
 			}
+			if(FT_HAS_KERNING(face))kerning=true;
+			else kerning = false;
 		}
 		else 
 		{
-			if(FT_New_Face(library,filename.c_str(),faceIndex,&fontFace)==0)
-			{
-				currentFilename = filename;
-				currentIndex = faceIndex;
-				faceLoaded = true;
-				return true;
-			}
-			else
-			{
-				faceLoaded=false;
-				return false;
-			}
+			faceLoaded=false;
 		}
 		
-		return false;
+		return faceLoaded;
 	}
 	
-	
-	// This returns how many font faces avialable
-	long Glyph::totalFaces()
+	void Glyph::render(double x, double y, Rgba col, Bitmap *bmp, int alignment, const std::string & text, ...)
 	{
 		if(faceLoaded)
 		{
-			return fontFace->num_glyphs;
-		}
-		else return 0;
-	}
-	
-	// Set font face index return true if successfull
-	bool Glyph::setFaceIndex(int index)
-	{
-		if(faceLoaded)
-		{
-			FT_Face tmpFace;
-			if(FT_New_Face(library,currentFilename.c_str(),index,&tmpFace)==0)
+			double rend_x=0;
+			double rend_y=0;
+			std::ostringstream str;
+					
+					// Get extra arguments
+			va_list ap;
+			va_start(ap, text);
+			for(unsigned int i = 0; i<text.length();++i)
 			{
-				currentIndex =  index;
-				FT_Done_Face(fontFace);
-				//fontFace = tmpFace;
-				memcpy(fontFace,tmpFace,sizeof &tmpFace);
-				return true;
-			}
-			else
-			{
-				FT_Done_Face(tmpFace);
-				return false;
-			}
-		}
-		else return false;
-	}
-	
-	// Set width and height in pixels return true if successfull
-	bool Glyph::setFontSize(int width, int height)
-	{
-		if(faceLoaded)
-		{
-			if(FT_Set_Char_Size( fontFace, width, height,100, 0 )==0)
-			{
-				return true;
-			}
-			else return false;
-		}
-		
-		return false;
-	}
-	
-	void Glyph::updateMatrix()
-	{
-		if(italics!=0)italicized=true;
-		else italicized=false;
-		if(angle!=0)angled=true;
-		else angled=false;
-		
-		if(italicized || angled)
-		{
-			FT_Matrix temp;
-			matrix.xx = 0x10000;
-			matrix.xy = (FT_Fixed)(sin(italics)*(GLYPH_SQRT2*0x10000));
-			matrix.yx = 0;
-			matrix.yy = 0x10000;
-			temp.xx = (FT_Fixed)( cos(angle)*0x10000);
-			temp.xy = (FT_Fixed)(-sin(angle)*0x10000);
-			temp.yx = (FT_Fixed)( sin(angle)*0x10000);
-			temp.yy = (FT_Fixed)( cos(angle)*0x10000);
-			FT_Matrix_Multiply(&temp,&matrix);
-		}
-	}
-	
-	Bitmap Glyph::getCharBitmap(FT_Face face, FT_ULong unicode)
-	{
-		int w, h, ew;
-		BITMAP *bmp;
-		int x, y;
-		unsigned char *line;
-		
-		FT_Load_Char(face, unicode, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT);
-
-		w = face->glyph->bitmap.width;
-		h = face->glyph->bitmap.rows;
-		ew = 0;
-
-		if (!w)
-			ew = 1;
-
-		if (!h)
-			h = 1;
-
-		bmp = create_bitmap_ex(8, w + ew, h);
-		clear_to_color(bmp, bitmap_mask_color(bmp));
-
-		line = face->glyph->bitmap.buffer;
-		for (y = 0; y < face->glyph->bitmap.rows; y++)
-		{
-			unsigned char *buffer = line;
-			for (x = 0; x < face->glyph->bitmap.width; x++)
-			{
-				putpixel(bmp, x, y, *buffer++);
-			}
-			line += face->glyph->bitmap.pitch;
-		}
-		
-		return Bitmap(bmp);
-		
-		/*
-		class loader {
-			private:
-				unsigned char *img;
-   
-			public:
-				loader( FT_Bitmap bmp) {
-					img = bmp.buffer;
-					width = bmp.width;
-					height = bmp.rows;
+				if(text[i]=='%')
+				{
+					++i;
+					if(text[i]=='s')
+					{
+						str << va_arg(ap,char *);
+					}
+					else if(text[i]=='d'||text[i]=='i')
+					{
+						str << va_arg(ap,signed int);
+					}
+					else if(text[i]=='c')
+					{
+						str << (char)va_arg(ap,int);
+					}
 				}
-   
-				Rgba operator() ( int x, int y ) {
-     					// The image is guranteed to be loaded top-to-bottom, left-to-right
-					return Rgba( (int)gets( (char *)img ), (int)gets( (char *)img ), (int)gets( (char *)img ), (int)gets( (char *)img ));
+				else
+				{
+					str << text[i];
 				}
-   
-				int width, height;
-		};
-		
-		loader ld(face->glyph->bitmap);
-		
-		return Bitmap(ld.width,ld.height,ld);*/
-	}
-	
-	// Italicized check
-	bool Glyph::isItalicized()
-	{
-		return italicized;
-	}
-	
-	// Angled check
-	bool Glyph::isAngled()
-	{
-		return angled;
-	}
-	
-	void Glyph::setItalics(int i)
-	{
-		if (i < -45 || i > 45) return;
-		italics = (double)(i)*GLYPH_PI/180;
-		updateMatrix();
-	}
-	
-	void Glyph::setAngle(double a)
-	{
-		angle = ( a / 360 ) * GLYPH_PI * 2; 
-	}
-	
-	bool Glyph::setPixelSize(const unsigned height, const unsigned width)
-	{
-		if (fontFace || size) return false;
-		FT_Activate_Size(size);
-		if (FT_Set_Char_Size(fontFace,height,width,72,72))
-		{
-			/* Send error to logs
-			"Error: setPixelSize(): Can't set font size to %.3fx%.3f pixels\n",((double)height)/64,((double)width)/64);*/
-			return false;
+			}
+			va_end(ap);
+					
+			std::string fixedText(str.str());
+			switch(alignment)
+			{
+				case 0:
+					rend_x=x;
+					rend_y=y;
+					break;
+				case 1:
+					rend_x = x - getLength(fixedText)/2;
+					rend_y=y;
+					break;
+				case 2:
+					rend_x = x - getLength(fixedText);
+					rend_y=y;
+					break;
+			}
+			int previous = 0;
+			int next = 0;
+			for(unsigned int i = 0; i<fixedText.length();++i)
+			{
+				if(kerning)
+				{
+					next = FT_Get_Char_Index( face, fixedText[i] );
+					FT_Vector delta;
+					FT_Get_Kerning( face, previous, next, FT_KERNING_DEFAULT, &delta );
+					rend_x += delta.x >> 6;
+					previous = next;
+				}
+				drawCharacter(fixedText[i],rend_x, rend_y, bmp, col);
+			}
 		}
-		hsize = height;
-		vsize = width;
-		lineSpacing = fontFace->size->metrics.height;
-		lineSpacingPixels = (lineSpacing+63)>>6;
-		textHeight = ascender() - descender();
-		textHeightPixels = ((ascender()+63)>>6) - ((descender()+63)>>6);
-
-		return true;
 	}
 	
-	// Set hinting mode
-	void Glyph::setHintingMode(const unsigned mode)
-	{
-		hintingMode =  mode;
-		loadFlags = FT_LOAD_NO_BITMAP | hintingMode | hintingTarget;
-	}
 	
-	int Glyph::ascender()
+	// Get text length
+	double Glyph::getLength(const std::string & text)
 	{
-		return (size) ? size->metrics.ascender : 0;
-	}
-
-	int Glyph::ascenderPixels()
-	{
-		return (size) ? (size->metrics.ascender+63)>>6 : 0;
-	}
-
-	int Glyph::descender()
-	{
-		return (size) ? size->metrics.descender : 0;
-	}
-
-	int Glyph::descenderPixels()
-	{
-		return (size) ? (size->metrics.descender+63)>>6 : 0;
-	}
-	
-	int Glyph::textWidthUTF8(const std::string text)
-	{
-		return 0;
-	}
-	
-	void Glyph::render(std::string text, float x, float y)
-	{
-		float next_x = x;
-		for(unsigned int i=0;i<text.length();++i)
+		double length=0;
+		std::map<int, std::map<signed long, character> >::iterator ft;
+		ft = fontTable.find(size);
+		if(ft!=fontTable.end())
 		{
-			Bitmap temp = getCharBitmap(fontFace,text[i]);
-			temp.Blit(next_x,y);
-			next_x+=temp.Width();
+			for(unsigned int i = 0; i<text.length();++i)
+			{
+				std::map<signed long, character>::iterator p;
+				p = (ft->second).find(text[i]);
+				if(p!=(ft->second).end())
+				{
+					if(p!=fontTable[size].end())
+					{
+						length+=(p->second).length;
+					}
+				}
+			}
 		}
+		return length;
+	}
+	
+	// Set size
+	void Glyph::setSize(int s)
+	{
+		if(size<0 || size > 50)return;
+		size=s;
+		createIndex(size);
+	}
+	
+	// Get Width
+	int Glyph::getSize()
+	{
+		return size;
 	}
 	
 	/*
@@ -338,7 +365,9 @@ namespace ol
 	{
 		GLYPH_FACE *temp = new GLYPH_FACE();
 		
-		temp->glyphFace = new Glyph(filename, index);
+		temp->glyphFace = new Glyph();
+		
+		temp->glyphFace->load(filename,index);
 		
 		return temp;
 	}
@@ -364,22 +393,23 @@ namespace ol
 	
 	void rend_set_italic( GLYPH_REND* const rend, int italics )
 	{
-		rend->glyphFace->setItalics(italics);
+		//rend->glyphFace->setItalics(italics);
 	}
 	
 	void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned height, const unsigned width)
 	{
-		rend->glyphFace->setPixelSize(height<<6, width<<6);
+		//rend->glyphFace->setSize(height<<6, width<<6);
+		rend->glyphFace->setSize(width<<6);
 	}
 	
 	void rend_set_hinting_default( GLYPH_REND* const rend )
 	{
-		rend->glyphFace->setHintingMode(FT_LOAD_DEFAULT);
+		//rend->glyphFace->setHintingMode(FT_LOAD_DEFAULT);
 	}
 	
 	void gk_rend_set_hinting_off( GLYPH_REND* const rend )
 	{
-		rend->glyphFace->setHintingMode(FT_LOAD_NO_HINTING);
+		//rend->glyphFace->setHintingMode(FT_LOAD_NO_HINTING);
 	}
 	
 	void rend_set_render_mode_normal( GLYPH_REND* const rend )
@@ -388,25 +418,24 @@ namespace ol
 		
 	}
 	
-	Rgba colorConvert(const unsigned col)
+	Rgba colorConvert(const unsigned char *c,short ext)
 	{
-		return Rgba(((float)(( col >> 16 ) & 0xff))/255.0, ((float)(( col >> 8 ) & 0xff))/255.0,
-			      ((float)( col & 0xff))/255.0, ((float)(( col >> 24 ) & 0xff))/255.0);
+		return Rgba(*c * 255 / (ext - 1), *c * 255 / (ext - 1),*c * 255 / (ext - 1),*c * 255 / (ext - 1));
 	}
 	
 	void gk_rend_set_text_alpha_color( GLYPH_REND* const rend, const unsigned alpha_color)
 	{
-		rend->glyphFace->color = colorConvert(alpha_color);
+		//rend->glyphFace->color = colorConvert(alpha_color);
 	}
 	
 	int gk_rend_ascender_pixels( GLYPH_REND* const rend )
 	{
-		return rend->glyphFace->ascenderPixels();
+		return 0;//rend->glyphFace->ascenderPixels();
 	}
 	
 	int rend_ascender_pixels( GLYPH_REND* const rend )
 	{
-		return rend->glyphFace->ascenderPixels();
+		return 0;//rend->glyphFace->ascenderPixels();
 	}
 	
 	int text_width_utf8(GLYPH_REND* const rend,const char* const text)
@@ -445,7 +474,7 @@ namespace ol
 	
 	void gk_render_line_gl_utf8( GLYPH_TEXTURE *texture, const char *text, int x, int y )
 	{
-		texture->glyphFace->render(text,x,y);
+		//texture->glyphFace->render(text,x,y);
 	}
 	
 	void gk_send_texture_to_gpu( GLYPH_TEXTURE *texture )

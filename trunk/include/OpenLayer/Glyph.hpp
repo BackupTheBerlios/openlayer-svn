@@ -4,20 +4,19 @@
 #define OL_GLYPH_HPP
 
 #include <math.h>
+#include <map>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_INTERNAL_OBJECTS_H
-#include "Includes.hpp"
 #include "Rgba.hpp"
 #include "Bitmap.hpp"
-#include "Internal.hpp"
+#include "Point.hpp"
 
 #define GLYPH_PI	3.14159265358979323846
 #define GLYPH_SQRT2	1.41421356237309504880
 
 namespace ol
 {
-	
 	// Forward decleration of Glyph for libFreeType
 	class Glyph;
 	
@@ -63,7 +62,7 @@ namespace ol
 	void rend_set_hinting_default( GLYPH_REND* const rend );
 	void gk_rend_set_hinting_off( GLYPH_REND* const rend );
 	void rend_set_render_mode_normal( GLYPH_REND* const rend );
-	Rgba colorConvert(const unsigned col);
+	Rgba colorConvert(const unsigned char *c,short ext);
 	void gk_rend_set_text_alpha_color( GLYPH_REND* const rend, const unsigned alpha_color);
 	int gk_rend_ascender_pixels( GLYPH_REND* const rend );
 	int rend_ascender_pixels( GLYPH_REND* const rend );
@@ -74,114 +73,136 @@ namespace ol
 	void gk_render_line_gl_utf8( GLYPH_TEXTURE *texture, const char *text, int x, int y );
 	void gk_send_texture_to_gpu( GLYPH_TEXTURE *texture );
 	
+	class character
+	{
+		public:
+			//! Constructor
+			character();
+			
+			//! Destructor
+			~character();
+			
+			//! Unicode representation of character
+			signed long unicode;
+			
+			//! Width of character
+			int width;
+			
+			//! Height of character
+			int height;
+			
+			//! Space on the left of a character (assists on positioning the character)
+			int left;
+			
+			//! Space on top of the character (assists on positioning the character)
+			int top;
+			
+			//! Space on the right of a character (assists on positioning the character)
+			int right;
+			
+			//! Pitch of a character (assists on positioning the character)
+			int pitch;
+			
+			//! Amount of shades of grays the FT_Bitmap holds
+			int grays;
+			
+			//! Entire rows of the FT_Bitmap
+			int rows;
+			
+			//! Entire length of the character with spacing and all
+			int length;
+			
+			//! FT_Bitmap raw data
+			unsigned char *line;
+	};
+	
 	// This class handles face objects
 	class Glyph
 	{
 		private:
-			// FT_Library
-			FT_Library library;
+			//! ID
+			int ID;
 			
-			// Current filename
+			//! Comparison of IDs
+			bool operator==(Glyph *g);
+
+			//! Current file
 			std::string currentFilename;
 			
-			// Face
-			FT_Face fontFace;
+			//! Is the face loaded
 			bool faceLoaded;
 			
-			// Slot
-			FT_GlyphSlot	slot;
-			FT_Matrix	matrix;
-			FT_Size		size;
-			FT_UInt		currentIndex;
-			FT_Vector	coord;
+			//! Does the face have kerning
+			bool kerning;
 			
-			// Font specifics
+			//! Current index default 0
+			int currentIndex;
 			
-			// Italics
-			bool 		italicized;
-			double 		italics;
+			//! Font size
+			FT_UInt size;
 			
-			// Angle
-			bool 		angled;
-			double 		angle;
+			//! Workspace bitmap
+			Bitmap *workBitmap;
 			
-			bool 		kerning;
-			bool 		monoSpacing;
+			//! Face
+			FT_Face face;
 			
-			int		hsize,vsize;
-			int		lineSpacing;
-			int		lineSpacingPixels;
-			int		textHeight;
-			int		textHeightPixels;
-			int		hintingMode;
-			int		hintingTarget;
-			int		loadFlags;
+			//! Face Name
+			std::string faceName;
 			
-			/*
-			*	These items are so that we can maintain compatibility with Glyph Keeper
-			*	until TextRender adopts the new system and replaces references to
-			*	GlyphKeeper in the future.
-			*/
+			//! Current character
+			character *currentChar;
+			
+			//! Lookup Table by size
+			std::map<int, std::map<signed long, character> >fontTable;
+			
+			//! Extract glyph
+			character extractGlyph(signed long unicode);
+			
+			//! Create single index
+			void createIndex(int i);
+			
+			//! Render a character from the lookup table (utilizing the workBitmap)
+			void drawCharacter(signed long unicode, double &x1, double &y1, Bitmap *bitmap, Rgba col);
 			
 			friend class GLYPH_FACE;
 			friend class GLYPH_REND;
 			friend class GLYPH_TEXTURE;
-			
-		protected:
-			
-			// Translate the face on its matrix
-			void updateMatrix();
-			Bitmap getCharBitmap(FT_Face face, FT_ULong unicode);
-			
 		public:
-			// Constructors
+			//! Constructor
 			Glyph();
-			Glyph(const std::string filename,int faceIndex = 0);
 			
-			// Destructor
+			//! Destructor
 			~Glyph();
-			// Face handling
 			
-			// Loads a new face into Glyph
-			bool load(const std::string filename, int faceIndex);
+			//! Load font from memory
+			bool loadFromMemory(const unsigned char *memoryFont, unsigned int length, int index=0, unsigned int fontSize=14);
 			
-			// This returns how many font faces avialable
-			long totalFaces();
+			//! Load font from file
+			bool load(const std::string & filename, int index=0, unsigned int fontSize=14);
 			
-			// Set font face index return true if successfull
-			bool setFaceIndex(int index);
+			//! Get text length
+			double getLength(const std::string & text);
 			
-			// Set width and height in pixels return true if successfull
-			bool setFontSize(int width=0, int height=0);
+			//! Render font to a bitmap
+			void render(double x, double y, Rgba col, Bitmap *bmp, int alignment, const std::string & text, ...);
 			
-			// Italicized check
-			bool isItalicized();
+			//! Set size
+			void setSize(int s);
 			
-			// Angled check
-			bool isAngled();
+			//! Get size
+			int getSize();
 			
-			void setItalics(int i);
-			
-			void setAngle(double a);
-			
-			bool setPixelSize(const unsigned height, const unsigned width);
-			
-			void setHintingMode(const unsigned mode);
-			
-			int ascender();
-			
-			int ascenderPixels();
-			
-			int descender();
-			
-			int descenderPixels();
-			
-			int textWidthUTF8(const std::string text);
-			
-			void render(std::string text, float x, float y);
-			
-			// Variables
+			//! Color
 			Rgba color;
+			
+			//! Enumerator for positioning of text when rendering
+			enum
+			{
+				LEFT=0,
+				CENTERED,
+				RIGHT
+			};
 	};
 
 }
