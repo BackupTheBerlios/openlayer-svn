@@ -1,4 +1,5 @@
 #define foobarbaz /*
+
 # A shell script within a source file. Ugly, but it works...
 
 TRGT=`basename ${0/.c/.exe}`
@@ -10,8 +11,9 @@ for i in $@ ; do
    fi
 done
 
-gcc -o /tmp/$TRGT "$0" && { "/tmp/$TRGT" $@ ; RET=$? ; rm -f "/tmp/$TRGT" ; exit $RET ; }
+gcc -W -Wall -Werror -o /tmp/$TRGT "$0" && { "/tmp/$TRGT" $@ ; RET=$? ; rm -f "/tmp/$TRGT" ; exit $RET ; }
 exit $?
+
 */
 
 /* CBuild written by Chris Robinson, copyright 2005-2006
@@ -44,17 +46,17 @@ exit $?
 #include <errno.h>
 #include <setjmp.h>
 
-#ifdef __unix__
+#if defined(__unix__) || defined(__MACH__)
+#include <sys/wait.h>
 #include <unistd.h>
+#else
+#define WIFEXITED(x)   (1)
+#define WEXITSTATUS(x) (x)
 #endif
 
 #if defined(__unix__) || defined(__GNUC__)
 #include <sys/param.h>
 #include <dirent.h>
-#endif
-
-#ifdef __MACH__
-#include <unistd.h>
 #endif
 
 #ifdef _WIN32
@@ -77,6 +79,10 @@ exit $?
 #define S_IWUSR _S_IWRITE 
 #define S_IXUSR _S_IEXEC 
 #define S_IRWXU (_S_IREAD | _S_IWRITE | _S_IEXEC)
+
+#define STDIN_FILENO 0
+#define STDOUT_FILENO 1
+#define STDERR_FILENO 2
 
 struct dirent {
 	char *d_name;
@@ -313,7 +319,7 @@ static inline void resize_list(void **ptr, size_t count, size_t type_size,
 		{
 			fprintf(USEABLE_ERR, "\n\n*** Critical Error ***\n"
 			                     "Out of memory allocating %u bytes!\n",
-			                     type_size*newlen);
+			                     (unsigned int)(type_size*newlen));
 			strcpy(linebuf, "exit -1\n");
 			longjmp(jmpbuf, 1);
 		}
@@ -323,7 +329,11 @@ static inline void resize_list(void **ptr, size_t count, size_t type_size,
 	*size = count;
 }
 #define RESIZE_LIST(name, count) \
-resize_list((void**)&name, count, sizeof(*name), &name##_len, &name##_size)
+{ \
+	void *vptr = name; \
+	resize_list(&vptr, count, sizeof(*name), &name##_len, &name##_size); \
+	name = vptr; \
+}
 
 
 static int libify_name(char *buf, size_t buflen, char *name);
@@ -1629,7 +1639,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 				size_t idx = ((ptr+1 >= end || !ptr[1]) ? 1 : atoi(ptr+1));
 				while(idx < argc)
 				{
-					i += snprintf(buf+i, BUF_SIZE-i, "${'%d'}", idx);
+					i += snprintf(buf+i, BUF_SIZE-i, "${'%u'}", (unsigned int)idx);
 
 					++idx;
 					if(idx < argc)
@@ -2254,7 +2264,7 @@ reparse:
 			{
 				fprintf(USEABLE_ERR, "\n\n!!! %s error, line %d !!!\n"
 				        "Too many 'do' commands enountered (max: %u)!\n\n",
-				        fname, curr_line, sizeof(int)*8 - 1);
+				        fname, curr_line, (unsigned int)sizeof(int)*8 - 1);
 				snprintf(linebuf, sizeof(linebuf), "exit -1\n");
 				goto reparse;
 			}
@@ -2751,20 +2761,15 @@ dir_write_check:
 				continue;
 			}
 
+			if(*(val-1) == '?')
 			{
-				char *next;
-
-				if(*(val-1) == '?')
-				{
-					*(val-1) = 0;
-					if(*getvar(ptr))
-						ovr = 0;
-				}
-
-				*(val++) = 0;
-				if(isspace(*val))
-					val = extract_word(val, sizeof(linebuf)+linebuf-val);
+				*(val-1) = 0;
+				if(*getvar(ptr))
+					ovr = 0;
 			}
+			*(val++) = 0;
+			if(isspace(*val))
+				val = extract_word(val, sizeof(linebuf)+linebuf-val);
 
 			if(*val)
 			{
@@ -2847,7 +2852,12 @@ dir_write_check:
 				printf("%s\n", buffer);
 				fflush(stdout);
 			}
-			if((ret=system(buffer)) != 0)
+			ret = system(buffer);
+			if(WIFEXITED(ret))
+				ret = WEXITSTATUS(ret);
+			else
+				ret = -1;
+			if(ret != 0)
 			{
 				if(!ignore_err)
 				{
@@ -3106,7 +3116,12 @@ compile_it:
 					fflush(stdout);
 				}
 
-				if((ret=system(buffer)) != 0)
+				ret = system(buffer);
+				if(WIFEXITED(ret))
+					ret = WEXITSTATUS(ret);
+				else
+					ret = -1;
+				if(ret != 0)
 				{
 					tmp = ret;
 					if(!ignore_err)
@@ -3220,7 +3235,12 @@ next_src_file:
 					printf("Linking %s...\n", obj);
 				fflush(stdout);
 			}
-			if((ret=system(buffer)) != 0)
+			ret = system(buffer);
+			if(WIFEXITED(ret))
+				ret = WEXITSTATUS(ret);
+			else
+				ret = -1;
+			if(ret != 0)
 			{
 				if(!ignore_err)
 				{
@@ -3295,7 +3315,12 @@ next_src_file:
 					printf("Linking %s...\n", obj);
 				fflush(stdout);
 			}
-			if((ret=system(buffer)) != 0)
+			ret = system(buffer);
+			if(WIFEXITED(ret))
+				ret = WEXITSTATUS(ret);
+			else
+				ret = -1;
+			if(ret != 0)
 			{
 				if(!ignore_err)
 				{
@@ -3392,7 +3417,12 @@ next_src_file:
 					printf("%s\n", buffer);
 					fflush(stdout);
 				}
-				if((ret=system(buffer)) != 0)
+				ret = system(buffer);
+				if(WIFEXITED(ret))
+					ret = WEXITSTATUS(ret);
+				else
+					ret = -1;
+				if(ret != 0)
 				{
 					tmp = ret;
 					if(!ignore_err)
@@ -4316,7 +4346,11 @@ next_src_file:
 			close(STDOUT_FILENO);
 			dup2(fd, STDOUT_FILENO);
 
-			ret |= system(buffer);
+			ret = system(buffer);
+			if(WIFEXITED(ret))
+				ret = WEXITSTATUS(ret);
+			else
+				ret = -1;
 			if(ret != 0)
 			{
 				if(!ignore_err)

@@ -475,6 +475,7 @@ namespace ol
 	void gk_render_line_gl_utf8( GLYPH_TEXTURE *texture, const char *text, int x, int y )
 	{
 		//texture->glyphFace->render(text,x,y);
+		texture->glyphFace->render(x,y,Rgba::WHITE,NULL,0,text);
 	}
 	
 	void gk_send_texture_to_gpu( GLYPH_TEXTURE *texture )
