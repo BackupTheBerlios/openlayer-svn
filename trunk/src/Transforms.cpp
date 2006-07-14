@@ -127,9 +127,15 @@ ResetPlacement() {
       while( stackCounter > 0 ) {
          PopPlacement();
       }
-
+      
       glPopMatrix();
       transformationStored = false;
+      
+      x = 0;
+      y = 0;
+      angle = 0.0;
+      xStretch = 1.0;
+      yStretch = 1.0;
    }
 }
 
@@ -138,7 +144,7 @@ ResetPlacement() {
 void Transforms::
 ApplyTransforms() {
    ResetTransforms();
-
+   
    glPushMatrix();
    transformationStored = true;
 

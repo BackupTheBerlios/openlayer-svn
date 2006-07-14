@@ -3,6 +3,7 @@
 
 
 #include "Shape.hpp"
+#include "Point.hpp"
 #include "Settings.hpp"
 #include "Polygon.hpp"
 #include <cmath>
@@ -114,6 +115,11 @@ public:
 
 	inline bool Collides( const Poly& other ) const {
 		return DoCollisionTest( other, Placement(), other.GetPlacement(), false ).IsCollision();
+	}
+
+	inline bool Collides( const Point& other ) const {
+		return other.pos.x >= pos.x && other.pos.x < pos.x + size.x && other.pos.y >= pos.y
+		    && other.pos.y < pos.y + size.y;
 	}
    
    // Tests if two polygons collide and gives detailed information about the collision //

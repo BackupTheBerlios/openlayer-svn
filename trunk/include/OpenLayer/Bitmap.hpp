@@ -12,6 +12,7 @@
 #include "RenderModes.hpp"
 
 #include <vector>
+#include <string>
 #include <math.h>
 
 
@@ -49,7 +50,7 @@ public:
     // ExtraFlags should be zero or MAKE_COLLISION_POLY
     
     // Construct the Bitmap using a bitmap file //
-    Bitmap( const char *filename, int extraFlags = 0 )                                : bmp( 0 ), collisionPoly( 0 ), destroyBmp( true ), pendingLoad( 0 ), pivot( Vec2D( 0.0, 0.0 )), useDefaultPivot( true ), isSubBitmap( false ) { AddToCollection(); Load( filename, extraFlags ); }
+    Bitmap( std::string filename, int extraFlags = 0 )                                : bmp( 0 ), collisionPoly( 0 ), destroyBmp( true ), pendingLoad( 0 ), pivot( Vec2D( 0.0, 0.0 )), useDefaultPivot( true ), isSubBitmap( false ) { AddToCollection(); Load( filename.c_str(), extraFlags ); }
     
     // Construct the Bitmap using a separate bitmap for //
     // the color and the transparency information //
