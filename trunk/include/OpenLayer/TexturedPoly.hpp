@@ -17,7 +17,7 @@ class Bitmap;
 class TexturedPoly : public Poly {
 public:
    TexturedPoly( Vec2D rotationPivot = Vec2D( 0.0, 0.0 ))
-      : Poly( 0 ), texture( &texture ), dirty( true ) {}
+      : Poly( rotationPivot ), texture( 0 ), dirty( true ) {}
       
    TexturedPoly( const Bitmap &texture, Vec2D rotationPivot = Vec2D( 0.0, 0.0 ))
       : Poly( rotationPivot ), texture( &texture ), dirty( true ) {}
