@@ -143,7 +143,9 @@ ResetPlacement() {
 
 void Transforms::
 ApplyTransforms() {
-   ResetTransforms();
+   if( transformationStored ) {
+      glPopMatrix();
+   }
    
    glPushMatrix();
    transformationStored = true;
