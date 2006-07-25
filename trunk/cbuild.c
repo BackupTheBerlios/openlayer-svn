@@ -1661,7 +1661,7 @@ static char *expand_string(char *str, const char *stp, size_t len,
 		while(buf[i])
 		{
 			if(buf[i] == '&' || buf[i] == '\'' || buf[i] == '"' ||
-			   buf[i] == '\\')
+			   buf[i] == '\\' || buf[i] == '#')
 			{
 				memmove(buf+i+1, buf+i, BUF_SIZE-i-1);
 				buf[i] = '\\';
