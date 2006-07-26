@@ -536,12 +536,12 @@ LIB_PRE = utils/loadpng/
 LIB_EXT = .a
 ifnexist ${'OBJ_DIR'} -mkdir ${'OBJ_DIR'}
 ifnexist ${'DEP_DIR'} -mkdir ${'DEP_DIR'}
-@!compile ${LDPNGSRC} 
-@!linklib libldpng
+@!compile ${LDPNGSRC}
 do ifnret 0
 	 echo "There was a problem compiling loadpng, do you have libpng installed?"
 	 goto pngcleanup
 done
+@!linklib libldpng
 do ifexist utils/loadpng/libldpng.a
 :pngask
 	echo "Where do you wish to install loadpng?"
@@ -622,11 +622,11 @@ LIB_EXT = .a
 ifnexist ${'OBJ_DIR'} -mkdir ${'OBJ_DIR'}
 ifnexist ${'DEP_DIR'} -mkdir ${'DEP_DIR'}
 @!compile ${GKSRC}
-@!linklib libglyph-agl
 do ifnret 0
 	 echo "There was a problem compiling glyphkeeper, do you have freetype installed?"
 	 goto gkcleanup
 done
+@!linklib libglyph-agl
 do ifexist utils/glyphkeeper/libglyph-agl.a
 :gkask
 	echo "Where do you wish to install glyph-agl?"
