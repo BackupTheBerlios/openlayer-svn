@@ -8,19 +8,17 @@ Before compiling ensure you have the following installed and in your path:
 - Freetype library version 2.1.10 or greater. Anything else and it won't work.
 - GlyphKeeper library specifically built for ALLEGROGL
 	- the allegrogl version should be named libglyph-agl.a
-	- Attached is a makefile (under utils) to create the allegrogl verision with glyphkeeper 0.29.1
-	- Note that GK 0.29.1 will have 2 compile errors in glyph_to_opengl. Either remove the comments
-	  or change // to /* with it's closing */ brace
+	- The sources have now been included with openlayer in the utils/glyphkeeper directory
+	- run ./cbuild.c glyphkeeper and it will build the library and ask you where you want to install it
 - Png library
 - LoadPng library 1.4 pre1 
 	- Loadpng must be the 1.4 pre1 release anything before that WILL not work
-	- The library is included in the utils directory run 'make loadpng' to build it and follow the instructions to install
+	- The library is included in the utils directory run ./cbuild.c loadpng to build it and ask you where you want to install it
 - Zlib library
 
 BUILDING:
 
-*Note that the makefile is being depricated for a better build system known as cbuild.
-*For more information on cbuild please check: http://awiki.tomasu.org/bin/view/Main/CBUILD
+The build utility is known as cbuild which openlayer uses, for more information go to http://awiki.tomasu.org/bin/view/Main/CBUILD
 
 For those on windows without msys, but have mingw please use the batch file "buildme.bat" instead.
 Substitute 'buildme' for './cbuild.c' below.

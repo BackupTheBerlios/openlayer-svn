@@ -3,6 +3,11 @@
 # check verbose output
 ifopt verbose verbose 1
 
+# check for building utilities
+ifopt loadpng goto doldpng
+
+ifopt glyphkeeper goto dogk
+
 # Lets force configuration
 ifopt configure configure = "true"
 
@@ -20,13 +25,15 @@ To compile run:"
 	done
 	echo "
 [OPTIONS]
-help      - Prints this information
-verbose   - Enable verbose output
-configure - Force configuration prompts
-clean     - Clean up resources
-install   - installs the library
-uninstall - uninstalls the library
-developer - Enables the developer configuration prompts"
+help      	- Prints this information
+verbose   	- Enable verbose output
+configure 	- Force configuration prompts
+clean     	- Clean up resources
+install   	- installs the library
+uninstall 	- uninstalls the library
+developer 	- Enables the developer configuration prompts
+loadpng 	- Builds loadpng and installs
+glyphkeeper 	- Builds (AllegroGL specific) glyphkeeper and installs"
 	exit 0
 done
 
@@ -128,7 +135,7 @@ else if $(tolower ${'target'})='msvc'
 else if $(tolower ${'target'})='macosx'
 	echo "Seting up for macosx environment"
 	CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer `freetype-config --cflags` -fexpensive-optimizations
-	LDFLAGS=-lglyph-agl `freetype-config --libs` -lldpng -lpng -lz -lagl `allegro-config --libs` -framework OpenGL -framework Carbon
+	LDFLAGS=-lglyph-agl `freetype-config --libs` `libpng-config --libs` -lldpng -lagl `allegro-config --libs` -framework OpenGL -framework Carbon
 done
 
 # Prompt user for preprocessor support
@@ -427,39 +434,39 @@ appendfile include/OpenLayer.hpp
 appendfile include/OpenLayer.hpp \#ifndef OPENLAYER_HPP
 appendfile include/OpenLayer.hpp \#define OPENLAYER_HPP
 appendfile include/OpenLayer.hpp 
-appendfile include/OpenLayer.hpp \#include "OpenLayer/GarbageCollector.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Includes.hpp"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/GarbageCollector.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Includes.hpp\"
 appendfile include/OpenLayer.hpp 
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Animation.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Bitmap.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Blenders.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/FpsCounter.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/GarbageCollector.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/General.hpp"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Animation.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Bitmap.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Blenders.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/FpsCounter.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/GarbageCollector.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/General.hpp\"
 appendfile include/OpenLayer.hpp 
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Rgba.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Settings.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Setup.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/TextRenderer.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Transforms.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Canvas.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/RenderModes.hpp"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Rgba.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Settings.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Setup.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/TextRenderer.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Transforms.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Canvas.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/RenderModes.hpp\"
 appendfile include/OpenLayer.hpp 
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Shape.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/TexturedPoly.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Polygon.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Line.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Rectangle.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Circle.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/LineStrip.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Point.hpp"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Shape.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/TexturedPoly.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Polygon.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Line.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Rectangle.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Circle.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/LineStrip.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Point.hpp\"
 appendfile include/OpenLayer.hpp 
-appendfile include/OpenLayer.hpp \#include "OpenLayer/Vec2D.hpp"
-appendfile include/OpenLayer.hpp \#include "OpenLayer/TextureInfo.hpp"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Vec2D.hpp\"
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/TextureInfo.hpp\"
 appendfile include/OpenLayer.hpp 
 do ifnot ${'DROPOLDAPI'}='true'
 	appendfile include/OpenLayer.hpp \// Providing backwards compatibility with apps made before 2.0
-	appendfile include/OpenLayer.hpp \#include "OpenLayer/GfxRend.hpp"
+	appendfile include/OpenLayer.hpp \#include \"OpenLayer/GfxRend.hpp\"
 done
 appendfile include/OpenLayer.hpp 
 appendfile include/OpenLayer.hpp \// Defines set accordingly to compiled settings
@@ -483,3 +490,122 @@ appendfile include/OpenLayer.hpp
 appendfile include/OpenLayer.hpp \#endif
 appendfile include/OpenLayer.hpp 
 goto finishedcompile
+
+
+# Build libldpng and install it
+:doldpng
+CFLAGS="-O2 -W -Wall"
+do ifplat windows
+	LDFLAGS="-lpng"
+else
+	LDFLAGS="`libpng-config --libs`"
+done
+LDPNGSRC= loadpng.c regpng.c savepng.c
+src_paths utils/loadpng
+OBJ_DIR= utils/loadpng/obj
+DEP_DIR= utils/loadpng/dep
+AR = ar
+AR_OPT = rcs
+LIB_PRE = utils/loadpng/
+LIB_EXT = .a
+ifnexist ${'OBJ_DIR'} -mkdir ${'OBJ_DIR'}
+ifnexist ${'DEP_DIR'} -mkdir ${'DEP_DIR'}
+compile ${LDPNGSRC}
+linklib libldpng
+
+do ifexist utils/loadpng/libldpng.a
+:pngask
+	echo "Where do you wish to install loadpng?"
+	do ifplat win32
+		echo "example: c:\mingw (make sure lib and include exist in the directory)"
+	else
+		echo "example: /usr/local (make sure lib and include exist in the directory)"
+	done
+	echo "Enter exit or cancel if you don't want to install at this time."
+	read LOCATION
+	do if $(tolower ${'LOCATION'})='cancel'
+		goto pngcleanup
+	else if $(tolower ${'LOCATION'})='exit'
+		goto pngcleanup
+	else if ${'LOCATION'}='' goto pngask
+	else ifexist ${'LOCATION'}/lib ifexist ${'LOCATION'}/include
+		echo "Installing loadpng to ${'LOCATION'}"
+		-copy utils/loadpng/loadpng.h ${'LOCATION'}/include/
+		-copy utils/loadpng/libldpng.a ${'LOCATION'}/lib/
+	else ifnexist ${'LOCATION'}/lib ifnexist ${'LOCATION'}/include
+		echo "${'LOCATION'} is an invalid install location."
+		goto pngask
+	done
+else ifnexist utils/loadpng/libldpng.a
+	echo "There was a problem compiling loadpng, do you have libpng installed?"
+done
+:pngcleanup
+-rm utils/loadpng/libldpng.a
+-rmobj ${LDPNGSRC}
+-rm ${'OBJ_DIR'}
+-rm ${'DEP_DIR'}
+exit 0
+
+# Build libglyph-agl and install it
+:dogk
+do ifplat windows
+	do ifexist ${'MINGDIR'}/include/freetype2
+		CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -I%MINGDIR%/include/freetype2 -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL
+	else ifexist ${'MINGDIR'}/local/include/freetype2
+		CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -I%MINGDIR%/local/include/freetype2 -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL
+	else
+		echo "Can't find freetype do you have it installed?"
+		exit 1
+	done
+	LDFLAGS="-lfreetype -lz"
+else
+	CPPFLAGS="-O2 -Wall `freetype-config --cflags` -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
+	LDFLAGS="`freetype-config --libs`"
+done
+GKSRC= "glyph.c glyph_global_vars.c glyph_rend.c glyph_to_allegro_mono.c glyph_dimensions.c glyph_index.c glyph_to_allegro_aa.c glyph_to_opengl.c glyph_face.c glyph_main.c glyph_to_allegro.c glyph_utils.c"
+
+src_paths utils/glyphkeeper/src
+OBJ_DIR= utils/glyphkeeper/obj
+DEP_DIR= utils/glyphkeeper/dep
+AR = ar
+AR_OPT = rcs
+LIB_PRE = utils/glyphkeeper/
+LIB_EXT = .a
+ifnexist ${'OBJ_DIR'} -mkdir ${'OBJ_DIR'}
+ifnexist ${'DEP_DIR'} -mkdir ${'DEP_DIR'}
+compile ${GKSRC}
+linklib libglyph-agl
+
+do ifexist utils/glyphkeeper/libglyph-agl.a
+:gkask
+	echo "Where do you wish to install glyph-agl?"
+	do ifplat win32
+		echo "example: c:\mingw (make sure lib and include exist in the directory)"
+	else
+		echo "example: /usr/local (make sure lib and include exist in the directory)"
+	done
+	echo "Enter exit or cancel if you don't want to install at this time."
+	read LOCATION
+	do if $(tolower ${'LOCATION'})='cancel'
+		goto gkcleanup
+	else if $(tolower ${'LOCATION'})='exit'
+		goto gkcleanup
+	else if ${'LOCATION'}='' goto gkask
+	else ifexist ${'LOCATION'}/lib ifexist ${'LOCATION'}/include
+		echo "Installing glyph-agl to ${'LOCATION'}"
+		-copy utils/glyphkeeper/include/glyph.h ${'LOCATION'}/include/
+		-copy utils/glyphkeeper/libglyph-agl.a ${'LOCATION'}/lib/
+	else ifnexist ${'LOCATION'}/lib ifnexist ${'LOCATION'}/include
+		echo "${'LOCATION'} is an invalid install location."
+		goto gkask
+	done
+else ifnexist utils/glyphkeeper/libglyph-agl.a
+	echo "There was a problem compiling loadpng, do you have freetype installed?"
+done
+:gkcleanup
+-rm utils/glyphkeeper/libglyph-agl.a
+-rmobj ${GKSRC}
+-rm ${'OBJ_DIR'}
+-rm ${'DEP_DIR'}
+
+exit 0
