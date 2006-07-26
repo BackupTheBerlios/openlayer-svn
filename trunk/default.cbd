@@ -495,7 +495,7 @@ goto finishedcompile
 # Build libldpng and install it
 :doldpng
 CFLAGS="-O2 -W -Wall"
-do ifplat windows
+do ifplat win32
 	LDFLAGS="-lpng"
 else
 	LDFLAGS="`libpng-config --libs`"
@@ -510,9 +510,12 @@ LIB_PRE = utils/loadpng/
 LIB_EXT = .a
 ifnexist ${'OBJ_DIR'} -mkdir ${'OBJ_DIR'}
 ifnexist ${'DEP_DIR'} -mkdir ${'DEP_DIR'}
-compile ${LDPNGSRC}
-linklib libldpng
-
+@!compile ${LDPNGSRC} 
+@!linklib libldpng
+do ifnret 0
+	 echo "There was a problem compiling loadpng, do you have libpng installed?"
+	 goto pngcleanup
+done
 do ifexist utils/loadpng/libldpng.a
 :pngask
 	echo "Where do you wish to install loadpng?"
@@ -540,26 +543,26 @@ else ifnexist utils/loadpng/libldpng.a
 	echo "There was a problem compiling loadpng, do you have libpng installed?"
 done
 :pngcleanup
--rm utils/loadpng/libldpng.a
--rmobj ${LDPNGSRC}
--rm ${'OBJ_DIR'}
--rm ${'DEP_DIR'}
+@!rm utils/loadpng/libldpng.a
+@!rmobj ${LDPNGSRC}
+@!rm ${'OBJ_DIR'}
+@!rm ${'DEP_DIR'}
 exit 0
 
 # Build libglyph-agl and install it
 :dogk
-do ifplat windows
+do ifplat win32
 	do ifexist ${'MINGDIR'}/include/freetype2
-		CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -I%MINGDIR%/include/freetype2 -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL
+		CFLAGS="-O2 -Wall -Iinclude -Iinclude/OpenLayer -I%MINGDIR%/include/freetype2 -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
 	else ifexist ${'MINGDIR'}/local/include/freetype2
-		CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -I%MINGDIR%/local/include/freetype2 -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL
+		CFLAGS="-O2 -Wall -Iinclude -Iinclude/OpenLayer -I%MINGDIR%/local/include/freetype2 -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
 	else
 		echo "Can't find freetype do you have it installed?"
 		exit 1
 	done
 	LDFLAGS="-lfreetype -lz"
 else
-	CPPFLAGS="-O2 -Wall `freetype-config --cflags` -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
+	CFLAGS="-O2 -Wall `freetype-config --cflags` -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
 	LDFLAGS="`freetype-config --libs`"
 done
 GKSRC= "glyph.c glyph_global_vars.c glyph_rend.c glyph_to_allegro_mono.c glyph_dimensions.c glyph_index.c glyph_to_allegro_aa.c glyph_to_opengl.c glyph_face.c glyph_main.c glyph_to_allegro.c glyph_utils.c"
@@ -573,9 +576,12 @@ LIB_PRE = utils/glyphkeeper/
 LIB_EXT = .a
 ifnexist ${'OBJ_DIR'} -mkdir ${'OBJ_DIR'}
 ifnexist ${'DEP_DIR'} -mkdir ${'DEP_DIR'}
-compile ${GKSRC}
-linklib libglyph-agl
-
+@!compile ${GKSRC}
+@!linklib libglyph-agl
+do ifnret 0
+	 echo "There was a problem compiling glyphkeeper, do you have freetype installed?"
+	 goto gkcleanup
+done
 do ifexist utils/glyphkeeper/libglyph-agl.a
 :gkask
 	echo "Where do you wish to install glyph-agl?"
@@ -600,12 +606,11 @@ do ifexist utils/glyphkeeper/libglyph-agl.a
 		goto gkask
 	done
 else ifnexist utils/glyphkeeper/libglyph-agl.a
-	echo "There was a problem compiling loadpng, do you have freetype installed?"
+	echo "There was a problem compiling glyphkeeper, do you have freetype installed?"
 done
 :gkcleanup
--rm utils/glyphkeeper/libglyph-agl.a
--rmobj ${GKSRC}
--rm ${'OBJ_DIR'}
--rm ${'DEP_DIR'}
-
+@!rm utils/glyphkeeper/libglyph-agl.a
+@!rmobj ${GKSRC}
+@!rm ${'OBJ_DIR'}
+@!rm ${'DEP_DIR'}
 exit 0
