@@ -494,8 +494,34 @@ goto finishedcompile
 
 # Build libldpng and install it
 :doldpng
-CFLAGS="-O2 -W -Wall"
 do ifplat win32
+	do ifexist ${'MINGDIR'}/include/png.h
+		CFLAGS="-O2 -Wall -I%MINGDIR%/include"
+	else ifexist ${'MINGDIR'}/local/include/png.h
+		CFLAGS="-O2 -Wall -I%MINGDIR%/local/include"
+	else
+:pnglocation
+		echo "Can't find libpng do you have it installed?"
+		echo "Please specify where its located:"
+		do ifplat win32
+			echo "example: c:\mingw (make sure lib\libpng.a and include\png.h exist in the directory)"
+		else
+			echo "example: /usr/local (make sure lib/libpng.a and include/png.h exist in the directory)"
+		done
+		echo "Enter exit or cancel if you don't have it."
+		read LOCATION
+		do if $(tolower ${'LOCATION'})='cancel'
+			exit 0
+		else if $(tolower ${'LOCATION'})='exit'
+			exit 0
+		else if ${'LOCATION'}='' goto pnglocation
+		else ifexist ${'LOCATION'}/lib/libpng.a ifexist ${'LOCATION'}/include/png.h
+			CFLAGS="-O2 -Wall -I${'LOCATION'}/include"
+		else ifnexist ${'LOCATION'}/lib/libpng.a ifnexist ${'LOCATION'}/include/png.h
+			echo "${'LOCATION'} is an invalid library location."
+			goto pnglocation
+		done
+	done
 	LDFLAGS="-lpng"
 else
 	LDFLAGS="`libpng-config --libs`"
@@ -553,12 +579,31 @@ exit 0
 :dogk
 do ifplat win32
 	do ifexist ${'MINGDIR'}/include/freetype2
-		CFLAGS="-O2 -Wall -Iinclude -Iinclude/OpenLayer -I%MINGDIR%/include/freetype2 -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
+		CFLAGS="-O2 -Wall -I%MINGDIR%/include/freetype2 -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
 	else ifexist ${'MINGDIR'}/local/include/freetype2
-		CFLAGS="-O2 -Wall -Iinclude -Iinclude/OpenLayer -I%MINGDIR%/local/include/freetype2 -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
+		CFLAGS="-O2 -Wall -I%MINGDIR%/local/include/freetype2 -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
 	else
+:gklocation
 		echo "Can't find freetype do you have it installed?"
-		exit 1
+		echo "Please specify where its located:"
+		do ifplat win32
+			echo "example: c:\mingw (make sure lib\libfreetype.a and include\freetype2 exist in the directory)"
+		else
+			echo "example: /usr/local (make sure lib/libfreetype.a and include/freetype2 exist in the directory)"
+		done
+		echo "Enter exit or cancel if you don't have it."
+		read LOCATION
+		do if $(tolower ${'LOCATION'})='cancel'
+			exit 0
+		else if $(tolower ${'LOCATION'})='exit'
+			exit 0
+		else if ${'LOCATION'}='' goto gklocation
+		else ifexist ${'LOCATION'}/lib/libfreetype.a ifexist ${'LOCATION'}/include/freetype2
+			CFLAGS="-O2 -Wall -I${'LOCATION'}/include/freetype2 -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
+		else ifnexist ${'LOCATION'}/lib/libfreetype.a ifnexist ${'LOCATION'}/include/freetype2
+			echo "${'LOCATION'} is an invalid library location."
+			goto gklocation
+		done
 	done
 	LDFLAGS="-lfreetype -lz"
 else
