@@ -73,14 +73,10 @@ To Use:
 
 - #include <OpenLayer.hpp> in your project's sources
 
-	LINUX
-- Link your projects with:
-	"-lopenlayer -lglyph-agl -lfreetype -lldpng -lpng -lz -lagl `allegro-config --libs` -lGL -lGLU"
+	LINUX/*NIX and MACOSX
+- Link your projects with: `openlayer-config --libs` if you need the flags do `openlayer-config --cflags`
 	
 	WINDOWS
 - Link your projects with:
 	"-lopenlayer -lglyph-agl -lfreetype -lldpng -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32-lopengl32"
 	
-	MACOSX
-- Link your projects with:
-	"-lopenlayer -lglyph-agl -lfreetype -lldpng -lpng -lz -lagl `allegro-config --libs` -framework OpenGL -framework Carbon"

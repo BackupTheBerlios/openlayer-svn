@@ -69,6 +69,17 @@ do ifexist options
 	CONFIGFLAGS = ${'tempstr'}
 	read tempstr
 	CONFIGLIBS = ${'tempstr'}
+	read tempstr
+	DROPPNG = ${'tempstr'}
+	read tempstr
+	DROPTTF = ${'tempstr'}
+	read tempstr
+	USENEWTTF = ${'tempstr'}
+	read tempstr
+	DROPOLDAPI = ${'tempstr'}
+	read tempstr
+	DROPSTATECHANGE = ${'tempstr'}
+	setinput
 	goto build
 done
 
@@ -127,18 +138,11 @@ echo "Do you wish to drop PNG support? [y/N]"
 read PNG
 do if $(tolower ${'PNG'})='y'
 	CPPFLAGS += " -DOL_NO_PNG"
-else if $(tolower ${'PNG'})='yes'
-	CPPFLAGS += " -DOL_NO_PNG"
-else ifnot $(tolower ${'PNG'})='n' ifnot $(tolower ${'PNG'})='no' ifnot ${'PNG'}='' goto NOPNG
+	DROPPNG='true'
+else ifnot $(tolower ${'PNG'})='n' ifnot ${'PNG'}='' goto NOPNG
 done
 
-do if ${'PNG'}=''
-	CONFIGFLAGS += "`libpng-config --cflags` "
-	CONFIGLIBS += "`libpng-config --libs` -lldpng "
-else if ${'PNG'}='n'
-	CONFIGFLAGS += "`libpng-config --cflags` "
-	CONFIGLIBS += "`libpng-config --libs` -lldpng "
-else if ${'PNG'}='no'
+do if ${'DROPPNG'}=''
 	CONFIGFLAGS += "`libpng-config --cflags` "
 	CONFIGLIBS += "`libpng-config --libs` -lldpng "
 done
@@ -148,13 +152,9 @@ echo "Do you wish to drop TTF support? [y/N]"
 read TTF
 do if $(tolower ${'TTF'})='y'
 	CPPFLAGS += " -DOL_NO_TTF"
-else if $(tolower ${'TTF'})='yes'
-	CPPFLAGS += " -DOL_NO_TTF"
-else ifnot $(tolower ${'TTF'})='n' ifnot $(tolower ${'TTF'})='no' ifnot ${'TTF'}='' goto NOTTF
-done
-
-do if $(tolower ${'TTF'})='y'
+	DROPTTF='true'
 	goto NOOLDAPI
+else ifnot $(tolower ${'TTF'})='n' ifnot ${'TTF'}='' goto NOTTF
 done
 
 CONFIGFLAGS += "`freetype-config --cflags` "
@@ -171,11 +171,8 @@ do if $(tolower ${'NEWTTF'})='y'
 	CPPFLAGS += " -DUSE_NEW_TTF"
 	LDFLAGS -= "-lglyph-agl "
 	CONFIGLIBS-="-lglyph-agl "
-else if $(tolower ${'NEWTTF'})='yes'
-	CPPFLAGS += " -DUSE_NEW_TTF"
-	LDFLAGS -= "-lglyph-agl "
-	CONFIGLIBS-="-lglyph-agl "
-else ifnot $(tolower ${'NEWTTF'})='n' ifnot $(tolower ${'NEWTTF'})='no' ifnot ${'NEWTTF'}='' goto NONEWTTF
+	USENEWTTF='true'
+else ifnot $(tolower ${'NEWTTF'})='n' ifnot ${'NEWTTF'}='' goto NONEWTTF
 done	
 	
 :NOOLDAPI
@@ -183,18 +180,16 @@ echo "Do you wish to drop old API Support? [y/N]"
 read OLDAPI
 do if $(tolower ${'OLDAPI'})='y'
 	CPPFLAGS += " -DOL_NO_OLD_API"
-else if $(tolower ${'OLDAPI'})='yes'
-	CPPFLAGS += " -DOL_NO_OLD_API"
-else ifnot $(tolower ${'OLDAPI'})='n' ifnot $(tolower ${'OLDAPI'})='no' ifnot ${'OLDAPI'}='' goto NOOLDAPI
+	DROPOLDAPI='true'
+else ifnot $(tolower ${'OLDAPI'})='n' ifnot ${'OLDAPI'}='' goto NOOLDAPI
 done
 :NOSTATECHANGE
 echo "Do you wish to drop State Changes? [y/N]"
 read STATECHANGE
 do if $(tolower ${'STATECHANGE'})='y'
 	CPPFLAGS += " -DOL_NO_STATE_CHANGE"
-else if $(tolower ${'STATECHANGE'})='yes'
-	CPPFLAGS += " -DOL_NO_STATE_CHANGE"
-else ifnot $(tolower ${'STATECHANGE'})='n' ifnot $(tolower ${'STATECHANGE'})='no' ifnot ${'STATECHANGE'}='' goto NOSTATECHANGE
+	DROPSTATECHANGE='true'
+else ifnot $(tolower ${'STATECHANGE'})='n' ifnot ${'STATECHANGE'}='' goto NOSTATECHANGE
 done
 
 # Finishing touches on the openlayer-config script
@@ -212,6 +207,11 @@ appendfile options ${'CPPFLAGS'}
 appendfile options ${'LDFLAGS'}
 appendfile options ${'CONFIGFLAGS'}
 appendfile options ${'CONFIGLIBS'}
+appendfile options ${'DROPPNG'}
+appendfile options ${'DROPTTF'}
+appendfile options ${'USENEWTTF'}
+appendfile options ${'DROPOLDAPI'}
+appendfile options ${'DROPSTATECHANGE'}
 goto build
 
 # Start building library
@@ -225,6 +225,8 @@ compile ${LIB_SOURCES}
 echo "- Assembling library -"
 -rm lib/libopenlayer.a
 linklib libopenlayer
+goto doopenlayerheader
+:finishedcompile
 echo "
 - Compilation completed -
 
@@ -397,3 +399,87 @@ appendfile ${'LOCATION'}/bin/openlayer-config done
 goto libinstallfinish
 
 # Create include header
+:doopenlayerheader
+writefile include/OpenLayer.hpp //     O p e n L a y e r      //
+appendfile include/OpenLayer.hpp //                            //
+appendfile include/OpenLayer.hpp // by Esa Tanskanen           //
+appendfile include/OpenLayer.hpp //                            //
+appendfile include/OpenLayer.hpp // 2D Graphics routines using //
+appendfile include/OpenLayer.hpp // OpenGL acceleration        //
+appendfile include/OpenLayer.hpp //
+appendfile include/OpenLayer.hpp // Use it where ever you want,//
+appendfile include/OpenLayer.hpp // as long as you dont claim //
+appendfile include/OpenLayer.hpp // the code to be your own!   //
+appendfile include/OpenLayer.hpp 
+appendfile include/OpenLayer.hpp // Requires:  
+appendfile include/OpenLayer.hpp // - Glyph Keeper 0.26.1 or later (Compile with -DGLYPH_TARGET=GLYPH_ALLEGGL)
+appendfile include/OpenLayer.hpp // - Allegro 4.0.2 or later
+appendfile include/OpenLayer.hpp // - AllegroGL 0.2.4 or later
+appendfile include/OpenLayer.hpp // - Recommended: Loadpng + LibPNG + ZLib to load png images
+appendfile include/OpenLayer.hpp // - Reading the manual or header files to know the functions
+appendfile include/OpenLayer.hpp // - Linking your programs with: 
+appendfile include/OpenLayer.hpp //   -lglyph -lfreetype -lloadpng -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32
+appendfile include/OpenLayer.hpp 
+appendfile include/OpenLayer.hpp //\#define FORTIFY
+appendfile include/OpenLayer.hpp //\#include <Fortify/Fortify.h>
+appendfile include/OpenLayer.hpp 
+appendfile include/OpenLayer.hpp 
+appendfile include/OpenLayer.hpp \#ifndef OPENLAYER_HPP
+appendfile include/OpenLayer.hpp \#define OPENLAYER_HPP
+appendfile include/OpenLayer.hpp 
+appendfile include/OpenLayer.hpp \#include "OpenLayer/GarbageCollector.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Includes.hpp"
+appendfile include/OpenLayer.hpp 
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Animation.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Bitmap.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Blenders.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/FpsCounter.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/GarbageCollector.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/General.hpp"
+appendfile include/OpenLayer.hpp 
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Rgba.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Settings.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Setup.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/TextRenderer.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Transforms.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Canvas.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/RenderModes.hpp"
+appendfile include/OpenLayer.hpp 
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Shape.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/TexturedPoly.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Polygon.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Line.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Rectangle.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Circle.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/LineStrip.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Point.hpp"
+appendfile include/OpenLayer.hpp 
+appendfile include/OpenLayer.hpp \#include "OpenLayer/Vec2D.hpp"
+appendfile include/OpenLayer.hpp \#include "OpenLayer/TextureInfo.hpp"
+appendfile include/OpenLayer.hpp 
+do ifnot ${'DROPOLDAPI'}='true'
+	appendfile include/OpenLayer.hpp \// Providing backwards compatibility with apps made before 2.0
+	appendfile include/OpenLayer.hpp \#include "OpenLayer/GfxRend.hpp"
+done
+appendfile include/OpenLayer.hpp 
+appendfile include/OpenLayer.hpp \// Defines set accordingly to compiled settings
+appendfile include/OpenLayer.hpp \#define OL_DRIVER ALLEGRO_GL
+do if ${'DROPPNG'}='true'
+	appendfile include/OpenLayer.hpp \#define OL_NO_PNG
+done
+do if ${'DROPTTF'}='true'
+	appendfile include/OpenLayer.hpp \#define OL_NO_TTF
+done
+do if ${'USENEWTTF'}='true'
+	appendfile include/OpenLayer.hpp \#define USE_NEW_TTF
+done
+do if ${'DROPOLDAPI'}='true'
+	appendfile include/OpenLayer.hpp \#define OL_NO_OLD_API
+done
+do if ${'DROPSTATECHANGE'}='true'
+	appendfile include/OpenLayer.hpp \#define OL_NO_STATE_CHANGE
+done
+appendfile include/OpenLayer.hpp 
+appendfile include/OpenLayer.hpp \#endif
+appendfile include/OpenLayer.hpp 
+goto finishedcompile
