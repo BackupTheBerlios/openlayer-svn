@@ -31,11 +31,11 @@ namespace ol
 		ID = instances;
 		faceLoaded = kerning = false;
 		currentIndex=0;
-		size=0;
 		currentFilename="";
 		faceName="";
 		currentChar = new character;
 		workBitmap=NULL;
+		color = Rgba::WHITE;
 	}
 	// Destructor
 	/*! Nothing yet */
@@ -93,13 +93,13 @@ namespace ol
 	}
 	
 	// Create single index
-	void Glyph::createIndex(int i)
+	void Glyph::createIndex(dimension v)
 	{
-		std::map<int, std::map<signed long, character> >::iterator p;
-		p = fontTable.find(i);
+		std::map<dimension, std::map<signed long, character> >::iterator p;
+		p = fontTable.find(v);
 		if(p==fontTable.end())
 		{
-			FT_Set_Pixel_Sizes(face, i, i);
+			FT_Set_Pixel_Sizes(face, v.width, v.height);
 			FT_UInt g;
 			FT_ULong unicode = FT_Get_First_Char(face, &g);
 			std::map<signed long, character>tempMap;
@@ -108,14 +108,14 @@ namespace ol
 				tempMap.insert(std::make_pair(unicode,extractGlyph(unicode)));
 				unicode = FT_Get_Next_Char(face, unicode, &g);
 			}
-			fontTable.insert(std::make_pair(i,tempMap));
+			fontTable.insert(std::make_pair(v,tempMap));
 		}
 	}
 	
 	// Render a character from the lookup table (utilizing the workBitmap)
 	void Glyph::drawCharacter(signed long unicode, double &x1, double &y1, Bitmap *bitmap, Rgba col)
 	{
-		std::map<int, std::map<signed long, character> >::iterator ft;
+		std::map<dimension, std::map<signed long, character> >::iterator ft;
 		ft = fontTable.find(size);
 		if(ft!=fontTable.end())
 		{
@@ -153,14 +153,12 @@ namespace ol
 					unsigned char *buffer = line;
 					for (int x = x1; x < x1+tempChar.width; x++)
 					{
-						Rgba col = colorConvert(buffer++,tempChar.grays);
+						Rgba checkCol = colorConvert(buffer++,tempChar.grays);
 						Rgba tempCol(0,0,0,0);
-						if(col.r != tempCol.r && col.g != tempCol.g && col.b != tempCol.b && col.a != tempCol.a)
+						if(checkCol.r != tempCol.r && checkCol.g != tempCol.g && checkCol.b != tempCol.b && checkCol.a != tempCol.a)
 						{
 							//workBitmap->placePixel(x, y, color);
 							ol::Point(float(x),float(y - tempChar.top)).Draw( col );
-							GfxRend::RefreshScreen();
-							rest(1);
 						}
 					}
 					line += tempChar.pitch;
@@ -181,7 +179,7 @@ namespace ol
 			currentFilename = "memoryFont";
 			currentIndex = index;
 			faceLoaded = true;
-			setSize(fontSize);
+			setSize(fontSize, fontSize);
 			if(FT_HAS_GLYPH_NAMES(face))
 			{
 				char buff[1024];
@@ -215,7 +213,7 @@ namespace ol
 			currentFilename = filename;
 			currentIndex = index;
 			faceLoaded = true;
-			setSize(fontSize);
+			setSize(fontSize, fontSize);
 			if(FT_HAS_GLYPH_NAMES(face))
 			{
 				char buff[1024];
@@ -314,7 +312,7 @@ namespace ol
 	double Glyph::getLength(const std::string & text)
 	{
 		double length=0;
-		std::map<int, std::map<signed long, character> >::iterator ft;
+		std::map<dimension, std::map<signed long, character> >::iterator ft;
 		ft = fontTable.find(size);
 		if(ft!=fontTable.end())
 		{
@@ -335,17 +333,23 @@ namespace ol
 	}
 	
 	// Set size
-	void Glyph::setSize(int s)
+	void Glyph::setSize(int w, int h)
 	{
-		if(size<0 || size > 50)return;
-		size=s;
+		size.width=w;
+		size.height=h;
 		createIndex(size);
 	}
 	
 	// Get Width
-	int Glyph::getSize()
+	int Glyph::getWidth()
 	{
-		return size;
+		return size.width;
+	}
+	
+	// Get Height
+	int Glyph::getHeight()
+	{
+		return size.height;
 	}
 	
 	/*
@@ -399,9 +403,9 @@ namespace ol
 		//rend->glyphFace->setItalics(italics);
 	}
 	
-	void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned int height, const unsigned int width)
+	void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned int width, const unsigned int height)
 	{
-		rend->glyphFace->setSize(width);
+		rend->glyphFace->setSize(width, height);
 	}
 	
 	void rend_set_hinting_default( GLYPH_REND* const rend )
@@ -425,19 +429,26 @@ namespace ol
 		return Rgba(*c * 255 / (ext - 1), *c * 255 / (ext - 1),*c * 255 / (ext - 1),*c * 255 / (ext - 1));
 	}
 	
+	Rgba colorConvert(const unsigned int c)
+	{
+		return Rgba((float)(((c >> 16) & 0xff )/255.0),(float)(((c >> 8) & 0xff )/255.0),(float)(((c) & 0xff )/255.0),(float)(((c >> 24) & 0xff )/255.0));
+		//		r( CompToF(( col >> 16 ) & 0xff)), g( CompToF(( col >> 8 ) & 0xff)),
+		//b( CompToF( col & 0xff)), a( CompToF(( col >> 24 ) & 0xff))
+	}
+	
 	void gk_rend_set_text_alpha_color( GLYPH_REND* const rend, const unsigned alpha_color)
 	{
-		//rend->glyphFace->color = colorConvert(alpha_color);
+		rend->glyphFace->color = colorConvert(alpha_color);
 	}
 	
 	int gk_rend_ascender_pixels( GLYPH_REND* const rend )
 	{
-		return rend->glyphFace->getSize();
+		return rend->glyphFace->getHeight();
 	}
 	
 	int rend_ascender_pixels( GLYPH_REND* const rend )
 	{
-		return rend->glyphFace->getSize();
+		return rend->glyphFace->getHeight();
 	}
 	
 	int text_width_utf8(GLYPH_REND* const rend,const char* const text)
@@ -477,7 +488,7 @@ namespace ol
 	void gk_render_line_gl_utf8( GLYPH_TEXTURE *texture, const char *text, int x, int y )
 	{
 		//texture->glyphFace->render(text,x,y);
-		texture->glyphFace->render(x,y,Rgba::WHITE,NULL,0,text);
+		texture->glyphFace->render(x,y,texture->glyphFace->color,NULL,0,text);
 	}
 	
 	void gk_send_texture_to_gpu( GLYPH_TEXTURE *texture )

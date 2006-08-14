@@ -58,11 +58,12 @@ namespace ol
 	GLYPH_FACE *load_face_from_file(const char *filename, int index);
 	GLYPH_REND *create_renderer( GLYPH_FACE* const face, int index );
 	void rend_set_italic( GLYPH_REND* const rend, int italics );
-	void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned int height, const unsigned int width);
+	void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned int width, const unsigned int height);
 	void rend_set_hinting_default( GLYPH_REND* const rend );
 	void gk_rend_set_hinting_off( GLYPH_REND* const rend );
 	void rend_set_render_mode_normal( GLYPH_REND* const rend );
 	Rgba colorConvert(const unsigned char *c,short ext);
+	Rgba colorConvert(const unsigned int c);
 	void gk_rend_set_text_alpha_color( GLYPH_REND* const rend, const unsigned alpha_color);
 	int gk_rend_ascender_pixels( GLYPH_REND* const rend );
 	int rend_ascender_pixels( GLYPH_REND* const rend );
@@ -72,6 +73,23 @@ namespace ol
 	void gk_destroy_texture( GLYPH_TEXTURE *texture );
 	void gk_render_line_gl_utf8( GLYPH_TEXTURE *texture, const char *text, int x, int y );
 	void gk_send_texture_to_gpu( GLYPH_TEXTURE *texture );
+	
+	class dimension
+	{
+		public:
+		dimension()
+		{
+			width = height = 0;
+		}
+		~dimension(){}
+		bool operator<(const dimension &d) const
+		{
+			if(width < d.width || height < d.height)return true;
+			return false;
+		}
+		int width;
+		int height;
+	};
 	
 	class character
 	{
@@ -139,7 +157,7 @@ namespace ol
 			int currentIndex;
 			
 			//! Font size
-			FT_UInt size;
+			dimension size;
 			
 			//! Workspace bitmap
 			Bitmap *workBitmap;
@@ -154,13 +172,13 @@ namespace ol
 			character *currentChar;
 			
 			//! Lookup Table by size
-			std::map<int, std::map<signed long, character> >fontTable;
+			std::map<dimension, std::map<signed long, character> >fontTable;
 			
 			//! Extract glyph
 			character extractGlyph(signed long unicode);
 			
 			//! Create single index
-			void createIndex(int i);
+			void createIndex(dimension v);
 			
 			//! Render a character from the lookup table (utilizing the workBitmap)
 			void drawCharacter(signed long unicode, double &x1, double &y1, Bitmap *bitmap, Rgba col);
@@ -188,10 +206,13 @@ namespace ol
 			void render(double x, double y, Rgba col, Bitmap *bmp, int alignment, const std::string & text, ...);
 			
 			//! Set size
-			void setSize(int s);
+			void setSize(int w, int h);
 			
-			//! Get size
-			int getSize();
+			//! Get width
+			int getWidth();
+			
+			//! Get height
+			int getHeight();
 			
 			//! Color
 			Rgba color;
