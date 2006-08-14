@@ -58,7 +58,7 @@ namespace ol
 	GLYPH_FACE *load_face_from_file(const char *filename, int index);
 	GLYPH_REND *create_renderer( GLYPH_FACE* const face, int index );
 	void rend_set_italic( GLYPH_REND* const rend, int italics );
-	void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned height, const unsigned width);
+	void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned int height, const unsigned int width);
 	void rend_set_hinting_default( GLYPH_REND* const rend );
 	void gk_rend_set_hinting_off( GLYPH_REND* const rend );
 	void rend_set_render_mode_normal( GLYPH_REND* const rend );

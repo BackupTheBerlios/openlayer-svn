@@ -4,6 +4,7 @@
 #define OL_GLYPH_CPP
 
 #include "Glyph.hpp"
+#include "GfxRend.hpp"
 
 namespace ol
 {
@@ -147,17 +148,19 @@ namespace ol
 				//workBitmap->clearBmp(&tempCol);
 				
 				unsigned char *line = tempChar.line;
-				for (int y = y1; y < tempChar.rows; y++)
+				for (int y = y1; y < y1+tempChar.rows; y++)
 				{
 					unsigned char *buffer = line;
-					for (int x = x1; x < tempChar.width; x++)
+					for (int x = x1; x < x1+tempChar.width; x++)
 					{
 						Rgba col = colorConvert(buffer++,tempChar.grays);
 						Rgba tempCol(0,0,0,0);
 						if(col.r != tempCol.r && col.g != tempCol.g && col.b != tempCol.b && col.a != tempCol.a)
 						{
 							//workBitmap->placePixel(x, y, color);
-							ol::Point(float(x),float(y)).Draw( col );
+							ol::Point(float(x),float(y - tempChar.top)).Draw( col );
+							GfxRend::RefreshScreen();
+							rest(1);
 						}
 					}
 					line += tempChar.pitch;
@@ -396,10 +399,9 @@ namespace ol
 		//rend->glyphFace->setItalics(italics);
 	}
 	
-	void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned height, const unsigned width)
+	void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned int height, const unsigned int width)
 	{
-		//rend->glyphFace->setSize(height<<6, width<<6);
-		rend->glyphFace->setSize(width<<6);
+		rend->glyphFace->setSize(width);
 	}
 	
 	void rend_set_hinting_default( GLYPH_REND* const rend )
@@ -430,17 +432,17 @@ namespace ol
 	
 	int gk_rend_ascender_pixels( GLYPH_REND* const rend )
 	{
-		return 0;//rend->glyphFace->ascenderPixels();
+		return rend->glyphFace->getSize();
 	}
 	
 	int rend_ascender_pixels( GLYPH_REND* const rend )
 	{
-		return 0;//rend->glyphFace->ascenderPixels();
+		return rend->glyphFace->getSize();
 	}
 	
 	int text_width_utf8(GLYPH_REND* const rend,const char* const text)
 	{
-		return 0;
+		return rend->glyphFace->getLength(text);
 	}
 	
 	GLYPH_TEXTURE::GLYPH_TEXTURE()
