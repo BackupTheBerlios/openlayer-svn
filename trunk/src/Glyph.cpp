@@ -99,6 +99,7 @@ namespace ol
 		p = fontTable.find(v);
 		if(p==fontTable.end())
 		{
+			std::cout << v.width << "\n" << v.height << "\n";
 			FT_Set_Pixel_Sizes(face, v.width, v.height);
 			
 			// Enable below whenever you get angles to work properly
@@ -397,7 +398,8 @@ namespace ol
 	
 	GLYPH_FACE::~GLYPH_FACE()
 	{
-		// Nothing to do	
+		// Nothing to do
+		if(glyphFace)delete glyphFace;	
 	}
 	
 	GLYPH_FACE *load_face_from_file(const char *filename, int index)
@@ -406,7 +408,7 @@ namespace ol
 		
 		temp->glyphFace = new Glyph();
 		
-		temp->glyphFace->load(filename,index);
+		if(!temp->glyphFace->load(filename,index))return 0;
 		
 		return temp;
 	}
