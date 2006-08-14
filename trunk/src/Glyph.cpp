@@ -99,7 +99,6 @@ namespace ol
 		p = fontTable.find(v);
 		if(p==fontTable.end())
 		{
-			std::cout << v.width << "\n" << v.height << "\n";
 			FT_Set_Pixel_Sizes(face, v.width, v.height);
 			
 			// Enable below whenever you get angles to work properly
