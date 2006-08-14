@@ -11,9 +11,6 @@ ifopt glyphkeeper goto dogk
 # Lets force configuration
 ifopt configure configure = "true"
 
-# Enable developement options
-ifopt developer oldevelop = "true"
-
 # Display Help
 do ifopt help
 	echo "This builds the OpenLayer 2.0 library. 
@@ -31,7 +28,6 @@ configure 	- Force configuration prompts
 clean     	- Clean up resources
 install   	- installs the library
 uninstall 	- uninstalls the library
-developer 	- Enables the developer configuration prompts
 loadpng 	- Builds loadpng and installs
 glyphkeeper 	- Builds (AllegroGL specific) glyphkeeper and installs"
 	exit 0
@@ -167,12 +163,8 @@ done
 CONFIGFLAGS += "`freetype-config --cflags` "
 CONFIGLIBS += "`freetype-config --libs` -lglyph-agl "
 
-do ifnot $(tolower ${'oldevelop'})='true'
-	goto NOOLDAPI
-done
-
 :NONEWTTF
-echo "Do you wish to use FreeFont directly and drop GlypKeeper?(development only) [y/N]"
+echo "Do you wish to use FreeType directly and drop GlyphKeeper? [y/N]"
 read NEWTTF
 do if $(tolower ${'NEWTTF'})='y'
 	CPPFLAGS += " -DUSE_NEW_TTF"

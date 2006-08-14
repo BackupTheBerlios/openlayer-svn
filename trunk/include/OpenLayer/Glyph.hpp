@@ -80,15 +80,17 @@ namespace ol
 		dimension()
 		{
 			width = height = 0;
+			italics = 0;
 		}
 		~dimension(){}
 		bool operator<(const dimension &d) const
 		{
-			if(width < d.width || height < d.height)return true;
+			if(width < d.width || height < d.height || italics < d.italics)return true;
 			return false;
 		}
 		int width;
 		int height;
+		double italics;
 	};
 	
 	class character
@@ -208,11 +210,17 @@ namespace ol
 			//! Set size
 			void setSize(int w, int h);
 			
+			//! Set italics
+			void setItalics(int i);
+			
 			//! Get width
 			int getWidth();
 			
 			//! Get height
 			int getHeight();
+			
+			//! Get italics
+			int getItalics();
 			
 			//! Color
 			Rgba color;
