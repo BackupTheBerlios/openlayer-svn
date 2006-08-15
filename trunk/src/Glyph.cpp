@@ -64,6 +64,23 @@ namespace ol
 	{
 		int w, h, ew;
 		character tempChar;
+		
+		// Enable below whenever able to get angles to work properly
+		//FT_Matrix a, matrix;
+		FT_Matrix matrix;
+		matrix.xx = 0x10000;
+		matrix.xy = (FT_Fixed)(sin(size.italics)*(GLYPH_SQRT2*0x10000));
+		matrix.yx = 0;
+		matrix.yy = 0x10000;
+		/*a.xx = (FT_Fixed)( cos(angle)*0x10000);
+		a.xy = (FT_Fixed)(-sin(angle)*0x10000);
+		a.yx = (FT_Fixed)( sin(angle)*0x10000);
+		a.yy = (FT_Fixed)( cos(angle)*0x10000);
+		FT_Matrix_Multiply(&a,&matrix);
+		*/
+		
+		if(size.italics!=0)FT_Set_Transform( face, &matrix, 0 );
+			
 	
 		FT_Load_Char(face, unicode, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT);
 			
@@ -93,40 +110,23 @@ namespace ol
 	}
 	
 	// Create single index
-	void Glyph::createIndex(dimension v)
+	void Glyph::createIndex()
 	{
 		std::map<dimension, std::map<signed long, character> >::iterator p;
-		p = fontTable.find(v);
+		p = fontTable.find(size);
 		if(p==fontTable.end())
 		{
-			FT_Set_Pixel_Sizes(face, v.width, v.height);
-			
-			// Enable below whenever you get angles to work properly
-			//FT_Matrix a, matrix;
-			FT_Matrix matrix;
-			FT_Vector unused;
-			matrix.xx = 0x10000;
-			matrix.xy = (FT_Fixed)(sin(v.italics)*(GLYPH_SQRT2*0x10000));
-			matrix.yx = 0;
-			matrix.yy = 0x10000;
-			/*a.xx = (FT_Fixed)( cos(angle)*0x10000);
-			a.xy = (FT_Fixed)(-sin(angle)*0x10000);
-			a.yx = (FT_Fixed)( sin(angle)*0x10000);
-			a.yy = (FT_Fixed)( cos(angle)*0x10000);
-			FT_Matrix_Multiply(&a,&matrix);
-			*/
+			FT_Set_Pixel_Sizes(face, size.width, size.height);
 			
 			FT_UInt g;
 			FT_ULong unicode = FT_Get_First_Char(face, &g);
 			std::map<signed long, character>tempMap;
 			while (g)
 			{
-				FT_Set_Transform( face, &matrix, &unused );
-			
 				tempMap.insert(std::make_pair(unicode,extractGlyph(unicode)));
 				unicode = FT_Get_Next_Char(face, unicode, &g);
 			}
-			fontTable.insert(std::make_pair(v,tempMap));
+			fontTable.insert(std::make_pair(size,tempMap));
 		}
 	}
 	
@@ -355,7 +355,7 @@ namespace ol
 	{
 		size.width=w;
 		size.height=h;
-		createIndex(size);
+		createIndex();
 	}
 	
 	// Set italics
@@ -363,7 +363,7 @@ namespace ol
 	{
 		if(i < -45 || i > 45) return;
 		size.italics = (double)(i)*GLYPH_PI/180;
-		createIndex(size);
+		createIndex();
 	}
 	
 	// Get Width

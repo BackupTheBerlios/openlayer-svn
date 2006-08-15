@@ -216,9 +216,9 @@ goto build
 # Start building library
 :build
 echo "- Creating required directories -"
--mkdir obj
--mkdir dep
--mkdir lib
+ifnexist obj -mkdir obj
+ifnexist dep -mkdir dep
+ifnexist lib -mkdir lib
 echo "- Starting compilation -"
 compile ${LIB_SOURCES}
 echo "- Assembling library -"

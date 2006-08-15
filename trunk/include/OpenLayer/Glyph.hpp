@@ -180,7 +180,7 @@ namespace ol
 			character extractGlyph(signed long unicode);
 			
 			//! Create single index
-			void createIndex(dimension v);
+			void createIndex();
 			
 			//! Render a character from the lookup table (utilizing the workBitmap)
 			void drawCharacter(signed long unicode, double &x1, double &y1, Bitmap *bitmap, Rgba col);
