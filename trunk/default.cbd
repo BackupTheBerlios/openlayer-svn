@@ -120,8 +120,32 @@ else if $(tolower ${'target'})='msys'
 		CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -I%MINGDIR%/include/freetype2 -fexpensive-optimizations
 	else ifexist ${'MINGDIR'}/local/include/freetype2
 		CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -I%MINGDIR%/local/include/freetype2 -fexpensive-optimizations
-	else 
-		CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -fexpensive-optimizations
+	else
+:gkloc
+		echo "Can't find freetype do you have it installed?"
+		echo "Please specify where its located:"
+		echo "example: c:\mingw (make sure lib\libfreetype.a and include\freetype2 exist in the directory)"
+		echo "Enter ignore to disable ttf support or exit if you don't have it and quit setup."
+		read LOCATION
+		do if $(tolower ${'LOCATION'})='ignore'
+			CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -fexpensive-optimizations
+			LDFLAGS=-lglyph-agl -lldpng -lpng -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32
+			DROPTTF='true'
+			goto NOPNG
+		else if $(tolower ${'LOCATION'})='exit'
+			exit 0
+		else if ${'LOCATION'}='' goto gkloc
+		else ifexist ${'LOCATION'}/lib/libfreetype.a
+			do ifexist ${'LOCATION'}/include/freetype2
+				CFLAGS+=-O2 -Wall -Iinclude/OpenLayer -I${'LOCATION'}/include/freetype2 -fexpensive-optimizations
+			else ifnexist ${'LOCATION'}/include/freetype2
+				echo "${'LOCATION'} is an invalid library location."
+				goto gkloc
+			done
+		else ifnexist ${'LOCATION'}/lib/libfreetype.a ifnexist ${'LOCATION'}/include/freetype2
+			echo "${'LOCATION'} is an invalid library location."
+			goto gkloc
+		done
 	done
 	LDFLAGS=-lglyph-agl -lfreetype -lldpng -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32
 else if $(tolower ${'target'})='msvc'
@@ -136,27 +160,13 @@ done
 
 # Prompt user for preprocessor support
 
-:NOPNG
-echo "Do you wish to drop PNG support? [y/N]"
-read PNG
-do if $(tolower ${'PNG'})='y'
-	CPPFLAGS += " -DOL_NO_PNG"
-	DROPPNG='true'
-else ifnot $(tolower ${'PNG'})='n' ifnot ${'PNG'}='' goto NOPNG
-done
-
-do if ${'DROPPNG'}=''
-	CONFIGFLAGS += "`libpng-config --cflags` "
-	CONFIGLIBS += "`libpng-config --libs` -lldpng "
-done
-
 :NOTTF
 echo "Do you wish to drop TTF support? [y/N]"
 read TTF
 do if $(tolower ${'TTF'})='y'
 	CPPFLAGS += " -DOL_NO_TTF"
 	DROPTTF='true'
-	goto NOOLDAPI
+	goto NOPNG
 else ifnot $(tolower ${'TTF'})='n' ifnot ${'TTF'}='' goto NOTTF
 done
 
@@ -172,7 +182,21 @@ do if $(tolower ${'NEWTTF'})='y'
 	CONFIGLIBS-="-lglyph-agl "
 	USENEWTTF='true'
 else ifnot $(tolower ${'NEWTTF'})='n' ifnot ${'NEWTTF'}='' goto NONEWTTF
-done	
+done
+
+:NOPNG
+echo "Do you wish to drop PNG support? [y/N]"
+read PNG
+do if $(tolower ${'PNG'})='y'
+	CPPFLAGS += " -DOL_NO_PNG"
+	DROPPNG='true'
+else ifnot $(tolower ${'PNG'})='n' ifnot ${'PNG'}='' goto NOPNG
+done
+
+do if ${'DROPPNG'}=''
+	CONFIGFLAGS += "`libpng-config --cflags` "
+	CONFIGLIBS += "`libpng-config --libs` -lldpng "
+done
 	
 :NOOLDAPI
 echo "Do you wish to drop old API Support? [y/N]"
