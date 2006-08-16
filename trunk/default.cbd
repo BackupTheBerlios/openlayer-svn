@@ -124,7 +124,7 @@ else if $(tolower ${'target'})='msys'
 :gkloc
 		echo "Can't find freetype do you have it installed?"
 		echo "Please specify where its located:"
-		echo "example: c:\mingw (make sure lib\libfreetype.a and include\freetype2 exist in the directory)"
+		echo "example: c:/\mingw (make sure lib/\libfreetype.a and include/\freetype2/\freetype exist in the directory)"
 		echo "Enter ignore to disable ttf support or exit if you don't have it and quit setup."
 		read LOCATION
 		do if $(tolower ${'LOCATION'})='ignore'
