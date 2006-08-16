@@ -8,6 +8,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_INTERNAL_OBJECTS_H
+#include FT_GLYPH_H
 #include "Rgba.hpp"
 #include "Bitmap.hpp"
 #include "Point.hpp"
@@ -176,6 +177,10 @@ namespace ol
 			//! Lookup Table by size
 			std::map<dimension, std::map<signed long, character> >fontTable;
 			
+			//! Load flags
+			unsigned hintingFlag;
+			unsigned renderFlag;
+			
 			//! Extract glyph
 			character extractGlyph(signed long unicode);
 			
@@ -212,6 +217,12 @@ namespace ol
 			
 			//! Set italics
 			void setItalics(int i);
+			
+			//! Set FreeType LoadFlags
+			void setHinting(bool on=true);
+			
+			//! Set FreeType LoadFlags
+			void setAntialias(bool on=false);
 			
 			//! Get width
 			int getWidth();

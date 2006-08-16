@@ -284,6 +284,8 @@ else ifnexist lib/libopenlayer.a
 	exit 1
 done
 
+exit 1
+
 :uninstall
 do ifexist installdir
 	setinput installdir

@@ -18,6 +18,7 @@ namespace ol
 	}
 	character::~character()
 	{
+		//if(line)delete [] line;
 	}
 	// Constructor
 	Glyph::Glyph()
@@ -36,6 +37,8 @@ namespace ol
 		currentChar = new character;
 		workBitmap=NULL;
 		color = Rgba::WHITE;
+		hintingFlag = FT_LOAD_FORCE_AUTOHINT;
+		renderFlag = FT_LOAD_TARGET_MONO;
 	}
 	// Destructor
 	/*! Nothing yet */
@@ -72,18 +75,16 @@ namespace ol
 		matrix.xy = (FT_Fixed)(sin(size.italics)*(GLYPH_SQRT2*0x10000));
 		matrix.yx = 0;
 		matrix.yy = 0x10000;
-		/*a.xx = (FT_Fixed)( cos(angle)*0x10000);
-		a.xy = (FT_Fixed)(-sin(angle)*0x10000);
-		a.yx = (FT_Fixed)( sin(angle)*0x10000);
-		a.yy = (FT_Fixed)( cos(angle)*0x10000);
-		FT_Matrix_Multiply(&a,&matrix);
-		*/
+		/*a.xx = (FT_Fixed)( cos(0)*0x10000);
+		a.xy = (FT_Fixed)(-sin(0)*0x10000);
+		a.yx = (FT_Fixed)( sin(0)*0x10000);
+		a.yy = (FT_Fixed)( cos(0)*0x10000);
+		FT_Matrix_Multiply(&a,&matrix);*/
 		
 		if(size.italics!=0)FT_Set_Transform( face, &matrix, 0 );
-			
 	
-		FT_Load_Char(face, unicode, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT);
-			
+		FT_Load_Char(face, unicode, renderFlag | FT_LOAD_RENDER | hintingFlag);
+		
 		w = face->glyph->bitmap.width;
 		h = face->glyph->bitmap.rows;
 		ew = 0;
@@ -142,28 +143,6 @@ namespace ol
 			if(p!=(ft->second).end())
 			{
 				character tempChar = p->second;
-				/*	
-				if(workBitmap==NULL)
-				{
-					workBitmap = (resourceManager::getInstance())->resourceFactory->createGfx();
-					systemName = (resourceManager::getInstance())->currentSystemName;
-				}
-				else if((resourceManager::getInstance())->currentSystemName!=systemName)
-				{
-					workBitmap = (resourceManager::getInstance())->resourceFactory->createGfx();
-					systemName = (resourceManager::getInstance())->currentSystemName;
-				}
-					
-				if((resourceManager::getInstance())->currentSystemName==systemName)
-				{
-					if(!workBitmap->isInitialized())workBitmap->createBmp(tempChar.width, tempChar.height);
-					else if(workBitmap->getBmpWidth()<tempChar.width || workBitmap->getBmpHeight()<tempChar.height)
-					{
-						workBitmap->createBmp(tempChar.width, tempChar.height);
-					}
-				}*/
-				//Rgba tempCol(255,0,255,255);
-				//workBitmap->clearBmp(&tempCol);
 				
 				unsigned char *line = tempChar.line;
 				for (int y = (int)y1; y < (int)(y1)+tempChar.rows; y++)
@@ -175,14 +154,13 @@ namespace ol
 						Rgba tempCol(0,0,0,0);
 						if(checkCol.r != tempCol.r && checkCol.g != tempCol.g && checkCol.b != tempCol.b && checkCol.a != tempCol.a)
 						{
-							//workBitmap->placePixel(x, y, color);
-							ol::Point(float(x),float(y - tempChar.top)).Draw( col );
+							ol::Point::StartFastDrawing();
+							ol::Point(float(x),float(y - tempChar.top)).DrawFast( col );
+							ol::Point::FinishFastDrawing();
 						}
 					}
 					line += tempChar.pitch;
 				}
-					
-				//workBitmap->renderBmpArea(0,0,x1,y1 - tempChar.top,tempChar.width,tempChar.height,bitmap);
 				x1+=tempChar.right;
 			}
 		}
@@ -361,9 +339,41 @@ namespace ol
 	// Set italics
 	void Glyph::setItalics(int i)
 	{
-		if(i < -45 || i > 45) return;
+		if(i < -45)i=-45;
+		else if(i > 45)i=45;
+		
 		size.italics = (double)(i)*GLYPH_PI/180;
 		createIndex();
+	}
+	
+	// Set FreeType LoadFlags
+	void Glyph::setHinting(bool on)
+	{
+		if(on)
+		{
+			hintingFlag = FT_LOAD_FORCE_AUTOHINT;
+		}
+		else
+		{
+			hintingFlag = FT_LOAD_NO_HINTING;
+		}
+		fontTable.clear();
+		setSize(size.width, size.height);
+	}
+	
+	// Set FreeType LoadFlags
+	void Glyph::setAntialias(bool on)
+	{
+		if(on)
+		{
+			renderFlag = FT_LOAD_TARGET_NORMAL;
+		}
+		else
+		{
+			renderFlag = FT_LOAD_TARGET_MONO;
+		}
+		fontTable.clear();
+		setSize(size.width, size.height);
 	}
 	
 	// Get Width
@@ -443,18 +453,17 @@ namespace ol
 	
 	void rend_set_hinting_default( GLYPH_REND* const rend )
 	{
-		//rend->glyphFace->setHintingMode(FT_LOAD_DEFAULT);
+		rend->glyphFace->setHinting(true);
 	}
 	
 	void gk_rend_set_hinting_off( GLYPH_REND* const rend )
 	{
-		//rend->glyphFace->setHintingMode(FT_LOAD_NO_HINTING);
+		rend->glyphFace->setHinting(false);
 	}
 	
 	void rend_set_render_mode_normal( GLYPH_REND* const rend )
 	{
-		// What to do?
-		
+		rend->glyphFace->setAntialias(true);
 	}
 	
 	Rgba colorConvert(const unsigned char *c,short ext)
