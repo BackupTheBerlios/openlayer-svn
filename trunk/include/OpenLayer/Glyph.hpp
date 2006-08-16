@@ -201,10 +201,10 @@ namespace ol
 			~Glyph();
 			
 			//! Load font from memory
-			bool loadFromMemory(const unsigned char *memoryFont, unsigned int length, int index=0, unsigned int fontSize=14);
+			bool loadFromMemory(const unsigned char *memoryFont, unsigned int length, int index=0, unsigned int width=14, unsigned int height=8);
 			
 			//! Load font from file
-			bool load(const std::string & filename, int index=0, unsigned int fontSize=14);
+			bool load(const std::string & filename, int index=0, unsigned int width=14, unsigned int height=8);
 			
 			//! Get text length
 			double getLength(const std::string & text);

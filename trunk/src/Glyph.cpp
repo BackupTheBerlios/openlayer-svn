@@ -168,14 +168,14 @@ namespace ol
 
 	
 	// Load font from memory
-	bool Glyph::loadFromMemory(const unsigned char *memoryFont, unsigned int length, int index, unsigned int fontSize)
+	bool Glyph::loadFromMemory(const unsigned char *memoryFont, unsigned int length, int index, unsigned int width, unsigned int height)
 	{
 		if(!FT_New_Memory_Face(ftLibrary,memoryFont, length,index,&face))
 		{
 			currentFilename = "memoryFont";
 			currentIndex = index;
 			faceLoaded = true;
-			setSize(fontSize, fontSize);
+			setSize(width, height);
 			if(FT_HAS_GLYPH_NAMES(face))
 			{
 				char buff[1024];
@@ -202,14 +202,14 @@ namespace ol
 	}
 			
 	// Load font from file
-	bool Glyph::load(const std::string & filename, int index, unsigned int fontSize)
+	bool Glyph::load(const std::string & filename, int index, unsigned int width, unsigned int height)
 	{
 		if(!FT_New_Face(ftLibrary,filename.c_str(),index,&face))
 		{
 			currentFilename = filename;
 			currentIndex = index;
 			faceLoaded = true;
-			setSize(fontSize, fontSize);
+			setSize(width, height);
 			if(FT_HAS_GLYPH_NAMES(face))
 			{
 				char buff[1024];
