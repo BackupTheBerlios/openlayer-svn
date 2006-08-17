@@ -35,7 +35,7 @@ ToPolygon( float startAngle, float angleSweep ) const {
    }
    
    
-   for( float a = startAngle; a <= endAngle; a += angleIncrement ) {
+   for( float a = endAngle; a >= startAngle; a -= angleIncrement ) {
       vertices.push_back( pos + Vec2D( cos(a) * xRad, sin(a) * yRad ));
    }
    
