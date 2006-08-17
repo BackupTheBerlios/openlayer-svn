@@ -9,6 +9,11 @@ static const float OL_NEAR_ZERO = 0.00001;
 
 void Rect::
 ExecDraw() const {
+#ifdef OL_NO_STATE_CHANGE
+   GLboolean texturesEnabled;
+   glGetBooleanv( GL_TEXTURE_2D, &texturesEnabled );
+#endif
+
    bool applyRotation = fabs( rotationAngle ) > OL_NEAR_ZERO;
    
    if( roundness <= OL_NEAR_ZERO ) {

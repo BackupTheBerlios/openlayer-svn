@@ -17,7 +17,6 @@ ToString() const {
 
 void ol::Ellipse::
 RotateBy( float angle ) {
-   printf( "Angle: %f\n", angle );
    this->angle += angle;
 }
 
@@ -71,15 +70,14 @@ ExecDraw() const {
 
 void ol::Ellipse::
 ExecDrawOutline() const {
-   glPushMatrix();
-   glTranslatef( pos.x, pos.y, 0.0 );
-   RotateMatrix( angle );
-   printf( "Angle : %f\n", angle );
-   
    if( lineWidth > 1 + OL_NEAR_ZERO ) {
       DiskRender( Rgba::WHITE, Rgba::WHITE, xRad - lineWidth, yRad - lineWidth, false );
       return;
    }
+   
+   glPushMatrix();
+   glTranslatef( pos.x, pos.y, 0.0 );
+   RotateMatrix( angle );
    
    glLineWidth( lineWidth );
    
@@ -168,6 +166,51 @@ DrawSlice( const Rgba &color, float startAngle, float angleSweep ) const {
 }
 
 
+
+void ol::Ellipse::
+DrawSlice( const Rgba &color1, const Rgba &color2, float startAngle, float angleSweep ) const {
+#ifdef OL_NO_STATE_CHANGE
+   GLboolean texturesEnabled;
+   glGetBooleanv( GL_TEXTURE_2D, &texturesEnabled );
+#endif
+   glDisable( GL_TEXTURE_2D );
+      
+   glPushMatrix();
+   glTranslatef( pos.x, pos.y, 0.0 );
+   RotateMatrix( angle );
+   
+   float endAngle = startAngle - angleSweep; 
+   
+   if( endAngle < startAngle ){
+     float temp = startAngle;
+     startAngle = endAngle;
+     endAngle = temp;
+   }
+   
+   glBegin( GL_TRIANGLE_FAN );
+      glVertex2f( 0.0, 0.0 );
+      
+      float mixAlpha = 0.0;
+      float mixIncr = angleIncrement / (endAngle - startAngle);
+      
+      for( float a = startAngle; a < endAngle; a += angleIncrement ) {
+         color1.MixWith( color2, mixAlpha ).Select();
+         glVertex2f( cos(a) * xRad, sin(a) * yRad );
+         mixAlpha += mixIncr;
+      }
+      
+      glVertex2f( cos( endAngle ) * xRad, sin( endAngle ) * yRad );
+   glEnd();
+   
+   glPopMatrix();
+   
+#ifdef OL_NO_STATE_CHANGE
+   if( texturesEnabled )
+      glEnable( GL_TEXTURE_2D );
+#endif
+}
+
+
 void ol::Ellipse::
 DrawArc( const Rgba &color, float startAngle, float angleSweep, float innerXRad, float innerYRad ) const {
 #ifdef OL_NO_STATE_CHANGE
@@ -176,6 +219,10 @@ DrawArc( const Rgba &color, float startAngle, float angleSweep, float innerXRad,
 #endif
    glDisable( GL_TEXTURE_2D );
    color.Select();
+   
+   glPushMatrix();
+   glTranslatef( pos.x, pos.y, 0.0 );
+   RotateMatrix( angle );
    
    float endAngle = startAngle - angleSweep; 
    
@@ -186,21 +233,21 @@ DrawArc( const Rgba &color, float startAngle, float angleSweep, float innerXRad,
    }
    
    glBegin( GL_QUADS );
-      float prevIX = pos.x + cos( startAngle ) * innerXRad;
-      float prevIY = pos.y + sin( startAngle ) * innerYRad;
+      float prevIX = cos( startAngle ) * innerXRad;
+      float prevIY = sin( startAngle ) * innerYRad;
       
-      float prevOX = pos.x + cos( startAngle ) * xRad;
-      float prevOY = pos.y + sin( startAngle ) * yRad;
+      float prevOX = cos( startAngle ) * xRad;
+      float prevOY = sin( startAngle ) * yRad;
       
       for( float a = startAngle; a < endAngle; a += angleIncrement ) {
          float cosa = cos(a);
          float sina = sin(a);
          
-         float newIX = pos.x + cosa * innerXRad;
-         float newIY = pos.y + sina * innerYRad;
+         float newIX = cosa * innerXRad;
+         float newIY =  sina * innerYRad;
          
-         float newOX = pos.x + cosa * xRad;
-         float newOY = pos.y + sina * yRad;
+         float newOX = cosa * xRad;
+         float newOY = sina * yRad;
          
          glVertex2f( newIX, newIY );
          glVertex2f( prevIX, prevIY );
@@ -215,12 +262,14 @@ DrawArc( const Rgba &color, float startAngle, float angleSweep, float innerXRad,
          prevOY = newOY;
       }
       
-      glVertex2f( pos.x + cos( endAngle ) * innerXRad, pos.y + sin( endAngle ) * innerYRad );
+      glVertex2f( cos( endAngle ) * innerXRad, sin( endAngle ) * innerYRad );
       glVertex2f( prevIX, prevIY );
       
       glVertex2f( prevOX, prevOY );
-      glVertex2f( pos.x + cos( endAngle ) * xRad, pos.y + sin( endAngle ) * yRad ); 
+      glVertex2f( cos( endAngle ) * xRad, sin( endAngle ) * yRad ); 
    glEnd();
+   
+   glPopMatrix();
    
 #ifdef OL_NO_STATE_CHANGE
    if( texturesEnabled )
@@ -238,6 +287,10 @@ DrawArc( const Rgba &innerColor, const Rgba &outerColor, float startAngle, float
 #endif
    glDisable( GL_TEXTURE_2D );
    
+   glPushMatrix();
+   glTranslatef( pos.x, pos.y, 0.0 );
+   RotateMatrix( angle );
+   
    float endAngle = startAngle - angleSweep; 
    
    if( endAngle < startAngle ) {
@@ -247,21 +300,21 @@ DrawArc( const Rgba &innerColor, const Rgba &outerColor, float startAngle, float
    }
    
    glBegin( GL_QUADS );
-      float prevIX = pos.x + cos( startAngle ) * innerXRad;
-      float prevIY = pos.y + sin( startAngle ) * innerYRad;
+      float prevIX = cos( startAngle ) * innerXRad;
+      float prevIY = sin( startAngle ) * innerYRad;
       
-      float prevOX = pos.x + cos( startAngle ) * xRad;
-      float prevOY = pos.y + sin( startAngle ) * yRad;
+      float prevOX = cos( startAngle ) * xRad;
+      float prevOY = sin( startAngle ) * yRad;
       
       for( float a = startAngle; a < endAngle; a += angleIncrement ) {
          float cosa = cos(a);
          float sina = sin(a);
          
-         float newIX = pos.x + cosa * innerXRad;
-         float newIY = pos.y + sina * innerYRad;
+         float newIX = cosa * innerXRad;
+         float newIY = sina * innerYRad;
          
-         float newOX = pos.x + cosa * xRad;
-         float newOY = pos.y + sina * yRad;
+         float newOX = cosa * xRad;
+         float newOY = sina * yRad;
          
          innerColor.Select();
          glVertex2f( newIX, newIY );
@@ -279,13 +332,15 @@ DrawArc( const Rgba &innerColor, const Rgba &outerColor, float startAngle, float
       }
       
       innerColor.Select();
-      glVertex2f( pos.x + cos( endAngle ) * innerXRad, pos.y + sin( endAngle ) * innerYRad );
+      glVertex2f( cos( endAngle ) * innerXRad, sin( endAngle ) * innerYRad );
       glVertex2f( prevIX, prevIY );
       
       outerColor.Select();
       glVertex2f( prevOX, prevOY );
-      glVertex2f( pos.x + cos( endAngle ) * xRad, pos.y + sin( endAngle ) * yRad ); 
+      glVertex2f( cos( endAngle ) * xRad, sin( endAngle ) * yRad ); 
    glEnd();
+   
+   glPopMatrix();
    
 #ifdef OL_NO_STATE_CHANGE
    if( texturesEnabled )
@@ -302,22 +357,26 @@ DiskRender( const Rgba &innerCol, const Rgba &outerCol, float innerXRad, float i
 #endif
    glDisable( GL_TEXTURE_2D );
    
+   glPushMatrix();
+   glTranslatef( pos.x, pos.y, 0.0 );
+   RotateMatrix( angle );
+   
    glBegin( GL_QUADS );
-      float prevIX = pos.x + innerXRad;
-      float prevIY = pos.y;
+      float prevIX = innerXRad;
+      float prevIY = 0.0;
       
-      float prevOX = pos.x + xRad;
-      float prevOY = pos.y;
+      float prevOX = xRad;
+      float prevOY = 0.0;
       
       for( float a = 0.0; a <= 2 * AL_PI; a += angleIncrement ) {
          float cosa = cos(a);
          float sina = sin(a);
          
-         float newIX = pos.x + cosa * innerXRad;
-         float newIY = pos.y + sina * innerYRad;
+         float newIX = cosa * innerXRad;
+         float newIY = sina * innerYRad;
          
-         float newOX = pos.x + cosa * xRad;
-         float newOY = pos.y + sina * yRad;
+         float newOX = cosa * xRad;
+         float newOY = sina * yRad;
          
          if( setCols )
             innerCol.Select();
@@ -340,16 +399,18 @@ DiskRender( const Rgba &innerCol, const Rgba &outerCol, float innerXRad, float i
       
       if( setCols )
          innerCol.Select();
-         
-      glVertex2f( pos.x + innerXRad, pos.y );
+      
+      glVertex2f( innerXRad, 0.0 );
       glVertex2f( prevIX, prevIY );
       
       if( setCols )
          outerCol.Select();
       
       glVertex2f( prevOX, prevOY );
-      glVertex2f( pos.x + xRad, pos.y );
+      glVertex2f( xRad, 0.0 );
    glEnd();
+   
+   glPopMatrix();
    
 #ifdef OL_NO_STATE_CHANGE
    if( texturesEnabled )
