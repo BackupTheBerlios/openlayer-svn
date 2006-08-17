@@ -143,6 +143,11 @@ namespace ol
 			if(p!=(ft->second).end())
 			{
 				character tempChar = p->second;
+				// Get the point size and set it to the primary size in order to avoid messed up fonts
+				GLfloat psGrab, psizes[2];
+				glGetFloatv(GL_POINT_SIZE_RANGE, psizes);
+				glGetFloatv(GL_POINT_SIZE, &psGrab);
+				glPointSize(psizes[0]);
 				
 				unsigned char *line = tempChar.line;
 				for (int y = (int)y1; y < (int)(y1)+tempChar.rows; y++)
@@ -162,6 +167,9 @@ namespace ol
 					line += tempChar.pitch;
 				}
 				x1+=tempChar.right;
+				
+				// Set previous pointsize
+				glPointSize(psGrab);
 			}
 		}
 	}
