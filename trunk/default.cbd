@@ -33,6 +33,22 @@ glyphkeeper 	- Builds (AllegroGL specific) glyphkeeper and installs"
 	exit 0
 done
 
+# Display Make help
+do ifopt makehelp
+	echo "This builds the OpenLayer 2.0 library. 
+To compile run:
+make [TARGET]
+[TARGETS]
+help      	- Prints this information
+verbose   	- Compiles the libray with verbose output
+clean     	- Clean up resources
+install   	- installs the library
+uninstall 	- uninstalls the library
+loadpng 	- Builds loadpng and installs
+glyphkeeper 	- Builds (AllegroGL specific) glyphkeeper and installs"
+	exit 0
+done
+
 # need to setup variables and directories beforehand
 AR = ar
 AR_OPT = rcs
@@ -47,6 +63,9 @@ src_paths src
 
 # Goto target clean
 ifopt clean goto clean
+
+# Remove temporary cbuild file
+ifopt rmcbuild goto rmcbuild
 
 # Goto target install
 ifopt install goto install
@@ -253,12 +272,7 @@ goto doopenlayerheader
 echo "
 - Compilation completed -
 
-You can now install the lib by running:"
-do ifplat win32
-	echo "buildme.bat install"
-else
-	echo "cbuild.c install"
-done
+You can now install the lib by passing install."
 exit 0
 
 # Install library
@@ -359,6 +373,8 @@ echo "- Cleaning up -"
 -rm obj
 -rm lib
 -rm dep
+:rmcbuild
+@-rmexec cbuild
 exit 0
 
 # Create openlayer-config script for *nix based systems
