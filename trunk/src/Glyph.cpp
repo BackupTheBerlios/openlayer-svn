@@ -149,6 +149,9 @@ namespace ol
 				glGetFloatv(GL_POINT_SIZE, &psGrab);
 				glPointSize(psizes[0]);
 				
+				// Also set the projection mode and switch back if necessary
+				ol::Settings::SetOrthographicProjection();
+				
 				unsigned char *line = tempChar.line;
 				for (int y = (int)y1; y < (int)(y1)+tempChar.rows; y++)
 				{
@@ -170,6 +173,9 @@ namespace ol
 				
 				// Set previous pointsize
 				glPointSize(psGrab);
+				
+				// Restore last mode
+				ol::Settings::RestoreOldProjection();
 			}
 		}
 	}
