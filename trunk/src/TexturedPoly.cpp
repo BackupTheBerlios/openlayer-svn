@@ -400,7 +400,9 @@ ProcessSide( std::vector< Vec2D > ::const_iterator start, std::vector< Vec2D > :
    
    // Add vertex in the case if the only crossing line crosses both the lower and upper sides of the region
    if( ret.vertices.empty() && beforeBeforeIter != vertices.end() ) {
+#ifdef OL_DEBUG_TEXTURED_POLY
       cout << "A1: " << Line( *beforeBeforeIter, *beforeIter ).ToString() << endl;
+#endif
       AddEdgePoints( ret.vertices, Line( *beforeBeforeIter, *beforeIter ), textureEdges, leftToRight );
    }
    
