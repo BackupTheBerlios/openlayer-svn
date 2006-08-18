@@ -12,6 +12,7 @@
 #include "Rgba.hpp"
 #include "Bitmap.hpp"
 #include "Point.hpp"
+#include "Canvas.hpp"
 
 #define GLYPH_PI	3.14159265358979323846
 #define GLYPH_SQRT2	1.41421356237309504880
@@ -188,7 +189,7 @@ namespace ol
 			void createIndex();
 			
 			//! Render a character from the lookup table (utilizing the workBitmap)
-			void drawCharacter(signed long unicode, double &x1, double &y1, Bitmap *bitmap, Rgba col);
+			void drawCharacter(signed long unicode, double &x1, double &y1, Bitmap *bitmap, const Rgba & col);
 			
 			friend class GLYPH_FACE;
 			friend class GLYPH_REND;

@@ -35,7 +35,7 @@ namespace ol
 		currentFilename="";
 		faceName="";
 		currentChar = new character;
-		workBitmap=NULL;
+		workBitmap=0;
 		color = Rgba::WHITE;
 		hintingFlag = FT_LOAD_FORCE_AUTOHINT;
 		renderFlag = FT_LOAD_TARGET_NORMAL;
@@ -132,7 +132,7 @@ namespace ol
 	}
 	
 	// Render a character from the lookup table (utilizing the workBitmap)
-	void Glyph::drawCharacter(signed long unicode, double &x1, double &y1, Bitmap *bitmap, Rgba col)
+	void Glyph::drawCharacter(signed long unicode, double &x1, double &y1, Bitmap *bitmap, const Rgba & col)
 	{
 		std::map<dimension, std::map<signed long, character> >::iterator ft;
 		ft = fontTable.find(size);
@@ -144,20 +144,37 @@ namespace ol
 			{
 				character tempChar = p->second;
 				
+				if(!workBitmap)
+				{
+					workBitmap = new Bitmap(tempChar.width+25, tempChar.height+25, Rgba::INVISIBLE );
+				}
+				else if(workBitmap->Width()<tempChar.width || workBitmap->Height()<tempChar.height)
+				{
+					delete workBitmap;
+					workBitmap = new Bitmap(tempChar.width+25, tempChar.height+25, Rgba::INVISIBLE );
+				}
+				
+				ol::Canvas::Push();
+				ol::Canvas::SetTo(*workBitmap);
+				
+				ol::Canvas::Fill(Rgba::INVISIBLE, ALPHA_ONLY);
+				
 				unsigned char *line = tempChar.line;
-				for (int y = (int)y1; y < (int)(y1)+tempChar.rows; y++)
+				for (int y = 0; y < tempChar.rows; y++)
 				{
 					unsigned char *buffer = line;
-					for (int x = (int)x1; x < (int)(x1)+tempChar.width; x++)
+					for (int x = 0; x < tempChar.width; x++)
 					{
 						Rgba checkCol = colorConvert(buffer++,tempChar.grays);
-						if((checkCol.r > 0.6 && checkCol.g > 0.6 && checkCol.b > 0.6 && checkCol.a > 0.6))
-						{
-							ol::Point(float(x),float(y - tempChar.top)).Draw( col );
-						}
+						ol::Point(x+2,y+2).Draw( checkCol );
 					}
 					line += tempChar.pitch;
 				}
+				
+				ol::Canvas::Pop();
+				
+				workBitmap->Blit(x1-2,y1 - tempChar.top + size.height - 2,TintMode( col ) );
+				
 				x1+=tempChar.right;
 			}
 		}
