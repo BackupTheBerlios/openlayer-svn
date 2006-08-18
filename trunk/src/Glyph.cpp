@@ -132,7 +132,7 @@ namespace ol
 	}
 	
 	// Render a character from the lookup table (utilizing the workBitmap)
-	void Glyph::drawCharacter(signed long unicode, double &x1, double &y1, Bitmap *bitmap, Rgba col)
+	void Glyph::drawCharacter(signed long unicode, double &x1, double &y1, Bitmap *bitmap, const Rgba & col)
 	{
 		std::map<dimension, std::map<signed long, character> >::iterator ft;
 		ft = fontTable.find(size);
