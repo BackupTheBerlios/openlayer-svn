@@ -38,7 +38,7 @@ namespace ol
 		workBitmap=NULL;
 		color = Rgba::WHITE;
 		hintingFlag = FT_LOAD_FORCE_AUTOHINT;
-		renderFlag = FT_LOAD_TARGET_MONO;
+		renderFlag = FT_LOAD_TARGET_NORMAL;
 	}
 	// Destructor
 	/*! Nothing yet */
@@ -143,14 +143,6 @@ namespace ol
 			if(p!=(ft->second).end())
 			{
 				character tempChar = p->second;
-				// Get the point size and set it to the primary size in order to avoid messed up fonts
-				GLfloat psGrab, psizes[2];
-				glGetFloatv(GL_POINT_SIZE_RANGE, psizes);
-				glGetFloatv(GL_POINT_SIZE, &psGrab);
-				glPointSize(psizes[0]);
-				
-				// Also set the projection mode and switch back if necessary
-				ol::Settings::SetOrthographicProjection();
 				
 				unsigned char *line = tempChar.line;
 				for (int y = (int)y1; y < (int)(y1)+tempChar.rows; y++)
@@ -159,23 +151,14 @@ namespace ol
 					for (int x = (int)x1; x < (int)(x1)+tempChar.width; x++)
 					{
 						Rgba checkCol = colorConvert(buffer++,tempChar.grays);
-						Rgba tempCol(0,0,0,0);
-						if(checkCol.r != tempCol.r && checkCol.g != tempCol.g && checkCol.b != tempCol.b && checkCol.a != tempCol.a)
+						if((checkCol.r > 0.6 && checkCol.g > 0.6 && checkCol.b > 0.6 && checkCol.a > 0.6))
 						{
-							ol::Point::StartFastDrawing();
-							ol::Point(float(x),float(y - tempChar.top)).DrawFast( col );
-							ol::Point::FinishFastDrawing();
+							ol::Point(float(x),float(y - tempChar.top)).Draw( col );
 						}
 					}
 					line += tempChar.pitch;
 				}
 				x1+=tempChar.right;
-				
-				// Set previous pointsize
-				glPointSize(psGrab);
-				
-				// Restore last mode
-				ol::Settings::RestoreOldProjection();
 			}
 		}
 	}
@@ -302,6 +285,17 @@ namespace ol
 			}
 			int previous = 0;
 			int next = 0;
+			
+			// Get the point size and set it to the primary size in order to avoid messed up fonts
+				
+			GLfloat psGrab, psizes[2];
+			glGetFloatv(GL_POINT_SIZE_RANGE, psizes);
+			glGetFloatv(GL_POINT_SIZE, &psGrab);
+			glPointSize(psizes[0]);
+				
+			// Also set the projection mode and switch back if necessary
+			ol::Settings::SetOrthographicProjection();
+			
 			for(unsigned int i = 0; i<fixedText.length();++i)
 			{
 				if(kerning)
@@ -314,6 +308,12 @@ namespace ol
 				}
 				drawCharacter(fixedText[i],rend_x, rend_y, bmp, col);
 			}
+			
+			// Set previous pointsize
+			glPointSize(psGrab);
+			
+			// Restore last mode
+			ol::Settings::RestoreOldProjection();
 		}
 	}
 	
