@@ -154,7 +154,7 @@ namespace ol
 						checkCol.r = checkCol.r * col.r * 2;
 						checkCol.g = checkCol.g * col.g * 2;
 						checkCol.b = checkCol.b * col.b * 2;
-						checkCol.a = checkCol.a * col.a * 2;
+						checkCol.a = col.a;//checkCol.a * col.a * 2;
 						
 						ol::Point(float(x),float(y - tempChar.top)).Draw( checkCol );
 					}
