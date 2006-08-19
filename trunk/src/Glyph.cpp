@@ -151,9 +151,10 @@ namespace ol
 					for (int x = (int)x1; x < (int)(x1)+tempChar.width; x++)
 					{
 						Rgba checkCol = colorConvert(buffer++,tempChar.grays);
-						checkCol.r = checkCol.r * col.r * 2;
-						checkCol.g = checkCol.g * col.g * 2;
-						checkCol.b = checkCol.b * col.b * 2;
+						double intensity = ( checkCol.r * 0.30 + checkCol.g * 0.59 + checkCol.r * 0.11);
+						checkCol.r = col.r * intensity;
+						checkCol.g = col.g * intensity;
+						checkCol.b = col.b * intensity;
 						checkCol.a = col.a;//checkCol.a * col.a * 2;
 						
 						ol::Point(float(x),float(y - tempChar.top)).Draw( checkCol );
