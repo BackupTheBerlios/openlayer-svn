@@ -151,6 +151,7 @@ namespace ol
 					for (int x = (int)x1; x < (int)(x1)+tempChar.width; x++)
 					{
 						Rgba checkCol = colorConvert(buffer++,tempChar.grays);
+						if(checkCol.r==0 && checkCol.g==0 && checkCol.b==0 && checkCol.a==0)continue;
 						double intensity = ( checkCol.r * 0.30 + checkCol.g * 0.59 + checkCol.r * 0.11);
 						checkCol.r = col.r * intensity;
 						checkCol.g = col.g * intensity;
