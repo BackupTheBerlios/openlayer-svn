@@ -158,7 +158,7 @@ namespace ol
 						checkCol.b = col.b * intensity;
 						checkCol.a = col.a;//checkCol.a * col.a * 2;
 						
-						ol::Point(float(x),float(y - tempChar.top)).Draw( checkCol );
+						ol::Point(float(x + tempChar.left),float(y - tempChar.top)).Draw( checkCol );
 					}
 					line += tempChar.pitch;
 				}
@@ -302,7 +302,7 @@ namespace ol
 			
 			for(unsigned int i = 0; i<fixedText.length();++i)
 			{
-				if(kerning)
+				if(kerning && previous && next)
 				{
 					next = FT_Get_Char_Index( face, fixedText[i] );
 					FT_Vector delta;
