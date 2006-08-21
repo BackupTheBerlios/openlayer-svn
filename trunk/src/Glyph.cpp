@@ -156,7 +156,7 @@ namespace ol
 						checkCol.r = col.r * intensity;
 						checkCol.g = col.g * intensity;
 						checkCol.b = col.b * intensity;
-						checkCol.a = col.a;//checkCol.a * col.a * 2;
+						checkCol.a = col.a * intensity;
 						
 						ol::Point(float(x + tempChar.left),float(y - tempChar.top)).Draw( checkCol );
 					}
