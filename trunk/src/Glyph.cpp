@@ -296,6 +296,9 @@ namespace ol
 			glGetFloatv(GL_POINT_SIZE_RANGE, psizes);
 			glGetFloatv(GL_POINT_SIZE, &psGrab);
 			glPointSize(psizes[0]);
+			
+			// Save the old transform state
+			ol::Transforms::PushPlacement();
 				
 			// Also set the projection mode and switch back if necessary
 			ol::Settings::SetOrthographicProjection();
@@ -318,6 +321,10 @@ namespace ol
 			
 			// Restore last mode
 			ol::Settings::RestoreOldProjection();
+			
+			// Restore transform
+			ol::Transforms::PopPlacement();
+			
 		}
 	}
 	
