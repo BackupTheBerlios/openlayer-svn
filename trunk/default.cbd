@@ -558,6 +558,7 @@ do ifplat win32
 	done
 	LDFLAGS="-lpng"
 else
+	CFLAGS="`libpng-config --cflags`"
 	LDFLAGS="`libpng-config --libs`"
 done
 LDPNGSRC= loadpng.c regpng.c savepng.c
