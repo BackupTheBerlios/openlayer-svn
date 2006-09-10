@@ -468,6 +468,25 @@ appendfile include/OpenLayer.hpp
 appendfile include/OpenLayer.hpp \#ifndef OPENLAYER_HPP
 appendfile include/OpenLayer.hpp \#define OPENLAYER_HPP
 appendfile include/OpenLayer.hpp 
+appendfile include/OpenLayer.hpp 
+appendfile include/OpenLayer.hpp \// Defines set accordingly to compiled settings
+appendfile include/OpenLayer.hpp \#define OL_DRIVER ALLEGRO_GL
+do if ${'DROPPNG'}='true'
+	appendfile include/OpenLayer.hpp \#define OL_NO_PNG
+done
+do if ${'DROPTTF'}='true'
+	appendfile include/OpenLayer.hpp \#define OL_NO_TTF
+done
+do if ${'USENEWTTF'}='true'
+	appendfile include/OpenLayer.hpp \#define USE_NEW_TTF
+done
+do if ${'DROPOLDAPI'}='true'
+	appendfile include/OpenLayer.hpp \#define OL_NO_OLD_API
+done
+do if ${'DROPSTATECHANGE'}='true'
+	appendfile include/OpenLayer.hpp \#define OL_NO_STATE_CHANGE
+done
+appendfile include/OpenLayer.hpp 
 appendfile include/OpenLayer.hpp \#include \"OpenLayer/GarbageCollector.hpp\"
 appendfile include/OpenLayer.hpp \#include \"OpenLayer/Includes.hpp\"
 appendfile include/OpenLayer.hpp 
@@ -501,24 +520,6 @@ appendfile include/OpenLayer.hpp
 do ifnot ${'DROPOLDAPI'}='true'
 	appendfile include/OpenLayer.hpp \// Providing backwards compatibility with apps made before 2.0
 	appendfile include/OpenLayer.hpp \#include \"OpenLayer/GfxRend.hpp\"
-done
-appendfile include/OpenLayer.hpp 
-appendfile include/OpenLayer.hpp \// Defines set accordingly to compiled settings
-appendfile include/OpenLayer.hpp \#define OL_DRIVER ALLEGRO_GL
-do if ${'DROPPNG'}='true'
-	appendfile include/OpenLayer.hpp \#define OL_NO_PNG
-done
-do if ${'DROPTTF'}='true'
-	appendfile include/OpenLayer.hpp \#define OL_NO_TTF
-done
-do if ${'USENEWTTF'}='true'
-	appendfile include/OpenLayer.hpp \#define USE_NEW_TTF
-done
-do if ${'DROPOLDAPI'}='true'
-	appendfile include/OpenLayer.hpp \#define OL_NO_OLD_API
-done
-do if ${'DROPSTATECHANGE'}='true'
-	appendfile include/OpenLayer.hpp \#define OL_NO_STATE_CHANGE
 done
 appendfile include/OpenLayer.hpp 
 appendfile include/OpenLayer.hpp \#endif
