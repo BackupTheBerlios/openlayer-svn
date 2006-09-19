@@ -250,17 +250,17 @@ namespace ol
 			{
 				if(text[i]=='%')
 				{
-					if(text[i]=='s')
+					if(text[i+1]=='s')
 					{
 						str << va_arg(ap,char *);
 						++i;
 					}
-					else if(text[i]=='d'||text[i]=='i')
+					else if(text[i+1]=='d'||text[i+1]=='i')
 					{
 						str << va_arg(ap,signed int);
 						++i;
 					}
-					else if(text[i]=='c')
+					else if(text[i+1]=='c')
 					{
 						str << (char)va_arg(ap,int);
 						++i;
