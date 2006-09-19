@@ -250,19 +250,22 @@ namespace ol
 			{
 				if(text[i]=='%')
 				{
-					++i;
 					if(text[i]=='s')
 					{
 						str << va_arg(ap,char *);
+						++i;
 					}
 					else if(text[i]=='d'||text[i]=='i')
 					{
 						str << va_arg(ap,signed int);
+						++i;
 					}
 					else if(text[i]=='c')
 					{
 						str << (char)va_arg(ap,int);
+						++i;
 					}
+					else str << text[i];
 				}
 				else
 				{
