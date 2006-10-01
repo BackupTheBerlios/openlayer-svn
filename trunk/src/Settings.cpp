@@ -50,13 +50,13 @@ SetAntialiasing( bool turnedOn ) {
    useAntiAlias = turnedOn;
    if( useAntiAlias ) {
       glEnable( GL_LINE_SMOOTH );
-      glEnable( GL_POINT_SMOOTH );
-      glEnable( GL_POLYGON_SMOOTH );
+      //glEnable( GL_POINT_SMOOTH );
+      //glEnable( GL_POLYGON_SMOOTH );
    }
    else {
       glDisable( GL_LINE_SMOOTH );
       glDisable( GL_POINT_SMOOTH );
-      glDisable( GL_POLYGON_SMOOTH );
+      //glDisable( GL_POLYGON_SMOOTH );
    }
 }
 
