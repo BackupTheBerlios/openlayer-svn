@@ -46,7 +46,7 @@ public:
    //static glEnum GetBytesPerPixel( glEnum textureFormat, int colorDepth = Setup::GetColorDepth() );
 
 protected:
-
+   
    const static std::string TEXTURE_NOT_POWER_OF_TWO_EXT;
 
 private:

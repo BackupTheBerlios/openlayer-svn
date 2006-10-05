@@ -161,7 +161,7 @@ UploadTexture( OL_MEMORY_IMG *bmp, bool isSolid ) {
    unsigned char *data = new unsigned char[textureW * textureH * bpp];
    //float *data = new float[textureW * textureH * bpp];
 
-   char buffer[100];
+   //char buffer[100];
 
    unsigned char *imageStart = data + bpp * (textureH - bmpH) * textureW;
    unsigned char *pixelPtr = imageStart;
@@ -206,7 +206,9 @@ UploadTexture( OL_MEMORY_IMG *bmp, bool isSolid ) {
    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
    glTexImage2D( GL_TEXTURE_2D, 0, bpp, textureW, textureH, 0, format, GL_UNSIGNED_BYTE, data );
-
+   
+   delete[] data;
+   
    /*glTexImage2D( GL_TEXTURE_2D, 0, 4, textureInfo.texWidth, textureInfo.texHeight,
                  0, GL_RGBA, GL_UNSIGNED_BYTE, data );*/
    textureInfo.SetIndex( index );
