@@ -239,6 +239,55 @@ echo "- Assembling library -"
 linklib libopenlayer
 goto doopenlayerheader
 :finishedcompile
+
+echo "- Compiling demos -"
+LIBFLAG = "lib/libopenlayer.a "
+LIBFLAG += ${LDFLAGS}
+LDFLAGS = ${LIBFLAG}
+CPPFLAGS -= "-DUSE_NEW_TTF"
+
+# Collision demo
+src_paths demos/collisiondemo
+-compile main.cpp
+-linkexec demos/collisiondemo/collisiondemo
+-rmobj main.cpp
+
+# gamedemo
+src_paths demos/gamedemo
+-compile Demo.cpp
+-linkexec demos/gamedemo/gamedemo
+-rmobj Demo.cpp
+
+# gameloop
+src_paths demos/gameloop
+-compile Main.cpp
+-linkexec demos/gameloop/gameloop
+-rmobj Main.cpp
+
+# Line strip demo
+src_paths demos/linestripdemo
+-compile Main.cpp
+-linkexec demos/linestripdemo/linestripdemo
+-rmobj Main.cpp
+
+# Render bitmap
+src_paths demos/renderbitmap
+-compile Main.cpp
+-linkexec demos/renderbitmap/renderbitmap
+-rmobj Main.cpp
+
+# Shape demo
+src_paths demos/shapedemo
+-compile Main.cpp
+-linkexec demos/shapedemo/shapedemo
+-rmobj Main.cpp
+
+# Text demo
+src_paths demos/textdemo
+-compile Main.cpp
+-linkexec demos/textdemo/textdemo
+-rmobj Main.cpp
+
 echo "
 - Compilation completed -
 
@@ -337,7 +386,7 @@ exit 0
 :clean
 echo "- Cleaning up -"
 -rmobj ${LIB_SOURCES}
--rm lib/libopenlayer.a
+-rm lib/libopenlayer.a demos/collisiondemo/collisiondemo demos/gamedemo/gamedemo demos/gameloop/gameloop demos/linestripdemo/linestripdemo demos/renderbitmap/renderbitmap demos/shapedemo/shapedemo demos/textdemo/textdemo
 -rm options
 -rm installdir
 -rm obj
