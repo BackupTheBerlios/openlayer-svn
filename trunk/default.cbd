@@ -245,6 +245,7 @@ LIBFLAG = "lib/libopenlayer.a "
 LIBFLAG += ${LDFLAGS}
 LDFLAGS = ${LIBFLAG}
 CPPFLAGS -= "-DUSE_NEW_TTF"
+LD = g++
 
 # Collision demo
 src_paths demos/collisiondemo
@@ -385,8 +386,9 @@ exit 0
 # clean up library
 :clean
 echo "- Cleaning up -"
+ifplat win32 EXE_EXT='.exe'	
 -rmobj ${LIB_SOURCES}
--rm lib/libopenlayer.a demos/collisiondemo/collisiondemo demos/gamedemo/gamedemo demos/gameloop/gameloop demos/linestripdemo/linestripdemo demos/renderbitmap/renderbitmap demos/shapedemo/shapedemo demos/textdemo/textdemo
+-rm lib/libopenlayer.a demos/collisiondemo/collisiondemo${'EXE_EXT'} demos/gamedemo/gamedemo${'EXE_EXT'} demos/gameloop/gameloop${'EXE_EXT'} demos/linestripdemo/linestripdemo${'EXE_EXT'} demos/renderbitmap/renderbitmap${'EXE_EXT'} demos/shapedemo/shapedemo${'EXE_EXT'} demos/textdemo/textdemo${'EXE_EXT'}
 -rm options
 -rm installdir
 -rm obj
