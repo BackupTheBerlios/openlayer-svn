@@ -392,7 +392,8 @@ int main() {
             ballYSpeed = -fabs( ballYSpeed );
          }
          else {
-            ballYSpeed += ((float(mouseYMovement) <? 2.5) <? 0 );
+//            ballYSpeed += ((float(mouseYMovement) <? 2.5) <? 0 );
+           ballYSpeed += min( mouseYMovement, 0 ); // MAX( MIN( mouseYMovement, 2.5 ), 0 );
             ballYSpeed = -fabs( ballYSpeed ) * 0.6;
          }
 

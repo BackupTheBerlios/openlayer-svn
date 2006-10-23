@@ -18,8 +18,11 @@ int main() {
    // Set up the screen in windowed mode with the window size of 800 x 600 //
    Setup::SetupScreen( 800, 600, WINDOWED );
    
+   Canvas::Fill( Rgba::BLACK );
+
    // Load the font with the size 30 x 24 and a white color //
-   TextRenderer neuropol( "Fonts/Neuropol.ttf", 30, 24, Rgba::WHITE );
+   TextRenderer neuropol;
+   neuropol.Load( "Fonts/Neuropol.ttf", 30, 24, Rgba::WHITE );
    
    // Test if the font was really loaded (maybe it didn't exist) //
    if( !neuropol ) {

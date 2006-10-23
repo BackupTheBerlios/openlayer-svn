@@ -1147,11 +1147,11 @@ GetCollisionPolygon( OL_MEMORY_IMG *bitmap, int alphaLimit, int numSkips, Vec2D 
 
    bool found = false;
 
-   for( int y = 0; y < bitmap->h; y++ ) {
-      for( int x = 0; x < bitmap->w; x++ ) {
-         if( TestAlpha( x, y, alphaLimit, bitmap )) {
-            startX = x;
-            startY = y;
+   for( int iy = 0; iy < bitmap->h; iy++ ) {
+      for( int ix = 0; ix < bitmap->w; ix++ ) {
+         if( TestAlpha( ix, iy, alphaLimit, bitmap )) {
+            startX = ix;
+            startY = iy;
 
             found = true;
             break;
@@ -1175,8 +1175,8 @@ GetCollisionPolygon( OL_MEMORY_IMG *bitmap, int alphaLimit, int numSkips, Vec2D 
    
    char *collisionBuffer = new char[width * height];
    
-   for( int i = 0; i < width * height; i++ ) {
-      collisionBuffer[i] = 0;
+   for( int ii = 0; ii < width * height; ii++ ) {
+      collisionBuffer[ii] = 0;
    }
    
    do {

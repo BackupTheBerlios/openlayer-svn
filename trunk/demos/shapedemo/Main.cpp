@@ -72,7 +72,7 @@ void mouse_function( int flags )
 		global_released = true;
 
 }
-END_OF_FUNCTION()
+END_OF_FUNCTION(mouse_function)
 
 void polygonLoop( Bitmap& pointer )
 {
@@ -145,7 +145,7 @@ int main() {
 
    // Load a bitmap //
    Bitmap pointer;
-   pointer.Load( "Gfx/Pointer.png", "Gfx/PointerAlpha.bmp" );
+   pointer.Load( "Gfx/PointerAlpha.png", "Gfx/PointerAlpha.bmp" );
 
    // Test if the bitmap was really loaded (maybe it didn't exist) //
    if( !pointer ) {

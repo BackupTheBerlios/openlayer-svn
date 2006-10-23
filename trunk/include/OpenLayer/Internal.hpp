@@ -34,16 +34,38 @@ static inline void OlError( std::string errorStr ) {
 
 
 
+#if defined(_MSC_VER) && _MSC_VER < 1300
 #define OlAssert( condition ) \
-if( !(condition) ) { \
-  char linechars[64]; \
-  sprintf( linechars, "%i", __LINE__ ); \
-  OlError( "Assertion failed in \nFile:     " + std::string( __FILE__ ) \
-			+ ", line " + std::string( linechars ) \
-			+ "\nFunction: " + std::string( __PRETTY_FUNCTION__ ) \
-			+ "\nProgram shutting down" ); \
-  exit( -1 ); \
-}
+  if( !(condition) ) { \
+char linechars[64]; \
+OlError( "Assertion failed somewhere in a VC6 program. Shutting down. Sorry can't be any more help"); \
+exit( -1 ); \
+  } 
+
+#elif defined(_MSC_VER) && _MSC_VER > 1300
+#define OlAssert( condition ) \
+  if( !(condition) ) { \
+char linechars[64]; \
+sprintf( linechars, "%i", __LINE__ ); \
+OlError( "Assertion failed in \nFile:     " + std::string( __FILE__ ) \
+        + ", line " + std::string( linechars ) \
+        + "\nFunction: " + std::string( __FUNCDNAME__ ) \
+        + "\nProgram shutting down" ); \
+        exit( -1 ); \
+  } 
+#else
+
+#define OlAssert( condition ) \
+  if( !(condition) ) { \
+char linechars[64]; \
+sprintf( linechars, "%i", __LINE__ ); \
+OlError( "Assertion failed in \nFile:     " + std::string( __FILE__ ) \
+        + ", line " + std::string( linechars ) \
+        + "\nFunction: " + std::string( __PRETTY_FUNCTION__ ) \
+        + "\nProgram shutting down" ); \
+        exit( -1 ); \
+  } 
+#endif
 
 
 
