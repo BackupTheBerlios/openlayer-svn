@@ -57,13 +57,9 @@ public:
    virtual std::string ToString() const;
    */
    
-   virtual void TransformBy(const Placement &placement) {
-	   pos += placement.GetPosition();
-   }
+   virtual void TransformBy(const Placement &placement);
  
-   virtual std::string ToString() const {
-	   return "";
-   }
+   virtual std::string ToString() const;
    
    Vec2D pos;
 

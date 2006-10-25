@@ -136,9 +136,7 @@ WakeUpProgram() {
 
 const char *Setup::
 GetGLError() {
-   OlLog( "Retrieving error" );
    GLenum error = glGetError();
-   OlLog( "Done... Got: " + ToString( error ));
    
    if( error == GL_NO_ERROR )
       return 0;

@@ -216,30 +216,6 @@ SetClipping( int x, int y, int w, int h ) {
    
    OlRectangle< int > clippingRegion( 0, 0, width, height );
    
-   if( !clippingRegions.empty() ) {
-      clippingRegion = clippingRegions.top();
-   }
-   
-   if( x < clippingRegion.x ) {
-      w -= clippingRegion.x - x;
-      x = clippingRegion.x;
-   }
-   
-   if( y < clippingRegion.y ) {
-      h -= clippingRegion.y - y;
-      y = clippingRegion.y;
-   }
-   
-   if( x + w > clippingRegion.w ) {
-      w = clippingRegion.w - x;
-   }
-   
-   if( y + h > clippingRegion.h ) {
-      h = clippingRegion.h - y;
-   }
-   
-   //TRACE( "%d %d, %d %d, %d %d\n", clippingRegion.w, clippingRegion.h, x, clippingRegion.h - (y + h), w, h );
-   
    clippingRegions.push( OlRectangle< int >( x, y, w, h ));
    
    ApplyClipping();
@@ -298,9 +274,12 @@ DisableClipping() {
 
 Rect Canvas::SurfaceInfo::
 GetClippingRegion() {
-   const OlRectangle< int > &clippingRegion = clippingRegions.top();
+   if(!clippingRegions.empty()) {
+      const OlRectangle< int > &clippingRegion = clippingRegions.top();
+      return Rect( clippingRegion.x, clippingRegion.y, clippingRegion.w, clippingRegion.h );
+   }
    
-   return Rect( clippingRegion.x, clippingRegion.y, clippingRegion.w, clippingRegion.h );
+   return Rect( 0, 0, Width(), Height() );
 }
 
 
