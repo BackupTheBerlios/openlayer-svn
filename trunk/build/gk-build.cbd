@@ -1,0 +1,83 @@
+# Build libglyph-agl and install it
+do ifplat win32
+	do ifexist ${'MINGDIR'}/include/freetype2
+		CFLAGS="-O2 -Wall -I%MINGDIR%/include/freetype2 -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
+	else ifexist ${'MINGDIR'}/local/include/freetype2
+		CFLAGS="-O2 -Wall -I%MINGDIR%/local/include/freetype2 -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
+	else
+:gklocation
+		echo "Can't find freetype do you have it installed?"
+		echo "Please specify where its located:"
+		do ifplat win32
+			echo "example: c:\mingw (make sure lib\libfreetype.a and include\freetype2 exist in the directory)"
+		else
+			echo "example: /usr/local (make sure lib/libfreetype.a and include/freetype2 exist in the directory)"
+		done
+		echo "Enter exit or cancel if you don't have it."
+		read LOCATION
+		do if $(tolower ${'LOCATION'})='cancel'
+			exit 0
+		else if $(tolower ${'LOCATION'})='exit'
+			exit 0
+		else if ${'LOCATION'}='' goto gklocation
+		else ifexist ${'LOCATION'}/lib/libfreetype.a ifexist ${'LOCATION'}/include/freetype2
+			CFLAGS="-O2 -Wall -I${'LOCATION'}/include/freetype2 -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
+		else ifnexist ${'LOCATION'}/lib/libfreetype.a ifnexist ${'LOCATION'}/include/freetype2
+			echo "${'LOCATION'} is an invalid library location."
+			goto gklocation
+		done
+	done
+	LDFLAGS="-lfreetype -lz"
+else
+	CFLAGS="-O2 -Wall `freetype-config --cflags` -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
+	LDFLAGS="`freetype-config --libs`"
+done
+GKSRC= "glyph.c glyph_global_vars.c glyph_rend.c glyph_to_allegro_mono.c glyph_dimensions.c glyph_index.c glyph_to_allegro_aa.c glyph_to_opengl.c glyph_face.c glyph_main.c glyph_to_allegro.c glyph_utils.c"
+
+src_paths utils/glyphkeeper/src
+OBJ_DIR= utils/glyphkeeper/obj
+DEP_DIR= utils/glyphkeeper/dep
+AR = ar
+AR_OPT = rcs
+LIB_PRE = utils/glyphkeeper/
+LIB_EXT = .a
+ifnexist ${'OBJ_DIR'} -mkdir ${'OBJ_DIR'}
+ifnexist ${'DEP_DIR'} -mkdir ${'DEP_DIR'}
+@!compile ${GKSRC}
+do ifnret 0
+	 echo "There was a problem compiling glyphkeeper, do you have freetype installed?"
+	 goto gkcleanup
+done
+@!linklib libglyph-agl
+do ifexist utils/glyphkeeper/libglyph-agl.a
+:gkask
+	echo "Where do you wish to install glyph-agl?"
+	do ifplat win32
+		echo "example: c:\mingw (make sure lib and include exist in the directory)"
+	else
+		echo "example: /usr/local (make sure lib and include exist in the directory)"
+	done
+	echo "Enter exit or cancel if you don't want to install at this time."
+	read LOCATION
+	do if $(tolower ${'LOCATION'})='cancel'
+		goto gkcleanup
+	else if $(tolower ${'LOCATION'})='exit'
+		goto gkcleanup
+	else if ${'LOCATION'}='' goto gkask
+	else ifexist ${'LOCATION'}/lib ifexist ${'LOCATION'}/include
+		echo "Installing glyph-agl to ${'LOCATION'}"
+		-copy utils/glyphkeeper/include/glyph.h ${'LOCATION'}/include/
+		-copy utils/glyphkeeper/libglyph-agl.a ${'LOCATION'}/lib/
+	else ifnexist ${'LOCATION'}/lib ifnexist ${'LOCATION'}/include
+		echo "${'LOCATION'} is an invalid install location."
+		goto gkask
+	done
+else ifnexist utils/glyphkeeper/libglyph-agl.a
+	echo "There was a problem compiling glyphkeeper, do you have freetype installed?"
+done
+:gkcleanup
+@!rm utils/glyphkeeper/libglyph-agl.a
+@!rmobj ${GKSRC}
+@!rm ${'OBJ_DIR'}
+@!rm ${'DEP_DIR'}
+exit 0
