@@ -53,24 +53,28 @@ endif(OL_NO_STATE_CHANGE)
 # UNIX BASED SYSTEMS
 # -------------------------------------------------------
 if(UNIX AND NOT CYGWIN)
-	#set(CMAKE_INCLUDE_PATH "/usr/include;/usr/local/include")
-	#set(CMAKE_LIBRARY_PATH "/usr/lib;/usr/local/lib")
+	set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/unix-build)
+	set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
+	set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 	
 	#libraries and stuff
-	set(ALLEGRO_LIBS `allegro-config --libs`)
+	#set(ALLEGRO_LIBS '`allegro-config --libs`')
+	exec_program(allegro-config ARGS --libs OUTPUT_VARIABLE ALLEGRO_LIBS)
 	set(ALLEGROGL_LIBS -lagl)
 	if(NOT OL_NO_PNG)
 		set(PNG_LIBS -lldpng -lpng)
 	endif(NOT OL_NO_PNG)
 	if(NOT OL_NO_TTF)
-		add_definitions(`freetype-config --cflags`)
+		add_definitions("`freetype-config --cflags`")
+		exec_program(freetype-config ARGS --cflags OUTPUT_VARIABLE FREETYPE_INCLUDE)
+		exec_program(freetype-config ARGS --libs OUTPUT_VARIABLE FT_LIBS)
 		if(NOT USE_NEW_TTF)
-			set(FREETYPE_LIBS -lglyph-agl `freetype-config --libs`)
+			set(FREETYPE_LIBS -lglyph-agl ${FT_LIBS})
 		else(NOT USE_NEW_TTF)
-			set(FREETYPE_LIBS `freetype-config --libs`)
+			set(FREETYPE_LIBS ${FT_LIBS})
 		endif(NOT USE_NEW_TTF)
 	endif(NOT OL_NO_TTF)
-	set(OPENGL_LIBS -lgl -lglu)
+	set(OPENGL_LIBS -lGL -lGLU)
 endif(UNIX AND NOT CYGWIN)
 
 # -------------------------------------------------------
@@ -79,8 +83,6 @@ endif(UNIX AND NOT CYGWIN)
 
 if(MINGW)
 	set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/mingw-build)
-	#set(CMAKE_CURRENT_BINARY_DIR ${CMAKE_SOURCE_DIR}/mingw-build)
-	#set(PROJECT_BINARY_DIR ${CMAKE_SOURCE_DIR}/mingw-build)
 	set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 	set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 	
@@ -90,7 +92,15 @@ if(MINGW)
 		message(FATAL_ERROR "Cannot find your mingw include and library paths. Please set them.")
 	endif(NOT CMAKE_INCLUDE_PATH AND NOT CMAKE_LIBRARY_PATH)
 	
-	#libraries and stuff
+	# -------------------------------------------------------	
+	# library checks
+	# Finding all the required libs needed to compile openlayer
+	# List:
+	#		* allegro
+	#		* allegroGL
+	#		* freetype (glyphkeeper depending on user settings)
+	#		* libpng
+	# -------------------------------------------------------
 	set(ALLEGRO_LIBS -lalleg)
 	set(ALLEGROGL_LIBS -lagl)
 	if(NOT OL_NO_PNG)
@@ -110,6 +120,38 @@ if(MINGW)
 		endif(NOT USE_NEW_TTF)
 	endif(NOT OL_NO_TTF)
 	set(OPENGL_LIBS -lgdi32 -lglu32 -lopengl32)
+	
+	find_library(ALLEGRO NAMES alleg)
+	if(NOT ALLEGRO)
+		message(FATAL_ERROR "Cannot find allegro. Please indicate where the library is and reconfigure.")
+	endif(NOT ALLEGRO)
+	find_library(ALLEGROGL NAMES agl)
+	if(NOT ALLEGROGL)
+		message(FATAL_ERROR "Cannot find allegroGL. Please indicate where the library is and reconfigure.")
+	endif(NOT ALLEGROGL)
+	if(NOT OL_NO_TTF)
+		find_library(FREETYPE NAMES freetype)
+		if(NOT FREETYPE)
+			message(FATAL_ERROR "Cannot find freetype. Please indicate where the library is and reconfigure.")
+		endif(NOT FREETYPE)
+		if(NOT USE_NEW_TTF)
+			find_library(GLYPKEEPER NAMES glyph-agl)
+			if(NOT GLYPHKEEPER)
+				message(FATAL_ERROR "Cannot find GlyphKeeper built with allegrogl target. Please indicate where the library is and reconfigure else use the internal renderer.")
+			endif(NOT GLYPHKEEPER)
+		endif(NOT USE_NEW_TTF)
+	endif(NOT OL_NO_TTF)
+	if(NOT OL_NO_PNG)
+		find_library(LIBPNG NAMES png png12)
+		if(NOT LIBPNG)
+			message(FATAL_ERROR "Cannot find libpng. Please indicate where the library is and reconfigure else disable png support.")
+		else(NOT LIBPNG)
+			find_library(LOADPNG NAMES ldpng)
+			if(NOT LOADPNG)
+				message(FATAL_ERROR "Cannot find loadpng. Please indicate where the library is and reconfigure else disable png support.")
+			endif(NOT LOADPNG)
+		endif(NOT LIBPNG)
+	endif(NOT OL_NO_PNG)
 #	-lopenlayer -lglyph-agl -lfreetype -lldpng -lpng -lz -lagl -lalleg -luser32 #-lgdi32 -lglu32-lopengl32
 endif(MINGW)
 
@@ -127,46 +169,6 @@ endif(MINGW)
 #	endif(NOT CMAKE_INCLUDE_PATH AND NOT CMAKE_LIBRARY_PATH)
 #endif(CYGWIN)
 
-# -------------------------------------------------------	
-# library checks
-# Finding all the required libs needed to compile openlayer
-# List:
-#		* allegro
-#		* allegroGL
-#		* freetype (glyphkeeper depending on user settings)
-#		* libpng
-# -------------------------------------------------------
-find_library(ALLEGRO NAMES alleg)
-if(NOT ALLEGRO)
-	message(FATAL_ERROR "Cannot find allegro. Please indicate where the library is and reconfigure.")
-endif(NOT ALLEGRO)
-find_library(ALLEGROGL NAMES agl)
-if(NOT ALLEGROGL)
-	message(FATAL_ERROR "Cannot find allegroGL. Please indicate where the library is and reconfigure.")
-endif(NOT ALLEGROGL)
-if(NOT OL_NO_TTF)
-	find_library(FREETYPE NAMES freetype)
-	if(NOT FREETYPE)
-		message(FATAL_ERROR "Cannot find freetype. Please indicate where the library is and reconfigure.")
-	endif(NOT FREETYPE)
-	if(NOT USE_NEW_TTF)
-		find_library(GLYPKEEPER NAMES glyph-agl)
-		if(NOT GLYPHKEEPER)
-			message(FATAL_ERROR "Cannot find GlyphKeeper built with allegrogl target. Please indicate where the library is and reconfigure else use the internal renderer.")
-		endif(NOT GLYPHKEEPER)
-	endif(NOT USE_NEW_TTF)
-endif(NOT OL_NO_TTF)
-if(NOT OL_NO_PNG)
-	find_library(LIBPNG NAMES png png12)
-	if(NOT LIBPNG)
-		message(FATAL_ERROR "Cannot find libpng. Please indicate where the library is and reconfigure else disable png support.")
-	else(NOT LIBPNG)
-		find_library(LOADPNG NAMES ldpng)
-		if(NOT LOADPNG)
-			message(FATAL_ERROR "Cannot find loadpng. Please indicate where the library is and reconfigure else disable png support.")
-		endif(NOT LOADPNG)
-	endif(NOT LIBPNG)
-endif(NOT OL_NO_PNG)
 
 
 # -------------------------------------------------------
@@ -204,14 +206,37 @@ endif(NOT SHARED_LIB)
 add_library (openlayer ${SHARED_LIB} ${SOURCES})
 
 # -------------------------------------------------------
-# Link it up
+# Create the library
 # -------------------------------------------------------
 target_link_libraries(openlayer ${REQUIRED_LIBS})
 
 # -------------------------------------------------------
+# Create the examples
+# -------------------------------------------------------
+add_executable(collisiondemo ${CMAKE_SOURCE_DIR}/demos/collisiondemo/main.cpp)
+target_link_libraries(collisiondemo openlayer)
+add_executable(gamedemo ${CMAKE_SOURCE_DIR}/demos/gamedemo/Demo.cpp)
+target_link_libraries(gamedemo openlayer)
+add_executable(gameloop ${CMAKE_SOURCE_DIR}/demos/gameloop/Main.cpp)
+target_link_libraries(gameloop openlayer)
+add_executable(linestripdemo ${CMAKE_SOURCE_DIR}/demos/linestripdemo/Main.cpp)
+target_link_libraries(linestripdemo openlayer)
+add_executable(renderbitmap ${CMAKE_SOURCE_DIR}/demos/renderbitmap/Main.cpp)
+target_link_libraries(renderbitmap openlayer)
+add_executable(shapedemo ${CMAKE_SOURCE_DIR}/demos/shapedemo/Main.cpp)
+target_link_libraries(shapedemo openlayer)
+add_executable(textdemo ${CMAKE_SOURCE_DIR}/demos/textdemo/Main.cpp)
+target_link_libraries(textdemo openlayer)
+
+# -------------------------------------------------------
+# openlayer-config for *nix based systems
+# -------------------------------------------------------
+if(UNIX AND NOT CGWIN)
+	include(ol-config)
+endif(UNIX AND NOT CGWIN)
+
+# -------------------------------------------------------
 # TODO:
-#		* Build example executables
-#		* Create openlayer-config script on *nix based systems
 #		* Do install
 # -------------------------------------------------------
 
