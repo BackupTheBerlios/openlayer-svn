@@ -79,11 +79,10 @@ endif(UNIX AND NOT CYGWIN)
 
 if(MINGW)
 	set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/mingw-build)
-	set(CMAKE_CURRENT_BINARY_DIR ${CMAKE_SOURCE_DIR}/mingw-build)
-	set(PROJECT_BINARY_DIR ${CMAKE_SOURCE_DIR}/mingw-build)
-	set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/mingw-build)
-	set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/mingw-build)
-	set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+	#set(CMAKE_CURRENT_BINARY_DIR ${CMAKE_SOURCE_DIR}/mingw-build)
+	#set(PROJECT_BINARY_DIR ${CMAKE_SOURCE_DIR}/mingw-build)
+	set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
+	set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 	
 	find_path(CMAKE_INCLUDE_PATH NAMES stdio.h PATHS c:/mingw/include)
 	find_path(CMAKE_LIBRARY_PATH NAMES libstdc++.a PATHS c:/mingw/lib)
@@ -207,7 +206,7 @@ add_library (openlayer ${SHARED_LIB} ${SOURCES})
 # -------------------------------------------------------
 # Link it up
 # -------------------------------------------------------
-target_link_libraries (openlayer ${REQUIRED_LIBS})
+target_link_libraries(openlayer ${REQUIRED_LIBS})
 
 # -------------------------------------------------------
 # TODO:
