@@ -1,4 +1,25 @@
 # -------------------------------------------------------
+# OpenLayer cmake build script. Creates makefiles for unix 
+# based systems and/or
+# project files for a given environment like MSVC.
+# TODO:
+#		* Do install
+#
+# Written by: juvinious
+# -------------------------------------------------------
+
+# -------------------------------------------------------
+# Add in uninstall target 
+# -------------------------------------------------------
+CONFIGURE_FILE(
+  "${CMAKE_CURRENT_SOURCE_DIR}/build/cmake_uninstall.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+  IMMEDIATE @ONLY)
+
+ADD_CUSTOM_TARGET(uninstall
+  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
+
+# -------------------------------------------------------
 # project name
 # -------------------------------------------------------
 project (OPENLAYER)
@@ -236,10 +257,15 @@ if(UNIX AND NOT CGWIN)
 endif(UNIX AND NOT CGWIN)
 
 # -------------------------------------------------------
-# TODO:
-#		* Do install
+# Installation
 # -------------------------------------------------------
+if(NOT ${CMAKE_INSTALL_PREFIX} AND ${CMAKE_INSTALL_PREFIX} STREQUAL "")
+	message(FATAL_ERROR "You need to set the base location where to install OpenLayer (ie /usr/local) - ${CMAKE_INSTALL_PREFIX}")
+endif(NOT ${CMAKE_INSTALL_PREFIX} AND ${CMAKE_INSTALL_PREFIX} STREQUAL "")
+install(FILES ${CMAKE_BINARY_DIR}/include/OpenLayer.hpp DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+install(FILES ${SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/OpenLayer)
+install(TARGETS openlayer DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+if(UNIX AND NOT CGWIN)
+	install(PROGRAMS ${CMAKE_BINARY_DIR}/bin/openlayer-config DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+endif(UNIX AND NOT CGWIN)
 
-# -------------------------------------------------------
-# Written by: juvinious
-# -------------------------------------------------------
