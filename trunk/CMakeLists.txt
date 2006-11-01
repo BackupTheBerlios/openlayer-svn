@@ -2,11 +2,27 @@
 # OpenLayer cmake build script. Creates makefiles for unix 
 # based systems and/or
 # project files for a given environment like MSVC.
-# TODO:
-#		* Do install
 #
 # Written by: juvinious
 # -------------------------------------------------------
+
+# -------------------------------------------------------
+# Ensure that we are doing an out of source build
+# Prevents any mishaps
+# -------------------------------------------------------
+if(EXISTS ${CMAKE_SOURCE_DIR}/CMakeCache.txt)
+	file(REMOVE ${CMAKE_SOURCE_DIR}/CMakeCache.txt)
+	file(REMOVE_RECURSE ${CMAKE_SOURCE_DIR}/CMakeFiles)
+endif(EXISTS ${CMAKE_SOURCE_DIR}/CMakeCache.txt)      
+if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+	  message(FATAL_ERROR "Oops. Don't do an in-source build. Create an extra directory change into it and run cmake pointing to the base directory. IE: mkdir mybuild; cd mybuild; cmakesetup ../")
+endif(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+
+
+# -------------------------------------------------------
+# Directory in which extra macros can be found
+# -------------------------------------------------------
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/build)
 
 # -------------------------------------------------------
 # Add in uninstall target 
@@ -22,12 +38,7 @@ add_custom_target(uninstall
 # -------------------------------------------------------
 # project name
 # -------------------------------------------------------
-project (OPENLAYER)
-
-# -------------------------------------------------------
-# Directory in which extra macros can be found
-# -------------------------------------------------------
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/build)
+project (OpenLayer)
 
 # -------------------------------------------------------
 # Including needed macros
@@ -36,7 +47,7 @@ include(CMakeMacros)
 # -------------------------------------------------------
 # User setable options
 # -------------------------------------------------------
-option(SHARED_LIB "Make the library shared?" off)
+option(STATIC_LIB "Make the library static?" on)
 option(OL_NO_TTF "Disable TTF" off)
 if(NOT OL_NO_TTF)
 	set(TTF_OK 1)
@@ -45,6 +56,15 @@ dependent_option(USE_NEW_TTF "Use internal font renderer" on "TTF_OK" on)
 option(OL_NO_PNG "Disable PNG support" off)
 option(OL_NO_OLD_API "Disable backwards compatibility with 2.0 and below" off)
 option(OL_NO_STATE_CHANGE "Disable state changes" off)
+
+# -------------------------------------------------------
+# Check whether to create a shared or static library
+# -------------------------------------------------------
+if(STATIC_LIB)
+	set(STATIC_LIB STATIC)
+else(STATIC_LIB)
+	set(STATIC_LIB SHARED)
+endif(STATIC_LIB)
 
 # -------------------------------------------------------
 # Paths and system setup
@@ -73,7 +93,7 @@ if(UNIX AND NOT CYGWIN)
 	if(OL_NO_STATE_CHANGE)
 		add_definitions(-DOL_NO_STATE_CHANGE)
 	endif(OL_NO_STATE_CHANGE)
-	set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/unix-build)
+	#set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/unix-build)
 	set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 	set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 	
@@ -122,7 +142,7 @@ if(MINGW)
 		add_definitions(-DOL_NO_STATE_CHANGE)
 	endif(OL_NO_STATE_CHANGE)
 	
-	set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/mingw-build)
+	#set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/mingw-build)
 	set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 	set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 	
@@ -197,6 +217,8 @@ if(MSVC)
 	# -------------------------------------------------------
 	# Take those user options and set the necessary compile time preprocessors
 	# -------------------------------------------------------
+	set(STATIC_LIB SHARED)
+	set(CMAKE_CONFIGURATION_TYPES Release)
 	if(NOT OL_NO_TTF)
 		if(USE_NEW_TTF)
 			add_definitions(/DUSE_NEW_TTF)
@@ -214,7 +236,7 @@ if(MSVC)
 		add_definitions(/DOL_NO_STATE_CHANGE)
 	endif(OL_NO_STATE_CHANGE)
 	
-	set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/msvc-build)
+	#set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/msvc-build)
 	set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 	set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 	
@@ -322,18 +344,9 @@ aux_source_directory(src SOURCES)
 include_directories(include include/OpenLayer ${FREETYPE_INCLUDE})
 
 # -------------------------------------------------------
-# Check whether to create a shared or static library
-# -------------------------------------------------------
-if(NOT SHARED_LIB)
-	set(SHARED_LIB STATIC)
-else(NOT SHARED_LIB)
-	set(SHARED_LIB SHARED)
-endif(NOT SHARED_LIB)
-
-# -------------------------------------------------------
 # OpenLayer Library
 # -------------------------------------------------------
-add_library (openlayer ${SHARED_LIB} ${SOURCES})
+add_library (openlayer ${STATIC_LIB} ${SOURCES})
 
 # -------------------------------------------------------
 # Create the library
