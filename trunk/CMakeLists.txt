@@ -118,7 +118,7 @@ if(UNIX AND NOT CYGWIN)
 		endif(NOT ENABLE_INTERNAL_FONT)
 		set(FREETYPE_LIB ${FT_LIBS})
 	endif(NOT DISABLE_TTF)
-	set(OPENGL_LIB -lGL -lGLU)
+	set(OPENGL_LIB -lGL\ -lGLU)
 endif(UNIX AND NOT CYGWIN)
 
 # -------------------------------------------------------
@@ -181,7 +181,7 @@ if(MINGW)
 		set(FREETYPE_LIB -lfreetype)
 		set(Z_LIB -lz)
 	endif(NOT DISABLE_TTF)
-	set(OPENGL_LIB -lgdi32 -lglu32 -lopengl32)
+	set(OPENGL_LIB -lgdi32\ -lglu32\ -lopengl32)
 	
 	find_library(ALLEGRO NAMES alleg)
 	if(NOT ALLEGRO)
@@ -317,12 +317,19 @@ endif(MSVC)
 # -------------------------------------------------------
 # Put the linked libraries together
 # -------------------------------------------------------
-set(REQUIRED_LIBS ${ALLEGROGL_LIB} ${LOADPNG_LIB} ${PNG_LIB} ${GLYPHKEEPER_LIB} ${FREETYPE_LIB} ${Z_LIB} ${ALLEGRO_LIB} ${OPENGL_LIB})
+set(REQUIRED_LIBS ${ALLEGROGL_LIB}\ ${LOADPNG_LIB}\ ${PNG_LIB}\ ${GLYPHKEEPER_LIB}\ ${FREETYPE_LIB}\ ${Z_LIB}\ ${ALLEGRO_LIB}\ ${OPENGL_LIB})
 
 # -------------------------------------------------------
 # Create the necessary header file for the library
 # -------------------------------------------------------
-configure_file(build/OpenLayer.hpp.cmake ${CMAKE_BINARY_DIR}/include/OpenLayer.hpp)
+configure_file(build/OpenLayer.hpp.in ${CMAKE_BINARY_DIR}/include/OpenLayer.hpp)
+
+# -------------------------------------------------------
+# openlayer-config for *nix based systems
+# -------------------------------------------------------
+if(UNIX AND NOT CYGWIN)
+	configure_file(build/openlayer-config.in ${CMAKE_BINARY_DIR}/bin/openlayer-config ESCAPE_QUOTES)
+endif(UNIX AND NOT CYGWIN)
 
 # -------------------------------------------------------
 # Source directory containing all the necessary .cpp files
@@ -374,13 +381,6 @@ add_dependencies(shapedemo openlayer)
 add_executable(textdemo ${CMAKE_SOURCE_DIR}/demos/textdemo/Main.cpp)
 target_link_libraries(textdemo openlayer)
 add_dependencies(textdemo openlayer)
-
-# -------------------------------------------------------
-# openlayer-config for *nix based systems
-# -------------------------------------------------------
-if(UNIX AND NOT CYGWIN)
-	include(ol-config)
-endif(UNIX AND NOT CYGWIN)
 
 # -------------------------------------------------------
 # Installation
