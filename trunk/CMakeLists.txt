@@ -317,8 +317,11 @@ endif(MSVC)
 # -------------------------------------------------------
 # Put the linked libraries together
 # -------------------------------------------------------
-set(REQUIRED_LIBS ${ALLEGROGL_LIB}\ ${LOADPNG_LIB}\ ${PNG_LIB}\ ${GLYPHKEEPER_LIB}\ ${FREETYPE_LIB}\ ${Z_LIB}\ ${ALLEGRO_LIB}\ ${OPENGL_LIB})
-
+if(NOT MSVC)
+	set(REQUIRED_LIBS ${ALLEGROGL_LIB}\ ${LOADPNG_LIB}\ ${PNG_LIB}\ ${GLYPHKEEPER_LIB}\ ${FREETYPE_LIB}\ ${Z_LIB}\ ${ALLEGRO_LIB}\ ${OPENGL_LIB})
+else(NOT MSVC)
+	set(REQUIRED_LIBS ${ALLEGROGL_LIB} ${LOADPNG_LIB} ${PNG_LIB} ${GLYPHKEEPER_LIB} ${FREETYPE_LIB} ${Z_LIB} ${ALLEGRO_LIB} ${OPENGL_LIB})
+endif(NOT MSVC)
 # -------------------------------------------------------
 # Create the necessary header file for the library
 # -------------------------------------------------------
