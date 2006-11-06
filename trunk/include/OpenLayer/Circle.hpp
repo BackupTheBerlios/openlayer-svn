@@ -177,7 +177,11 @@ public:
    Circle( Vec2D pos, float radius,
            float lineWidth = 1.0, float accuracy = Settings::GetCircleAccuracy() )
       : Ellipse( pos, Vec2D( radius, radius ), lineWidth, 0.0, accuracy ) {}
-
+   
+   Circle( float x, float y, float radius,
+           float lineWidth = 1.0, float accuracy = Settings::GetCircleAccuracy() )
+      : Ellipse( Vec2D( x, y ), Vec2D( radius, radius ), lineWidth, 0.0, accuracy ) {}
+   
    // Draws a filled disk //
    inline void DrawDisk( const Rgba &color, float innerRadius ) const {
       Ellipse::DrawDisk( color, innerRadius, innerRadius );

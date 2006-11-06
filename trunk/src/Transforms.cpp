@@ -159,8 +159,8 @@ ApplyTransforms() {
    }
    
    if( xStretch != 1.0 || yStretch != 1.0 ) {
-      float xTranslate = -(xStretch - 1.0) * SCREEN_W/2;
-      float yTranslate = -(yStretch - 1.0) * SCREEN_H/2;
+      float xTranslate = -(xStretch - 1.0) * (SCREEN_W/2 - x);
+      float yTranslate = -(yStretch - 1.0) * (SCREEN_H/2 - y);
 
       glTranslatef( xTranslate, yTranslate, 0.0 );
 
