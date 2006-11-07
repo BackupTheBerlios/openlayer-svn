@@ -379,7 +379,7 @@ aux_source_directory(src SOURCES)
 # -------------------------------------------------------
 # Include directory
 # -------------------------------------------------------
-include_directories(${CMAKE_BINARY_DIR}/include include/OpenLayer ${FREETYPE_INCLUDE})
+include_directories(include ${CMAKE_BINARY_DIR}/include include/OpenLayer ${FREETYPE_INCLUDE})
 
 # -------------------------------------------------------
 # OpenLayer Library
