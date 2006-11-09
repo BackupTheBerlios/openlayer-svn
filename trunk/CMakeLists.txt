@@ -235,6 +235,12 @@ if(MSVC)
 	# -------------------------------------------------------
 	# Take those user options and set the necessary compile time preprocessors
 	# -------------------------------------------------------
+	SET(CMAKE_CXX_FLAGS "/nologo /W3 /Gy")
+    SET(CMAKE_CXX_FLAGS_DEBUG "/MTd /Z7 /Od")
+    SET(CMAKE_CXX_FLAGS_RELEASE "/MT /O2")
+    SET(CMAKE_CXX_FLAGS_MINSIZEREL "/MT /O2")
+    SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MTd /Z7 /Od")
+	
 	set(LIB_NAME_ALLEGRO "alleg" CACHE STRING "Allegro Library lib filename")
 	set(LIB_NAME_ALLEGROGL "agl" CACHE STRING "AllegroGL Library lib filename")
 	set(LIB_NAME_FREETYPE "freetype" CACHE STRING "Freetype Library lib filename")
@@ -246,7 +252,6 @@ if(MSVC)
 	set(LIB_NAME_LOADPNG "ldpng" CACHE STRING "LoadPNG Library lib filename")
 	set(LIB_NAME_ZLIB "zlib" CACHE STRING "ZLIB Library lib filename")
 	
-	set(CREATE_STATIC_LIB SHARED)
 	set(CMAKE_CONFIGURATION_TYPES Release)
 	if(NOT DISABLE_TTF)
 		if(ENABLE_INTERNAL_FONT)
