@@ -63,6 +63,14 @@ option(DISABLE_PNG "Disable PNG support" off)
 option(DISABLE_OLD_API "Disable backwards compatibility with 2.0 and below" off)
 option(DISABLE_STATE_CHANGES "Disable state changes" off)
 
+if(NOT MSVC)
+	set(CXXFLAGS "-O2 -Wall -fexpensive-optimizations")
+else(NOT MSVC)
+	set(CXXFLAGS "-O2")
+endif(NOT MSVC)
+
+add_definitions(${CXXFLAGS})
+
 # -------------------------------------------------------
 # Check whether to create a shared or static library
 # -------------------------------------------------------
