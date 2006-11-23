@@ -57,7 +57,7 @@ SetupProgram( bool setupKeyboard, bool setupMouse, bool setupTimer ) {
    register_png_file_type();
 #endif
    
-   OlLog( "OpenLayer started up succesfully", false );
+   OlLog( "OpenLayer started up succesfully" );
    
    return true;
 }

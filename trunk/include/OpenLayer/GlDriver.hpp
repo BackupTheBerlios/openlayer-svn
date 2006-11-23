@@ -5,6 +5,7 @@
 #include "Internal.hpp"
 #include "Vec2D.hpp"
 #include "Setup.hpp"
+#include "Rgba.hpp"
 
 #include <string>
 
@@ -34,7 +35,8 @@ public:
    virtual int GetImageColorDepth( OL_MEMORY_IMG *bmp ) = 0;
    virtual bool SaveMemoryBitmap( OL_MEMORY_IMG *bmp, std::string filename ) = 0;
    virtual void DestroyMemoryBitmap( OL_MEMORY_IMG *bmp ) = 0;
-
+   virtual Rgba GetPixel( OL_MEMORY_IMG *img, int x, int y ) = 0;
+   
    virtual std::string GetExecutablePath() = 0;
    virtual std::string ToAbsolutePathname( std::string pathname ) = 0;
 
@@ -68,7 +70,8 @@ public:
    virtual int GetImageColorDepth( OL_MEMORY_IMG *bmp );
    virtual bool SaveMemoryBitmap( OL_MEMORY_IMG *bmp, std::string filename );
    virtual void DestroyMemoryBitmap( OL_MEMORY_IMG *bmp );
-
+   virtual Rgba GetPixel( OL_MEMORY_IMG *img, int x, int y );
+   
    virtual std::string GetExecutablePath();
    virtual std::string ToAbsolutePathname( std::string pathname );
 };

@@ -805,8 +805,8 @@ Load( const char *filename, int extraFlags ) {
    collisionPoly = 0;
 
    if( !Setup::IsScreenSetUp() ) {
-      OlLog( string( "Loading queued for bitmap:" ) + filename );
-
+      allegro_message(( string( "Loading queued for bitmap: " ) + filename + "\n" ).c_str());
+   
       pendingLoad = new PendingFileLoad( filename );
       return true;
    }

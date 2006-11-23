@@ -11,7 +11,12 @@
 namespace ol {
 
 
-static inline void OlLog( std::string logStr, bool append = true ) {
+extern bool firstLog;
+
+
+static inline void OlLog( std::string logStr, bool append = !firstLog ) {
+   firstLog = false;
+   
 #ifdef OL_TO_STDOUT
    std::cout << logStr << "\n";
 #else

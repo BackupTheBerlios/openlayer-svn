@@ -10,6 +10,7 @@
 #include "Collisions.hpp"
 #include "Vec2D.hpp"
 #include "RenderModes.hpp"
+#include "GlDriver.hpp"
 
 #include <vector>
 #include <string>
@@ -247,6 +248,7 @@ public:
     // Returns a memory bitmap copy of the specified region of the Bitmap //
     OL_MEMORY_IMG *GetMemoryBitmap( int x, int y, int width, int height ) const;
     
+    inline Rgba GetPixelFromMemory( int x, int y ) const { return GlDriver::Get()->GetPixel( bmp, x, y ); }
     
     // Retrurns the color value of the specified pixel as an Rgba color //
     // Make sure that you don't try to read out of the bounds of the bitmap //

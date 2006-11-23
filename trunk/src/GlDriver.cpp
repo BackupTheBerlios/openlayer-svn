@@ -125,6 +125,14 @@ GetBytesPerPixel( glEnum textureFormat, int colorDepth ) {
 */
 
 
+Rgba AllegroGLDriver::
+GetPixel( OL_MEMORY_IMG *img, int x, int y ) {
+   int pixel = getpixel( img, x, y );
+   return Rgba( getr( pixel ), getg( pixel ), getb( pixel ), geta( pixel ));
+}
+
+
+
 OlTextureInfo AllegroGLDriver::
 UploadTexture( OL_MEMORY_IMG *bmp, bool isSolid ) {
    isSolid = false;
