@@ -3,5 +3,8 @@
 
 #include "Internal.hpp"
 
+namespace ol {
+
 bool firstLog = true;
 
+}
