@@ -123,7 +123,7 @@ else ifplat win32
 		read LOCATION
 		do if $(tolower ${'LOCATION'})='ignore'
 			CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -fexpensive-optimizations
-			LDFLAGS=-lglyph-agl -lldpng -lpng -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32
+			LDFLAGS=-lldpng -lpng -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32
 			DROPTTF='true'
 			goto NOPNG
 		else if $(tolower ${'LOCATION'})='exit'
