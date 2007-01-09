@@ -6,8 +6,9 @@
 // OpenGL acceleration        //
 //
 // Use it where ever you want,//
-// as long as you dont claim //
+// as long as you don't claim //
 // the code to be your own!   //
+
 
 // Requires:  
 // - Glyph Keeper 0.26.1 or later (Compile with -DGLYPH_TARGET=GLYPH_ALLEGGL)
@@ -25,12 +26,8 @@
 #ifndef OPENLAYER_HPP
 #define OPENLAYER_HPP
 
-
-// Defines set accordingly to compiled settings
 #define OL_DRIVER ALLEGRO_GL
-#ifndef OL_NO_TTF
-#define OL_NO_TTF
-#endif /* OL_NO_TTF */
+
 
 #include "OpenLayer/GarbageCollector.hpp"
 #include "OpenLayer/Includes.hpp"
@@ -41,6 +38,10 @@
 #include "OpenLayer/FpsCounter.hpp"
 #include "OpenLayer/GarbageCollector.hpp"
 #include "OpenLayer/General.hpp"
+
+#ifndef OL_NO_OLD_API
+   #include "OpenLayer/GfxRend.hpp"
+#endif // NO_OLD_API
 
 #include "OpenLayer/Rgba.hpp"
 #include "OpenLayer/Settings.hpp"
@@ -62,8 +63,4 @@
 #include "OpenLayer/Vec2D.hpp"
 #include "OpenLayer/TextureInfo.hpp"
 
-// Providing backwards compatibility with apps made before 2.0
-#include "OpenLayer/GfxRend.hpp"
-
 #endif
-
