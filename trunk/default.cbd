@@ -155,6 +155,8 @@ echo "Do you wish to drop TTF support? [y/N]"
 read TTF
 do if $(tolower ${'TTF'})='y'
 	CPPFLAGS += " -DOL_NO_TTF"
+	LDFLAGS -= "-lglyph-agl "
+	CONFIGLIBS-="-lglyph-agl "
 	DROPTTF='true'
 	goto NOPNG
 else ifnot $(tolower ${'TTF'})='n' ifnot ${'TTF'}='' goto NOTTF

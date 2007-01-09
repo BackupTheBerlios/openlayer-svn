@@ -1,5 +1,3 @@
-#ifdef USE_NEW_TTF
-
 #ifndef OL_GLYPH_CPP
 #define OL_GLYPH_CPP
 
@@ -10,8 +8,9 @@ namespace ol
 {
 	// Static count of instances of fonts to track library
 	static int instances=0;
+#ifdef USE_NEW_TTF
 	static FT_Library ftLibrary = NULL;
-
+#endif
 	// Character ctor
 	character::character()
 	{
@@ -24,11 +23,13 @@ namespace ol
 	Glyph::Glyph()
 	{
 		//Load library
+#ifdef USE_NEW_TTF
 		if(ftLibrary==NULL)
 		{
 			FT_Init_FreeType(&ftLibrary);
-			instances++;
 		}
+#endif
+		instances++;
 		ID = instances;
 		faceLoaded = kerning = false;
 		currentIndex=0;
@@ -37,19 +38,24 @@ namespace ol
 		currentChar = new character;
 		workBitmap=NULL;
 		color = Rgba::WHITE;
+#ifdef USE_NEW_TTF
 		hintingFlag = FT_LOAD_FORCE_AUTOHINT;
 		renderFlag = FT_LOAD_TARGET_NORMAL;
+#endif
 	}
 	// Destructor
 	/*! Nothing yet */
 	Glyph::~Glyph()
 	{
+#ifdef USE_NEW_TTF
 		FT_Done_Face(face);
-		
+#endif
 		if(instances>0)instances--;
 		if(instances==0)
 		{
+#ifdef USE_NEW_TTF
 			FT_Done_FreeType(ftLibrary);
+#endif
 		}
 		if(currentChar)delete currentChar;
 	}
@@ -65,6 +71,7 @@ namespace ol
 	// Extract glyph
 	character Glyph::extractGlyph(signed long unicode)
 	{
+#ifdef USE_NEW_TTF
 		int w, h, ew;
 		character tempChar;
 		
@@ -108,11 +115,14 @@ namespace ol
 		tempChar.length = (w + ew)+face->glyph->advance.x >> 6;
 			
 		return tempChar;
+#endif
+		return character();
 	}
 	
 	// Create single index
 	void Glyph::createIndex()
 	{
+#ifdef USE_NEW_TTF
 		std::map<dimension, std::map<signed long, character> >::iterator p;
 		p = fontTable.find(size);
 		if(p==fontTable.end())
@@ -129,11 +139,13 @@ namespace ol
 			}
 			fontTable.insert(std::make_pair(size,tempMap));
 		}
+#endif
 	}
 	
 	// Render a character from the lookup table (utilizing the workBitmap)
 	void Glyph::drawCharacter(signed long unicode, double &x1, double &y1, Bitmap *bitmap, const Rgba & col)
 	{
+#ifdef USE_NEW_TTF
 		std::map<dimension, std::map<signed long, character> >::iterator ft;
 		ft = fontTable.find(size);
 		if(ft!=fontTable.end())
@@ -165,12 +177,14 @@ namespace ol
 				x1+=tempChar.right;
 			}
 		}
+#endif
 	}
 
 	
 	// Load font from memory
 	bool Glyph::loadFromMemory(const unsigned char *memoryFont, unsigned int length, int index, unsigned int width, unsigned int height)
 	{
+#ifdef USE_NEW_TTF
 		if(!FT_New_Memory_Face(ftLibrary,memoryFont, length,index,&face))
 		{
 			currentFilename = "memoryFont";
@@ -200,11 +214,14 @@ namespace ol
 		}
 					
 		return faceLoaded;
+#endif
+		return false;
 	}
 			
 	// Load font from file
 	bool Glyph::load(const std::string & filename, int index, unsigned int width, unsigned int height)
 	{
+#ifdef USE_NEW_TTF
 		if(!FT_New_Face(ftLibrary,filename.c_str(),index,&face))
 		{
 			currentFilename = filename;
@@ -233,10 +250,13 @@ namespace ol
 		}
 		
 		return faceLoaded;
+#endif
+		return false;
 	}
 	
 	void Glyph::render(double x, double y, Rgba col, Bitmap *bmp, int alignment, const std::string & text, ...)
 	{
+#ifdef USE_NEW_TTF
 		if(faceLoaded)
 		{
 			double rend_x=0;
@@ -329,6 +349,7 @@ namespace ol
 			ol::Transforms::PopPlacement();
 			
 		}
+#endif
 	}
 	
 	
@@ -377,6 +398,7 @@ namespace ol
 	// Set FreeType LoadFlags
 	void Glyph::setHinting(bool on)
 	{
+#ifdef USE_NEW_TTF
 		if(on)
 		{
 			hintingFlag = FT_LOAD_FORCE_AUTOHINT;
@@ -385,6 +407,7 @@ namespace ol
 		{
 			hintingFlag = FT_LOAD_NO_HINTING;
 		}
+#endif
 		fontTable.clear();
 		setSize(size.width, size.height);
 	}
@@ -392,6 +415,7 @@ namespace ol
 	// Set FreeType LoadFlags
 	void Glyph::setAntialias(bool on)
 	{
+#ifdef USE_NEW_TTF
 		if(on)
 		{
 			renderFlag = FT_LOAD_TARGET_NORMAL;
@@ -400,6 +424,7 @@ namespace ol
 		{
 			renderFlag = FT_LOAD_TARGET_MONO;
 		}
+#endif
 		fontTable.clear();
 		setSize(size.width, size.height);
 	}
@@ -566,5 +591,3 @@ namespace ol
 	}
 
 #endif /* OL_GLYPH_CPP */
-
-#endif /* USE_NEW_TTF */

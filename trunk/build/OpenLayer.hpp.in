@@ -27,11 +27,21 @@
 
 // Defines set accordingly to compiled settings
 #define OL_DRIVER ALLEGRO_GL
+#ifndef OL_NO_PNG
 #cmakedefine OL_NO_PNG
+#endif /* OL_NO_PNG */
+#ifndef OL_NO_TTF
 #cmakedefine OL_NO_TTF
+#endif /* OL_NO_TTF */
+#ifndef USE_NEW_TTF
 #cmakedefine USE_NEW_TTF
+#endif /* USE_NEW_TTF */
+#ifndef OL_NO_OLD_API
 #cmakedefine OL_NO_OLD_API
+#endif /* OL_NO_OLD_API */
+#ifndef OL_NO_STATE_CHANGE
 #cmakedefine OL_NO_STATE_CHANGE
+#endif /* OL_NO_STATE_CHANGE */
 
 #include "OpenLayer/GarbageCollector.hpp"
 #include "OpenLayer/Includes.hpp"

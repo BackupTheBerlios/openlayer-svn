@@ -30,19 +30,29 @@ appendfile include/OpenLayer.hpp
 appendfile include/OpenLayer.hpp \// Defines set accordingly to compiled settings
 appendfile include/OpenLayer.hpp \#define OL_DRIVER ALLEGRO_GL
 do if ${'DROPPNG'}='true'
+	appendfile include/OpenLayer.hpp \#ifndef OL_NO_PNG
 	appendfile include/OpenLayer.hpp \#define OL_NO_PNG
+	appendfile include/OpenLayer.hpp \#endif /* OL_NO_PNG */
 done
 do if ${'DROPTTF'}='true'
+	appendfile include/OpenLayer.hpp \#ifndef OL_NO_TTF
 	appendfile include/OpenLayer.hpp \#define OL_NO_TTF
+	appendfile include/OpenLayer.hpp \#endif /* OL_NO_TTF */
 done
 do if ${'USENEWTTF'}='true'
+	appendfile include/OpenLayer.hpp \#ifndef USE_NEW_TTF
 	appendfile include/OpenLayer.hpp \#define USE_NEW_TTF
+	appendfile include/OpenLayer.hpp \#endif /* USE_NEW_TTF */
 done
 do if ${'DROPOLDAPI'}='true'
+	appendfile include/OpenLayer.hpp \#ifndef OL_NO_OLD_API
 	appendfile include/OpenLayer.hpp \#define OL_NO_OLD_API
+	appendfile include/OpenLayer.hpp \#endif /* OL_NO_OLD_API */
 done
 do if ${'DROPSTATECHANGE'}='true'
+	appendfile include/OpenLayer.hpp \#ifndef OL_NO_STATE_CHANGE
 	appendfile include/OpenLayer.hpp \#define OL_NO_STATE_CHANGE
+	appendfile include/OpenLayer.hpp \#endif /* OL_NO_STATE_CHANGE */
 done
 appendfile include/OpenLayer.hpp 
 appendfile include/OpenLayer.hpp \#include \"OpenLayer/GarbageCollector.hpp\"

@@ -1,7 +1,11 @@
-#ifndef OL_NO_TTF
+//#ifndef OL_NO_TTF
 
 #ifndef OL_TEXT_RENDERER_HPP
 #define OL_TEXT_RENDERER_HPP
+
+#ifdef OL_NO_TTF
+#define USE_NEW_TTF
+#endif
 
 
 #include "Includes.hpp"
@@ -222,4 +226,4 @@ private:
 
 #endif // OL_TEXT_RENDERER_HPP
 
-#endif // OL_NO_TTF
+//#endif // OL_NO_TTF

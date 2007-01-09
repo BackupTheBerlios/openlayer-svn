@@ -1,4 +1,7 @@
-#ifndef OL_NO_TTF
+//#ifndef OL_NO_TTF
+
+#ifndef OL_TEXT_RENDERER_CPP
+#define OL_TEXT_RENDERER_CPP
 
 #include "TextRenderer.hpp"
 #include "Internal.hpp"
@@ -611,5 +614,6 @@ IsLoadingQueued() const {
    return loader != 0;
 }
 
+#endif /* OL_TEXT_RENDERER_CPP */
 
-#endif // OL_NO_TTF
+//#endif // OL_NO_TTF

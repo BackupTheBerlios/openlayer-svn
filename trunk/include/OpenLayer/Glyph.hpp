@@ -1,17 +1,18 @@
-#ifdef USE_NEW_TTF
-
 #ifndef OL_GLYPH_HPP
 #define OL_GLYPH_HPP
 
 #include <math.h>
 #include <map>
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include FT_GLYPH_H
 #include "Rgba.hpp"
 #include "Bitmap.hpp"
 #include "Point.hpp"
 #include "Canvas.hpp"
+
+#ifdef USE_NEW_TTF
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_GLYPH_H
+#endif
 
 #define GLYPH_PI	3.14159265358979323846
 #define GLYPH_SQRT2	1.41421356237309504880
@@ -164,10 +165,10 @@ namespace ol
 			
 			//! Workspace bitmap
 			Bitmap *workBitmap;
-			
+#ifdef USE_NEW_TTF
 			//! Face
 			FT_Face face;
-			
+#endif	
 			//! Face Name
 			std::string faceName;
 			
@@ -248,5 +249,3 @@ namespace ol
 }
 
 #endif /* OL_GLYPH_HPP */
-
-#endif /* USE_NEW_TTF */
