@@ -704,8 +704,8 @@ Load( OL_MEMORY_IMG *toBmp, bool hasAlphaChannel, bool convertMagicPink, int ext
 
       set_color_depth( colorDepth );
 
-      if( shouldBeConverted ) {
-         destroy_bitmap( toBmp );
+      if( !shouldBeConverted ) {
+         destroyBmp = false;
       }
 
       bmp = dst;
