@@ -4,8 +4,6 @@
 ifopt verbose verbose 1
 
 # check for building utilities
-ifopt loadpng invoke build/ldpng-build.cbd
-
 ifopt glyphkeeper invoke build/gk-build.cbd
 
 # Lets force configuration

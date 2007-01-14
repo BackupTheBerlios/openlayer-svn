@@ -94,7 +94,7 @@ protected:
 
 
 
-enum OL_LIB_DECLSPEC OlFlippingChoise {
+enum OlFlippingChoise {
    HORIZONTAL,
    VERTICAL,
    BOTH
@@ -136,7 +136,7 @@ private:
 
 
 
-enum OL_LIB_DECLSPEC OlSlicingChoise {
+enum OlSlicingChoise {
    HORIZONTAL_SLICE,
    VERTICAL_SLICE
 };

@@ -11,7 +11,7 @@ namespace ol {
 // ToString - Converts a variable to a string //
 
 template< class Type >
-OL_LIB_DECLSPEC std::string ToString( Type value ) {
+std::string ToString( Type value ) {
    std::stringstream s;
    s << value;
    return s.str();
@@ -19,7 +19,7 @@ OL_LIB_DECLSPEC std::string ToString( Type value ) {
 
 
 template< class Type >
-OL_LIB_DECLSPEC std::string VarToString( Type value ) {
+std::string VarToString( Type value ) {
    return ToString( value );
 }
 
@@ -27,20 +27,20 @@ OL_LIB_DECLSPEC std::string VarToString( Type value ) {
 OL_LIB_DECLSPEC int ToNextPowOfTwo( int num );
 
 
-enum OL_LIB_DECLSPEC Axis {
+enum Axis {
    X_AXIS,
    Y_AXIS
 };
 
 
-enum OL_LIB_DECLSPEC OutlineTextureMode {
+enum OutlineTextureMode {
    SHRINK,
    STRETCH,
    OPTIMIZE
 };
 
 
-enum OL_LIB_DECLSPEC TextAlignment {
+enum TextAlignment {
    LEFT,
    RIGHT,
    CENTER,

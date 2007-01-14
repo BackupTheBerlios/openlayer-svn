@@ -15,7 +15,7 @@ namespace ol {
 extern OL_LIB_DECLSPEC bool firstLog;
 
 
-static inline OL_LIB_DECLSPEC void OlLog( std::string logStr, bool append = !firstLog ) {
+static inline void OlLog( std::string logStr, bool append = !firstLog ) {
    firstLog = false;
    
 #ifdef OL_TO_STDOUT
@@ -29,7 +29,7 @@ static inline OL_LIB_DECLSPEC void OlLog( std::string logStr, bool append = !fir
 
 
 
-static inline OL_LIB_DECLSPEC void OlError( std::string errorStr ) {
+static inline void OlError( std::string errorStr ) {
    std::string msg = std::string("ERROR: ") + errorStr;
    OlLog( msg );
 }
@@ -75,14 +75,14 @@ OlError( "Assertion failed in \nFile:     " + std::string( __FILE__ ) \
 
 
 
-static inline OL_LIB_DECLSPEC float RadiansToDegrees( float angle ) {
+static inline float RadiansToDegrees( float angle ) {
    return angle * (180.0/AL_PI);
 }
 
 
 
 
-static inline OL_LIB_DECLSPEC void RotateMatrix( float angle ) {
+static inline void RotateMatrix( float angle ) {
    #ifdef OL_ANGLES_IN_DEGREES
       glRotatef( angle, 0.0, 0.0, 1.0 );
    #else // OL_ANGLES_IN_DEGREES
