@@ -6,6 +6,7 @@
 #include "Bitmap.hpp"
 #include "Rectangle.hpp"
 #include "OlRectangle.hpp"
+#include "Declspec.hpp"
 
 #include <stack>
 #include <map>
@@ -34,7 +35,7 @@ class Rect;
 
 // The rendering surface //
 
-class Canvas {
+class OL_LIB_DECLSPEC Canvas {
 public:
    // Sets the Bitmap as the active rendering surface //
    static void SetTo( const Bitmap &image );

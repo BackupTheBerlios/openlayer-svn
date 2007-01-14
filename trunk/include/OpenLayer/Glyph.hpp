@@ -7,6 +7,7 @@
 #include "Bitmap.hpp"
 #include "Point.hpp"
 #include "Canvas.hpp"
+#include "Declspec.hpp"
 
 #ifdef USE_NEW_TTF
 #include <ft2build.h>
@@ -20,7 +21,7 @@
 namespace ol
 {
 	// Forward decleration of Glyph for libFreeType
-	class Glyph;
+	class OL_LIB_DECLSPEC Glyph;
 	
 	/*
 	*	These items are so that we can maintain compatibility with Glyph Keeper
@@ -28,7 +29,7 @@ namespace ol
 	*	GlyphKeeper in the future.
 	*/
 	
-	class GLYPH_FACE
+	class OL_LIB_DECLSPEC GLYPH_FACE
 	{
 		public:
 			GLYPH_FACE();
@@ -37,7 +38,7 @@ namespace ol
 			Glyph *glyphFace;
 	};
 	
-	class GLYPH_REND
+	class OL_LIB_DECLSPEC GLYPH_REND
 	{
 		public:
 			GLYPH_REND();
@@ -47,7 +48,7 @@ namespace ol
 				
 	};
 	
-	class GLYPH_TEXTURE
+	class OL_LIB_DECLSPEC GLYPH_TEXTURE
 	{
 		public:
 			GLYPH_TEXTURE();
@@ -57,26 +58,26 @@ namespace ol
 			
 	};
 	
-	GLYPH_FACE *load_face_from_file(const char *filename, int index);
-	GLYPH_REND *create_renderer( GLYPH_FACE* const face, int index );
-	void rend_set_italic( GLYPH_REND* const rend, int italics );
-	void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned int width, const unsigned int height);
-	void rend_set_hinting_default( GLYPH_REND* const rend );
-	void gk_rend_set_hinting_off( GLYPH_REND* const rend );
-	void rend_set_render_mode_normal( GLYPH_REND* const rend );
-	Rgba colorConvert(const unsigned char *c,short ext);
-	Rgba colorConvert(const unsigned int c);
-	void gk_rend_set_text_alpha_color( GLYPH_REND* const rend, const unsigned alpha_color);
-	int gk_rend_ascender_pixels( GLYPH_REND* const rend );
-	int rend_ascender_pixels( GLYPH_REND* const rend );
-	int text_width_utf8(GLYPH_REND* const rend,const char* const text);
-	GLYPH_TEXTURE *gk_create_texture( GLYPH_REND *rend, int rangeStart, int rangeLength );
-	void gk_unload_texture_from_gpu( GLYPH_TEXTURE *texture );
-	void gk_destroy_texture( GLYPH_TEXTURE *texture );
-	void gk_render_line_gl_utf8( GLYPH_TEXTURE *texture, const char *text, int x, int y );
-	void gk_send_texture_to_gpu( GLYPH_TEXTURE *texture );
+	OL_LIB_DECLSPEC GLYPH_FACE *load_face_from_file(const char *filename, int index);
+	OL_LIB_DECLSPEC GLYPH_REND *create_renderer( GLYPH_FACE* const face, int index );
+	OL_LIB_DECLSPEC void rend_set_italic( GLYPH_REND* const rend, int italics );
+	OL_LIB_DECLSPEC void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned int width, const unsigned int height);
+	OL_LIB_DECLSPEC void rend_set_hinting_default( GLYPH_REND* const rend );
+	OL_LIB_DECLSPEC void gk_rend_set_hinting_off( GLYPH_REND* const rend );
+	OL_LIB_DECLSPEC void rend_set_render_mode_normal( GLYPH_REND* const rend );
+	OL_LIB_DECLSPEC Rgba colorConvert(const unsigned char *c,short ext);
+	OL_LIB_DECLSPEC Rgba colorConvert(const unsigned int c);
+	OL_LIB_DECLSPEC void gk_rend_set_text_alpha_color( GLYPH_REND* const rend, const unsigned alpha_color);
+	OL_LIB_DECLSPEC int gk_rend_ascender_pixels( GLYPH_REND* const rend );
+	OL_LIB_DECLSPEC int rend_ascender_pixels( GLYPH_REND* const rend );
+	OL_LIB_DECLSPEC int text_width_utf8(GLYPH_REND* const rend,const char* const text);
+	OL_LIB_DECLSPEC GLYPH_TEXTURE *gk_create_texture( GLYPH_REND *rend, int rangeStart, int rangeLength );
+	OL_LIB_DECLSPEC void gk_unload_texture_from_gpu( GLYPH_TEXTURE *texture );
+	OL_LIB_DECLSPEC void gk_destroy_texture( GLYPH_TEXTURE *texture );
+	OL_LIB_DECLSPEC void gk_render_line_gl_utf8( GLYPH_TEXTURE *texture, const char *text, int x, int y );
+	OL_LIB_DECLSPEC void gk_send_texture_to_gpu( GLYPH_TEXTURE *texture );
 	
-	class dimension
+	class OL_LIB_DECLSPEC dimension
 	{
 		public:
 		dimension()
@@ -95,7 +96,7 @@ namespace ol
 		double italics;
 	};
 	
-	class character
+	class OL_LIB_DECLSPEC character
 	{
 		public:
 			//! Constructor
@@ -139,7 +140,7 @@ namespace ol
 	};
 	
 	// This class handles face objects
-	class Glyph
+	class OL_LIB_DECLSPEC Glyph
 	{
 		private:
 			//! ID

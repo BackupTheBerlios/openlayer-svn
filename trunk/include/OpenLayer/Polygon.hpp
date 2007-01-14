@@ -11,6 +11,7 @@
 #include "Collisions.hpp"
 #include "LineStrip.hpp"
 #include "Line.hpp"
+#include "Declspec.hpp"
 
 #include <vector>
 
@@ -20,7 +21,7 @@ class Bitmap;
 class LineStrip;
 
 
-class Poly : public Shape {
+class OL_LIB_DECLSPEC Poly : public Shape {
 public:
    Poly( Vec2D rotationPivot = Vec2D( 0.0, 0.0 ))
       : outlineTexture( 0 ) { placement.SetRotationPivot( rotationPivot ); }

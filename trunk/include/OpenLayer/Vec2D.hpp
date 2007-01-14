@@ -5,13 +5,14 @@
 #include <string>
 #include <sstream>
 #include "General.hpp"
+#include "Declspec.hpp"
 
 
 namespace ol {
 
 
 
-class Vec2D {
+class OL_LIB_DECLSPEC Vec2D {
 public:
    float x, y;
 
@@ -147,7 +148,7 @@ inline Vec2D operator ~ ( Vec2D vec ) {
 
 // Checks if the points are in counter clockwise order //
 
-inline bool IsCounterClockwise( const Vec2D first, const Vec2D second, const Vec2D third ) {
+inline OL_LIB_DECLSPEC bool IsCounterClockwise( const Vec2D first, const Vec2D second, const Vec2D third ) {
   float dx1, dx2, dy1, dy2;
 
   dx1 = second.x - first.x;

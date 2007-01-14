@@ -3,6 +3,7 @@
 
 
 #include "Vec2D.hpp"
+#include "Declspec.hpp"
 #include <utility>
 #include <vector>
 
@@ -19,7 +20,7 @@ enum CollidingObject {
 };
 
 
-class Collision {
+class OL_LIB_DECLSPEC Collision {
 public:
    Collision( bool isCollision = false )
       : isCollision( isCollision ) {

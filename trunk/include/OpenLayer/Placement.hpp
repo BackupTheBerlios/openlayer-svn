@@ -4,12 +4,13 @@
 
 #include "Matrix.hpp"
 #include "Vec2D.hpp"
+#include "Declspec.hpp"
 
 
 namespace ol {
 
 
-class Placement {
+class OL_LIB_DECLSPEC Placement {
 public:
    Placement( Vec2D position = Vec2D( 0.0, 0.0 ),
               float rotation = 0.0,

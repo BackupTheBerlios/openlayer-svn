@@ -3,12 +3,13 @@
 
 #include "Shape.hpp"
 #include "Vec2D.hpp"
+#include "Declspec.hpp"
 
 
 namespace ol {
 
 
-class Point : public Shape {
+class OL_LIB_DECLSPEC Point : public Shape {
 public:
    Point( Vec2D pos )
       : pos( pos ) {}

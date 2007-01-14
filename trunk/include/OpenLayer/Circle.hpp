@@ -6,6 +6,7 @@
 #include "Settings.hpp"
 #include "Rgba.hpp"
 #include "Placement.hpp"
+#include "Declspec.hpp"
 #include <cmath>
 #include <vector>
 
@@ -23,7 +24,7 @@ namespace ol {
 
 // The ellipse shape //
 
-class Ellipse : public Shape {
+class OL_LIB_DECLSPEC Ellipse : public Shape {
 public:
    virtual ~Ellipse() {}
 
@@ -172,7 +173,7 @@ protected:
 
 // The circle shape //
 
-class Circle : public Ellipse {
+class OL_LIB_DECLSPEC Circle : public Ellipse {
 public:
    Circle( Vec2D pos, float radius,
            float lineWidth = 1.0, float accuracy = Settings::GetCircleAccuracy() )

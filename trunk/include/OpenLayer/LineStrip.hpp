@@ -6,6 +6,7 @@
 #include "Placement.hpp"
 #include "Line.hpp"
 #include "RawLineStrip.hpp"
+#include "Declspec.hpp"
 #include <list>
 
 
@@ -16,7 +17,7 @@ class Bitmap;
 
 // A series of lines clued together //
 
-class LineStrip : public Shape {
+class OL_LIB_DECLSPEC LineStrip : public Shape {
 public:
    LineStrip( float lineWidth = 1.0, const Bitmap *texture = 0 )
       : Shape( lineWidth ), texture( texture ) {}

@@ -3,12 +3,13 @@
 
 #include "Rgba.hpp"
 #include "Bitmap.hpp"
+#include "Declspec.hpp"
 
 namespace ol {
 
 
 template< class std_container1, class std_container2 >
-class RawLineStrip {
+class OL_LIB_DECLSPEC RawLineStrip {
 public:
    RawLineStrip() : totalLength( 0.0 ) {}
    

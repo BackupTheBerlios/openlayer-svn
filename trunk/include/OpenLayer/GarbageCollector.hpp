@@ -4,6 +4,7 @@
 
 #include <list>
 #include "Includes.hpp"
+#include "Declspec.hpp"
 
 namespace ol {
 
@@ -21,7 +22,7 @@ enum OlLoadResult {
 // to automate the loading and destroying of global variables //
 // GarbageCollected only defines the interface for garbage collected objects //
 
-class GarbageCollected {
+class OL_LIB_DECLSPEC GarbageCollected {
 public:
    GarbageCollected() : autoDelete( false ) {}
    
@@ -57,7 +58,7 @@ private:
 // Garbage collection which stores all Bitmaps and TextRenderers //
 // Automatically loads and destroys global Bitmaps and TextRenderers //
 
-class GarbageCollection {
+class OL_LIB_DECLSPEC GarbageCollection {
 public:
    void Add( GarbageCollected *item );
    void Remove( GarbageCollected *item );

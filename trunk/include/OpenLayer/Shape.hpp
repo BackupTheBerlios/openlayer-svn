@@ -6,6 +6,7 @@
 #include "Rgba.hpp"
 #include "Vec2D.hpp"
 #include "Collisions.hpp"
+#include "Declspec.hpp"
 
 
 #ifdef OL_NO_STATE_CHANGE
@@ -39,7 +40,7 @@ class Poly;
 
 // The base class of all Shapes //
 
-class Shape {
+class OL_LIB_DECLSPEC Shape {
 public:
    Shape( float lineWidth = 1.0 )
       : lineWidth( lineWidth ), displayList( 0 ) {}

@@ -6,6 +6,7 @@
 #include "Vec2D.hpp"
 #include "Rgba.hpp"
 #include "OlRectangle.hpp"
+#include "Declspec.hpp"
 
 
 // INTERNAL TEXTURE CLASSES //
@@ -27,13 +28,13 @@ public:
 };*/
 
 
-typedef OlRectangle< float > OlRect;
+typedef OL_LIB_DECLSPEC OlRectangle< float > OlRect;
 
 
 
 // OpenLayer's internal texture information //
 
-class OlTextureInfo {
+class OL_LIB_DECLSPEC OlTextureInfo {
 public:
    OlTextureInfo( int textureWidth, int textureHeight, 
                   int imageWidth, int imageHeight,
@@ -184,7 +185,7 @@ private:
 
 // Internal texture coordinate class //
 
-class OlTexCoords {
+class OL_LIB_DECLSPEC OlTexCoords {
 public:
    OlTexCoords( const OlTextureInfo &texture )
       : texture( texture ),

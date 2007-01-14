@@ -2,6 +2,7 @@
 #define OL_FRAMEBUFFER_HPP
 #include "Includes.hpp"
 #include "GlDriver.hpp"
+#include "Declspec.hpp"
 #include <vector>
 #include <map>
 
@@ -10,7 +11,7 @@ namespace ol {
 
 
 
-class FrameBuffer {
+class OL_LIB_DECLSPEC FrameBuffer {
 public:
    virtual ~FrameBuffer();
 
@@ -38,7 +39,7 @@ private:
 
 
 
-class BackbufFramebuf : public FrameBuffer {
+class OL_LIB_DECLSPEC BackbufFramebuf : public FrameBuffer {
 public:
    BackbufFramebuf()
       : boundTexture(0) {}
@@ -61,7 +62,7 @@ private:
 
 
 
-class OlFramebufferObjExt : public FrameBuffer {
+class OL_LIB_DECLSPEC OlFramebufferObjExt : public FrameBuffer {
 public:
    OlFramebufferObjExt()
       : boundTexture( 0 ) {}

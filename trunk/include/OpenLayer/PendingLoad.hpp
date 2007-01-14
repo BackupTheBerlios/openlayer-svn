@@ -5,6 +5,7 @@
 #include "Includes.hpp"
 #include "GarbageCollector.hpp"
 #include "TextureInfo.hpp"
+#include "Declspec.hpp"
 
 
 namespace ol {
@@ -13,7 +14,7 @@ namespace ol {
 class Bitmap;
 
 
-class PendingBitmapLoad {
+class OL_LIB_DECLSPEC PendingBitmapLoad {
 public:
 	virtual ~PendingBitmapLoad(){}
    virtual OlLoadResult ExecuteLoading( Bitmap &bmp ) = 0;
@@ -21,7 +22,7 @@ public:
 
 
 
-class PendingFileLoad : public PendingBitmapLoad {
+class OL_LIB_DECLSPEC PendingFileLoad : public PendingBitmapLoad {
 public:
    PendingFileLoad( const char *filename )
       : filename( filename ) {}
@@ -34,7 +35,7 @@ private:
 
 
 
-class PendingFileAlphaLoad : public PendingBitmapLoad {
+class OL_LIB_DECLSPEC PendingFileAlphaLoad : public PendingBitmapLoad {
 public:
    PendingFileAlphaLoad( const char *filename, const char *alphaFilename )
       : filename( filename ), alphaFilename( alphaFilename ) {}
@@ -48,7 +49,7 @@ private:
 
 
 
-class PendingDataLoad : public PendingBitmapLoad {
+class OL_LIB_DECLSPEC PendingDataLoad : public PendingBitmapLoad {
 public:
    PendingDataLoad( float *data, OlTextureInfo textureInfo )
       : data( data ), textureInfo( textureInfo ) {}
@@ -63,7 +64,7 @@ private:
 
 
 template< class Functor >
-class PendingFunctorLoad : public PendingBitmapLoad {
+class OL_LIB_DECLSPEC PendingFunctorLoad : public PendingBitmapLoad {
 public:
    PendingFunctorLoad( Functor functor, int width, int height )
       : functor( functor ), width( width ), height( height ) {}

@@ -4,6 +4,7 @@
 
 #include <list>
 #include "Bitmap.hpp"
+#include "Declspec.hpp"
 
 
 namespace ol {
@@ -12,7 +13,7 @@ namespace ol {
 class Effect;
 
 
-class EffectSystem {
+class OL_LIB_DECLSPEC EffectSystem {
 public:
    // Enables the specified effect //
    static void Enable( Effect *effect );
@@ -34,7 +35,7 @@ private:
 
 // The parent class of all effects //
 
-class Effect {
+class OL_LIB_DECLSPEC Effect {
 public:
    Effect( float duration ) :
       duration( duration ) {}
@@ -67,7 +68,7 @@ private:
 };
 
 
-class MotionBlur : public Effect {
+class OL_LIB_DECLSPEC MotionBlur : public Effect {
 public:
    // Create a new motion blur with the given strength //
    MotionBlur( float duration, float strength )
@@ -82,7 +83,7 @@ private:
 };
 
 
-class RadialBlur : public Effect {
+class OL_LIB_DECLSPEC RadialBlur : public Effect {
 public:
    // Create a new radial blur with the given strength //
    RadialBlur( float duration, float strength )
@@ -97,7 +98,7 @@ private:
 };
 
 
-class SwirlBlur : public Effect {
+class OL_LIB_DECLSPEC SwirlBlur : public Effect {
 public:
    // Create a new swirl blur with the given strength, accuracy and angle spread //
    SwirlBlur( float duration, float strength, float accuracy, float spread )

@@ -4,6 +4,7 @@
 #include "Rgba.hpp"
 #include "Bitmap.hpp"
 #include "RawLineStrip.hpp"
+#include "Declspec.hpp"
 
 #define OL_NEAR_ZERO 0.001
 
@@ -13,7 +14,7 @@ namespace ol {
 
 
 template< class std_container_v, class std_container_l >
-void RawLineStrip< std_container_v, std_container_l >::
+OL_LIB_DECLSPEC void RawLineStrip< std_container_v, std_container_l >::
 LineStripRender( const Rgba *color1, const Rgba *color2, const Bitmap *texture, float lineWidth,
          const Placement &placement, bool connectFirstAndLast ) const {
    

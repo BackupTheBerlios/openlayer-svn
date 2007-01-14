@@ -11,6 +11,7 @@
 #include "Vec2D.hpp"
 #include "RenderModes.hpp"
 #include "GlDriver.hpp"
+#include "Declspec.hpp"
 
 #include <vector>
 #include <string>
@@ -41,7 +42,7 @@ enum {
 
 // Bitmap - Stores a bitmap and draws it to the screen //
 
-class Bitmap : public GarbageCollected {
+class OL_LIB_DECLSPEC Bitmap : public GarbageCollected {
 public:
     Bitmap()                                                                          : bmp( 0 ), collisionPoly( 0 ), destroyBmp( true ), pendingLoad( 0 ), pivot( Vec2D( 0.0, 0.0 )), useDefaultPivot( true ), isSubBitmap( false ) { AddToCollection(); }
     

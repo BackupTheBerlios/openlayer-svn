@@ -73,6 +73,12 @@
 #include "OpenLayer/Vec2D.hpp"
 #include "OpenLayer/TextureInfo.hpp"
 
+#include "OpenLayer/Declspec.hpp"
+
+#ifndef OL_NO_PNG
+#include "OpenLayer/loadpng.h"
+#endif /* OL_NO_PNG */
+
 #ifndef OL_NO_OLD_API
 	// Providing backwards compatibility with apps made before 2.0
 	#include "OpenLayer/GfxRend.hpp"

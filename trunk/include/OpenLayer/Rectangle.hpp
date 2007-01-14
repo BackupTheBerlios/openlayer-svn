@@ -6,12 +6,13 @@
 #include "Point.hpp"
 #include "Settings.hpp"
 #include "Polygon.hpp"
+#include "Declspec.hpp"
 #include <cmath>
 
 
 namespace ol {
 
-class Rect : public Shape {
+class OL_LIB_DECLSPEC Rect : public Shape {
 public:
    Rect()
       : Shape( Settings::GetCircleAccuracy()) {}

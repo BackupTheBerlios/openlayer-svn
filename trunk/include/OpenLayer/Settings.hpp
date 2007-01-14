@@ -2,13 +2,14 @@
 #define OL_SETTINGS_HPP
 
 #include "Includes.hpp"
+#include "Declspec.hpp"
 
 
 namespace ol {
 
 // Settings - General settings of OpenLayer //
 
-class Settings {
+class OL_LIB_DECLSPEC Settings {
 public:
    // Turns the anti-aliasing on or off //
    // Anti-aliasing produces smoother graphics but slows down the rendering //

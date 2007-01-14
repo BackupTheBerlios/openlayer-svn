@@ -28,7 +28,6 @@ configure 	- Force configuration prompts
 clean     	- Clean up resources
 install   	- installs the library
 uninstall 	- uninstalls the library
-loadpng 	- Builds loadpng and installs
 glyphkeeper 	- Builds (AllegroGL specific) glyphkeeper and installs"
 	exit 0
 done
@@ -44,7 +43,6 @@ verbose   	- Compiles the libray with verbose output
 clean     	- Clean up resources
 install   	- installs the library
 uninstall 	- uninstalls the library
-loadpng 	- Builds loadpng and installs
 glyphkeeper 	- Builds (AllegroGL specific) glyphkeeper and installs"
 	exit 0
 done
@@ -107,7 +105,7 @@ done
 do ifplat linux
 	echo "Seting up for linux environment"
 	CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer `freetype-config --cflags` -fexpensive-optimizations
-	LDFLAGS=-lglyph-agl `freetype-config --libs` `libpng-config --libs` -lldpng -lagl `allegro-config --libs` -lGL -lGLU
+	LDFLAGS=-lglyph-agl `freetype-config --libs` `libpng-config --libs` -lagl `allegro-config --libs` -lGL -lGLU
 else ifplat win32
 	echo "Seting up for msys environment"
 	do ifexist ${'MINGDIR'}/include/freetype2
@@ -123,7 +121,7 @@ else ifplat win32
 		read LOCATION
 		do if $(tolower ${'LOCATION'})='ignore'
 			CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer -fexpensive-optimizations
-			LDFLAGS=-lldpng -lpng -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32
+			LDFLAGS=-lpng -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32
 			DROPTTF='true'
 			goto NOPNG
 		else if $(tolower ${'LOCATION'})='exit'
@@ -141,11 +139,11 @@ else ifplat win32
 			goto gkloc
 		done
 	done
-	LDFLAGS=-lglyph-agl -lfreetype -lldpng -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32
+	LDFLAGS=-lglyph-agl -lfreetype -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32
 else ifplat macosx
 	echo "Seting up for macosx environment"
 	CPPFLAGS+=-O2 -Wall -Iinclude -Iinclude/OpenLayer `freetype-config --cflags` -fexpensive-optimizations
-	LDFLAGS=-lglyph-agl `freetype-config --libs` `libpng-config --libs` -lldpng -lagl `allegro-config --libs` -framework OpenGL -framework Carbon
+	LDFLAGS=-lglyph-agl `freetype-config --libs` `libpng-config --libs` -lagl `allegro-config --libs` -framework OpenGL -framework Carbon
 done
 
 # Prompt user for preprocessor support
@@ -187,7 +185,7 @@ done
 
 do if ${'DROPPNG'}=''
 	CONFIGFLAGS += "`libpng-config --cflags` "
-	CONFIGLIBS += "`libpng-config --libs` -lldpng "
+	CONFIGLIBS += "`libpng-config --libs` "
 done
 	
 :NOOLDAPI

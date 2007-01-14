@@ -5,6 +5,7 @@
 #include "Includes.hpp"
 #include "Rgba.hpp"
 #include "Settings.hpp"
+#include "Declspec.hpp"
 
 
 namespace ol {
@@ -13,7 +14,7 @@ namespace ol {
 // Use Shape and Canvas instead //
 // GfxRend - Primitive graphics rendering functions //
 
-class GfxRend {
+class OL_LIB_DECLSPEC GfxRend {
 public:
    // Call this after you've finished rendering the current frame //
    static void RefreshScreen();

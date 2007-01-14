@@ -4,6 +4,7 @@
 
 #include "Includes.hpp"
 #include "Transforms.hpp"
+#include "Declspec.hpp"
 
 #include <string>
 #include <sstream>
@@ -15,7 +16,7 @@ namespace ol {
 
 // Rgba - the Color structure //
 
-class Rgba {
+class OL_LIB_DECLSPEC Rgba {
 public:
    // Construct the color from float (0.0 ... 1.0) or integer color components (0..255) /
    // or using the 24-bit packed color value and an alpha value //

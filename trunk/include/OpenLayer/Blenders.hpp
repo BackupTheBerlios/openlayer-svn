@@ -2,6 +2,7 @@
 #define OL_BLENDERS_HPP
 
 #include "Includes.hpp"
+#include "Declspec.hpp"
 #include <stack>
 
 namespace ol {
@@ -28,7 +29,7 @@ enum Blender {
 };
 
 
-class Blenders {
+class OL_LIB_DECLSPEC Blenders {
 public:
    // Sets the active blending function //
    // Additive blender lits the destination bitmap, //

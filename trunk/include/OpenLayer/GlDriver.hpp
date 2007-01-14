@@ -6,6 +6,7 @@
 #include "Vec2D.hpp"
 #include "Setup.hpp"
 #include "Rgba.hpp"
+#include "Declspec.hpp"
 
 #include <string>
 
@@ -19,7 +20,7 @@ namespace ol {
 class OlTextureInfo;
 
 
-class GlDriver {
+class OL_LIB_DECLSPEC GlDriver {
 public:
 
 	virtual ~GlDriver(){}
@@ -57,7 +58,7 @@ private:
 
 
 
-class AllegroGLDriver : public GlDriver {
+class OL_LIB_DECLSPEC AllegroGLDriver : public GlDriver {
 public:
 	virtual ~AllegroGLDriver(){}
    virtual bool SetupProgram( bool setupKeyboard, bool setupMouse, bool setupTimer );

@@ -2,6 +2,7 @@
 #define OL_INTERNAL_RECT
 
 #include <cmath>
+#include "Declspec.hpp"
 
 #ifdef max
 #undef max
@@ -17,7 +18,7 @@ namespace ol {
 // Internal  rectangle class //
 
 template< typename Type >
-   class OlRectangle {
+   class OL_LIB_DECLSPEC OlRectangle {
    public:
       OlRectangle( Type x = 0.0, Type y = 0.0, Type w = 0.0, Type h = 0.0 )  : x( x ), y( y ), w( w ), h( h ) {}
       

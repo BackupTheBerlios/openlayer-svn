@@ -4,6 +4,7 @@
 
 #include "Includes.hpp"
 #include "Bitmap.hpp"
+#include "Declspec.hpp"
 #include <vector>
 
 
@@ -13,7 +14,7 @@ namespace ol {
 // Animation - Loads and animates a sequence of bitmaps //
 // Animation speed is in animation frames per one game frame //
 
-class Animation {
+class OL_LIB_DECLSPEC Animation {
 public:
    // Loads the animation frames as filenameBegin01.extension, filenameBegin02.extension etc. //
    Animation( float framesPerTick, std::string filenameBegin, std::string extension, int numNumbers = 2 ) : framesPerTick( framesPerTick ), currentFrame( 0.0 ) { Load( filenameBegin, extension, numNumbers ); }

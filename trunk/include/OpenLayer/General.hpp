@@ -3,6 +3,7 @@
 
 
 #include <sstream>
+#include "Declspec.hpp"
 
 namespace ol {
 
@@ -10,7 +11,7 @@ namespace ol {
 // ToString - Converts a variable to a string //
 
 template< class Type >
-std::string ToString( Type value ) {
+OL_LIB_DECLSPEC std::string ToString( Type value ) {
    std::stringstream s;
    s << value;
    return s.str();
@@ -18,28 +19,28 @@ std::string ToString( Type value ) {
 
 
 template< class Type >
-std::string VarToString( Type value ) {
+OL_LIB_DECLSPEC std::string VarToString( Type value ) {
    return ToString( value );
 }
 
 
-int ToNextPowOfTwo( int num );
+OL_LIB_DECLSPEC int ToNextPowOfTwo( int num );
 
 
-enum Axis {
+enum OL_LIB_DECLSPEC Axis {
    X_AXIS,
    Y_AXIS
 };
 
 
-enum OutlineTextureMode {
+enum OL_LIB_DECLSPEC OutlineTextureMode {
    SHRINK,
    STRETCH,
    OPTIMIZE
 };
 
 
-enum TextAlignment {
+enum OL_LIB_DECLSPEC TextAlignment {
    LEFT,
    RIGHT,
    CENTER,

@@ -14,10 +14,10 @@ appendfile include/OpenLayer.hpp // Requires:
 appendfile include/OpenLayer.hpp // - Glyph Keeper 0.26.1 or later (Compile with -DGLYPH_TARGET=GLYPH_ALLEGGL)
 appendfile include/OpenLayer.hpp // - Allegro 4.0.2 or later
 appendfile include/OpenLayer.hpp // - AllegroGL 0.2.4 or later
-appendfile include/OpenLayer.hpp // - Recommended: Loadpng + LibPNG + ZLib to load png images
+appendfile include/OpenLayer.hpp // - Recommended: LibPNG + ZLib to load png images
 appendfile include/OpenLayer.hpp // - Reading the manual or header files to know the functions
 appendfile include/OpenLayer.hpp // - Linking your programs with: 
-appendfile include/OpenLayer.hpp //   -lglyph -lfreetype -lloadpng -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32
+appendfile include/OpenLayer.hpp //   -lglyph -lfreetype -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32
 appendfile include/OpenLayer.hpp 
 appendfile include/OpenLayer.hpp //\#define FORTIFY
 appendfile include/OpenLayer.hpp //\#include <Fortify/Fortify.h>
@@ -85,6 +85,12 @@ appendfile include/OpenLayer.hpp
 appendfile include/OpenLayer.hpp \#include \"OpenLayer/Vec2D.hpp\"
 appendfile include/OpenLayer.hpp \#include \"OpenLayer/TextureInfo.hpp\"
 appendfile include/OpenLayer.hpp 
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/Declspec.hpp\"
+appendfile include/OpenLayer.hpp
+appendfile include/OpenLayer.hpp \#ifndef OL_NO_PNG
+appendfile include/OpenLayer.hpp \#include \"OpenLayer/loadpng.h\"
+appendfile include/OpenLayer.hpp \#endif
+appendfile include/OpenLayer.hpp  
 do ifnot ${'DROPOLDAPI'}='true'
 	appendfile include/OpenLayer.hpp \// Providing backwards compatibility with apps made before 2.0
 	appendfile include/OpenLayer.hpp \#include \"OpenLayer/GfxRend.hpp\"

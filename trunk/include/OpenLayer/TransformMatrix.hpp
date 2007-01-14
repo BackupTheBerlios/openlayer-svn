@@ -1,12 +1,13 @@
 #ifndef OL_TRANSFORM_MATRIX_HPP
 #define OL_TRANSFORM_MATRIX_HPP
 
+#include "Declspec.hpp"
 
 
 namespace ol {
 
 
-class TransformMatrix {
+class OL_LIB_DECLSPEC TransformMatrix {
 public:
    
 private:
@@ -19,4 +20,4 @@ private:
 
 
 
-#endíf // OL_TRANSFORM_MATRIX_HPP
+#endï¿½ // OL_TRANSFORM_MATRIX_HPP

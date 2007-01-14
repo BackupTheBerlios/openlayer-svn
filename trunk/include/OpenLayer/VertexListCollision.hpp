@@ -1,6 +1,7 @@
 #include "Shape.hpp"
 #include "Collisions.hpp"
 #include "Line.hpp"
+#include "Declspec.hpp"
 #include <utility>
 
 

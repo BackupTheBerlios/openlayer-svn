@@ -5,12 +5,13 @@
 #include "Shape.hpp"
 #include "Vec2D.hpp"
 #include "Settings.hpp"
+#include "Declspec.hpp"
 
 
 namespace ol {
 
 
-class Line : public Shape {
+class OL_LIB_DECLSPEC Line : public Shape {
 public:
    Line()
       : Shape( 1.0 ) {}

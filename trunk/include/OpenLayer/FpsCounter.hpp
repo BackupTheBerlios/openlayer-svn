@@ -1,6 +1,8 @@
 #ifndef OL_FPS_COUNTER_HPP
 #define OL_FPS_COUNTER_HPP
 
+#include "Declspec.hpp"
+
 namespace ol {
 
 // FpsCounter - Make the game to run at the same speed in every computer and calculate the fps //
@@ -9,7 +11,7 @@ namespace ol {
 #define AUTO -1
 
 
-class FpsCounter {
+class OL_LIB_DECLSPEC FpsCounter {
 public:
    // Start the timer, defaultFps is the fps you're planning the game to run in //
    static void Start( float defaultFps );

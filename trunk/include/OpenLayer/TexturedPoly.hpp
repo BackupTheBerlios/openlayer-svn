@@ -3,6 +3,7 @@
 
 #include "Polygon.hpp"
 #include "Vec2D.hpp"
+#include "Declspec.hpp"
 #include <vector>
 #include <utility>
 
@@ -14,7 +15,7 @@ namespace ol {
 class Bitmap;
 
 
-class TexturedPoly : public Poly {
+class OL_LIB_DECLSPEC TexturedPoly : public Poly {
 public:
    TexturedPoly( Vec2D rotationPivot = Vec2D( 0.0, 0.0 ))
       : Poly( rotationPivot ), texture( 0 ), dirty( true ) {}

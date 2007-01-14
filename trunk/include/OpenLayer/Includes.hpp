@@ -1,6 +1,7 @@
 #ifndef OL_INCLUDES_HPP
 #define OL_INCLUDES_HPP
 
+#include "Declspec.hpp"
 
 /*
 #if (OL_DRIVER == SDL)
@@ -21,7 +22,7 @@
    
    #define OL_MEMORY_IMG BITMAP
    
-   inline int OlGetAlpha( OL_MEMORY_IMG *bitmap, int x, int y ) {
+   inline OL_LIB_DECLSPEC int OlGetAlpha( OL_MEMORY_IMG *bitmap, int x, int y ) {
       return geta32( _getpixel32( bitmap, x, y ));
    }
    

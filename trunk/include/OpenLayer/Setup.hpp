@@ -2,6 +2,7 @@
 #define OL_SETUP_HPP
 
 #include "Includes.hpp"
+#include "Declspec.hpp"
 #include <string>
 
 
@@ -26,7 +27,7 @@ enum {
 #define FULLSCREEN true
 
 
-class Setup {
+class OL_LIB_DECLSPEC Setup {
 public:
    // Sets up OpenLayer, Allegro and AllegroGL, returns true on success //
    static bool SetupProgram( bool setupKeyboard = true, bool setupMouse = true,

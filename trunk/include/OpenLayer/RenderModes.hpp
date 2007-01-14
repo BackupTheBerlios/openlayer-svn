@@ -3,6 +3,7 @@
 
 #include "Rgba.hpp"
 #include "TextureInfo.hpp"
+#include "Declspec.hpp"
 
 
 // RENDER MODES //
@@ -25,7 +26,7 @@ enum ETexCoord {
 
 // RenderMode - The base class of the mode the bitmap is rendered with //
 
-class RenderMode {
+class OL_LIB_DECLSPEC RenderMode {
 public:
    virtual ~RenderMode(){}
 
@@ -51,7 +52,7 @@ public:
 
 // Renders the bitmap tinted to a color //
 
-class TintMode : public RenderMode {
+class OL_LIB_DECLSPEC TintMode : public RenderMode {
 public:
 
    // The bitmap will be tinted to the given color //
@@ -71,7 +72,7 @@ protected:
 // Renders the bitmap with an additional alpha channel from an another bitmap //
 // The values of the alpha channels are multiplied together //
 
-class GainAlphaMode : public RenderMode {
+class OL_LIB_DECLSPEC GainAlphaMode : public RenderMode {
 public:
    GainAlphaMode( const Bitmap &alphaFrom, float anchorX = 0.0, float anchorY = 0.0 ) : alphaFrom( alphaFrom ), x( anchorX ), y( anchorY ) {}
 	virtual ~GainAlphaMode(){}
@@ -93,7 +94,7 @@ protected:
 
 
 
-enum OlFlippingChoise {
+enum OL_LIB_DECLSPEC OlFlippingChoise {
    HORIZONTAL,
    VERTICAL,
    BOTH
@@ -103,7 +104,7 @@ enum OlFlippingChoise {
 
 // Flips the bitmap in the specified way //
 
-class FlippedMode : public RenderMode {
+class OL_LIB_DECLSPEC FlippedMode : public RenderMode {
 public:
    FlippedMode( OlFlippingChoise mode ) : mode( mode ) {}
    virtual ~FlippedMode(){}
@@ -118,7 +119,7 @@ class Rect;
 
 // Clips the bitmap to a region //
 
-class ClippedMode : public RenderMode {
+class OL_LIB_DECLSPEC ClippedMode : public RenderMode {
 public:
    ClippedMode( float x, float y, float w, float h )
       : clipRect( x, y, w, h ) {}
@@ -135,7 +136,7 @@ private:
 
 
 
-enum OlSlicingChoise {
+enum OL_LIB_DECLSPEC OlSlicingChoise {
    HORIZONTAL_SLICE,
    VERTICAL_SLICE
 };
@@ -143,7 +144,7 @@ enum OlSlicingChoise {
 
 // Stretches a one pixel wide slice of the bitmap to fill the entire bitmap //
 
-class SliceMultiplyMode : public RenderMode {
+class OL_LIB_DECLSPEC SliceMultiplyMode : public RenderMode {
 public:
    SliceMultiplyMode( float slicePos, OlSlicingChoise mode )
       : slicePos( slicePos ), mode( mode ) {}
@@ -159,7 +160,7 @@ private:
 
 // Specifies different color channel cofficients for each corner of the Bitmap
 
-class GradientMode : public RenderMode {
+class OL_LIB_DECLSPEC GradientMode : public RenderMode {
 public:
    GradientMode( Rgba topLeft, Rgba topRight, Rgba bottomRight, Rgba bottomLeft ) {
       corners[0] = topLeft;
@@ -214,7 +215,7 @@ typedef GradientMode Gradient;
 // Combines two RenderModes to a single entity //
 // (You can use the sum operator of BlendingModes which returns a MultiMode) //
 
-class MultiMode : public RenderMode {
+class OL_LIB_DECLSPEC MultiMode : public RenderMode {
 public:
    MultiMode( const RenderMode &mode1, const RenderMode &mode2 ) : mode1( mode1 ), mode2( mode2 ) {}
    virtual ~MultiMode(){}

@@ -12,6 +12,7 @@
 #include "Rgba.hpp"
 #include "GarbageCollector.hpp"
 #include "General.hpp"
+#include "Declspec.hpp"
 
 #ifdef USE_NEW_TTF
 
@@ -37,7 +38,7 @@ namespace ol {
 // Uses GlyphKeeper to render text //
 
 
-class TextRenderer : public GarbageCollected {
+class OL_LIB_DECLSPEC TextRenderer : public GarbageCollected {
 public:
    // Construct the font by loading the face from a .ttf file //
    // The loaded font face will be automatically destroyed when the TextRenderer is destroyed //

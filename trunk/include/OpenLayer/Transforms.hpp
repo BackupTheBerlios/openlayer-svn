@@ -4,6 +4,7 @@
 #include "Includes.hpp"
 #include "Vec2D.hpp"
 #include "Placement.hpp"
+#include "Declspec.hpp"
 
 //#include "Rgba.hpp"
 
@@ -23,7 +24,7 @@ namespace ol {
 
 class Rgba;
 
-class Transforms {
+class OL_LIB_DECLSPEC Transforms {
 public:
    // Set the position of the whole screen (default: (0.0, 0.0)) //
    static void SetPosition( float x, float y );

@@ -3,12 +3,13 @@
 
 
 #include "Vec2D.hpp"
+#include "Declspec.hpp"
 
 
 namespace ol {
 
 
-class Matrix2D {
+class OL_LIB_DECLSPEC Matrix2D {
 public:
    
    enum {

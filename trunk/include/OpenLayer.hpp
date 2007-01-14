@@ -14,10 +14,10 @@
 // - Glyph Keeper 0.26.1 or later (Compile with -DGLYPH_TARGET=GLYPH_ALLEGGL)
 // - Allegro 4.0.2 or later
 // - AllegroGL 0.2.4 or later
-// - Recommended: Loadpng + LibPNG + ZLib to load png images
+// - Recommended: LibPNG + ZLib to load png images
 // - Reading the manual or header files to know the functions
 // - Linking your programs with: 
-//   -lglyph -lfreetype -lloadpng -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32
+//   -lglyph -lfreetype -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32
 
 //#define FORTIFY
 //#include <Fortify/Fortify.h>
@@ -62,5 +62,11 @@
 
 #include "OpenLayer/Vec2D.hpp"
 #include "OpenLayer/TextureInfo.hpp"
+
+#include "OpenLayer/Declspec.hpp"
+
+#ifndef OL_NO_PNG
+#include "OpenLayer/loadpng.h"
+#endif /* OL_NO_PNG */
 
 #endif

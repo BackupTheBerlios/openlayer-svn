@@ -4,11 +4,12 @@
 
 #include "Includes.hpp"
 #include "Vec2D.hpp"
+#include "Declspec.hpp"
 
 namespace ol {
 
 
-class Mouse {
+class OL_LIB_DECLSPEC Mouse {
 public:
    enum MouseButton {
       LEFT = 0,
