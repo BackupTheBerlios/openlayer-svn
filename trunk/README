@@ -10,7 +10,6 @@ Requirements:
 -# Glyph Keeper Library (Both Allegro and AllegroGL TARGETS)
 -# Freetype library
 -# Png library
--# LoadPng library
 -# Zlib library
     
 Introduction:

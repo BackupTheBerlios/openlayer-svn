@@ -7,7 +7,6 @@ Before compiling ensure you have the following installed and in your path:
 - AllegroGL Library
 - Freetype library version 2.1.10 or greater
 - Png library
-- LoadPng library 1.4 pre1 
 - Zlib library
 
 NOTES:
@@ -22,9 +21,6 @@ NOTES:
 	* the allegrogl version should be named libglyph-agl.a
 	* The sources have now been included with openlayer in the utils/glyphkeeper directory
 	* You can build it manually or try using cbuild passing 'glyphkeeper' as a param
-
-- LoadPng must be the 1.4 pre1 release anything before that WILL not work
-	* The library is included in the utils directory you can manually build it or use cbuild passing 'loadpng' as a param
 
 - For precompiled versions of the library please see http://openlayer.berlios.de for more info.
 
@@ -64,5 +60,5 @@ To Use:
 	
 	WINDOWS
 - Link your projects with:
-	"-lopenlayer -lglyph-agl -lfreetype -lldpng -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32-lopengl32"
+	"-lopenlayer -lglyph-agl -lfreetype -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32-lopengl32"
 	
