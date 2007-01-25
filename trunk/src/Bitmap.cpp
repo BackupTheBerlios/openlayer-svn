@@ -209,7 +209,11 @@ void Bitmap::
 TexturedQuad( float w, float h, float fact, const RenderMode &mode ) const {
    GetReadyToRender( fact );
 
-   OlRect renderArea = mode.GetRenderRect( OlRect( 0.0, 0.0, w, h ));
+   OlRect renderArea = mode.GetRenderRect( OlRect( 0.0, 0.0, Width(), Height() ));
+   
+   renderArea.w *= w/Width();
+   renderArea.h *= h/Height();
+   
    OlTexCoords texCoordArea = mode.GetTexCoords( OlTexCoords( textureInfo ));
 
    texCoordArea.CalculateTextureCoords();
@@ -344,7 +348,6 @@ BlitRotated( float x, float y, float pivotX, float pivotY, float angle, const Re
    if( !Settings::TextureMappingUsed() )
       glDisable( GL_TEXTURE_2D );
 }
-
 
 
 void Bitmap::

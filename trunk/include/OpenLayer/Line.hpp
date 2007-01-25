@@ -98,6 +98,9 @@ public:
    }
    
    
+   float GetShortestDistanceTo( const Vec2D &point );
+   
+   
    inline Placement GetPlacement() const {
       return Placement( origin );
    }

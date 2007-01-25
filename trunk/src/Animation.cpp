@@ -1,8 +1,7 @@
 #include "Animation.hpp"
+
 using namespace std;
 using namespace ol;
-
-
 
 bool Animation::
 Load( string filenameBegin, string extension, int numNumbers ) {
