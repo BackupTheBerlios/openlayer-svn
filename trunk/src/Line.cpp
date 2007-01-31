@@ -59,9 +59,9 @@ float Line::
 GetShortestDistanceTo( const Vec2D &point ) {
    // Contributed by SiegeLord
    
-   float A = x - start.x;
-   float B = y - start.y;
-   float C = x2 - start.x;
+   float A = point.x - start.x;
+   float B = point.y - start.y;
+   float C = end.x - start.x;
    float D = end.y - start.y;
    
    float dot = A * C + B * D;
@@ -86,7 +86,8 @@ GetShortestDistanceTo( const Vec2D &point ) {
        yy = start.y + param * D;
    }
    
-   return sqrt((( x - xx ) * ( x - xx )) + (( y - yy ) * ( y - yy )));
+   return sqrt((( point.x - xx ) * ( point.x - xx )) +
+      (( point.y - yy ) * ( point.y - yy )));
 }
 
 
