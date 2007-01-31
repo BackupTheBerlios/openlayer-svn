@@ -60,5 +60,5 @@ To Use:
 	
 	WINDOWS
 - Link your projects with:
-	"-lopenlayer -lglyph-agl -lfreetype -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32-lopengl32"
+	"-lopenlayer -lglyph-agl -lfreetype -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32"
 	
