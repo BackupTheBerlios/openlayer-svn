@@ -41,7 +41,7 @@ int main() {
    neuropol.Print( text, 200, 100 );
    
    // Refresh the screen contents to show the rendered image //
-   GfxRend::RefreshScreen();
+   Canvas::Refresh();
    
    // Wait for a keypress //
    readkey();

@@ -63,7 +63,7 @@ int main() {
       bmp.Blit( x, y );
 
       // Refresh the screen contents to show this frame //
-      GfxRend::RefreshScreen();
+	  Canvas::Refresh();
    }
    return 0;
 }

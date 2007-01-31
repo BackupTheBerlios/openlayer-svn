@@ -101,7 +101,7 @@ public:
    void Render() {
       // Render the particle dot in the screen with the additive blender //
       Blenders::Set( ADDITIVE_BLENDER );
-      GfxRend::Circle( x, y, radius, color );
+      Circle( x, y, radius ).Draw( color );
 
       // Revert back to the alpha blender //
       Blenders::Set( ALPHA_BLENDER );
@@ -567,7 +567,7 @@ int main() {
 
       if( drunkenMode ) {
          // We need to fill the screen with back as we can see the things outside the background //
-         GfxRend::FillScreen( Rgba::BLACK );
+         Canvas::Fill( Rgba::BLACK );
       }
 
       // Draw the background //
@@ -659,7 +659,7 @@ int main() {
       }
 
       // Show the current frame in the screen //
-      GfxRend::RefreshScreen();
+	  Canvas::Refresh();
    }
 
 
@@ -690,14 +690,15 @@ void ShowMessage( TextRenderer &textRenderer, string message ) {
    Transforms::SetTintColor( Rgba( 0.0, 0.0, 0.0, 0.30 ));
 
    // Draw the box below the text //
-   GfxRend::Rect( msgBoxX, msgBoxY, textWidth + 2 * paddingSpace, textHeight + 2 * paddingSpace, Rgba( 0.4, 0.4, 0.4, 0.5 ));
-   GfxRend::RectOutline( msgBoxX, msgBoxY, textWidth + 2 * paddingSpace, textHeight + 2 * paddingSpace, Rgba( 0.1, 0.1, 0.1, 0.8 ));
+   Rect boxRect( msgBoxX, msgBoxY, textWidth + 2 * paddingSpace, textHeight + 2 * paddingSpace );
+   boxRect.Draw( Rgba( 0.4, 0.4, 0.4, 0.5 ));
+   boxRect.DrawOutline( Rgba( 0.1, 0.1, 0.1, 0.8 ));
 
    // Draw the text //
    textRenderer.Print( message, msgBoxX + paddingSpace, msgBoxY + paddingSpace + 25 );
 
    // Show the current frame in the screen //
-   GfxRend::RefreshScreen();
+   Canvas::Refresh();
 
    // Wait for a keypress //
    clear_keybuf();
