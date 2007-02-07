@@ -3,7 +3,7 @@
 version=2.0
 prefix=${CMAKE_INSTALL_PREFIX}
 cflags="-I$prefix/include -I$prefix/include/OpenLayer ${FREETYPE_INCLUDE}"
-libs="${REQUIRED_LIBS}"
+libs="-lopenlayer ${REQUIRED_LIBS}"
 
 usage()
 {
