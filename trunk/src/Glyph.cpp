@@ -154,15 +154,15 @@ namespace ol
 			p = (ft->second).find(unicode);
 			if(p!=(ft->second).end())
 			{
-				character tempChar = p->second;
+				character *tempChar = &p->second;
 				
-				unsigned char *line = tempChar.line;
-				for (int y = (int)y1; y < (int)(y1)+tempChar.rows; y++)
+				unsigned char *line = tempChar->line;
+				for (int y = (int)y1; y < (int)(y1)+tempChar->rows; y++)
 				{
 					unsigned char *buffer = line;
-					for (int x = (int)x1; x < (int)(x1)+tempChar.width; x++)
+					for (int x = (int)x1; x < (int)(x1)+tempChar->width; x++)
 					{
-						Rgba checkCol = colorConvert(buffer++,tempChar.grays);
+						Rgba checkCol = colorConvert(buffer++,tempChar->grays);
 						if(checkCol.r==0 && checkCol.g==0 && checkCol.b==0 && checkCol.a==0)continue;
 						double intensity = ( checkCol.r * 0.30 + checkCol.g * 0.59 + checkCol.b * 0.11);
 						checkCol.r = col.r * intensity;
@@ -170,11 +170,11 @@ namespace ol
 						checkCol.b = col.b * intensity;
 						checkCol.a = col.a * intensity;
 						
-						ol::Point(float(x + tempChar.left),float(y - tempChar.top)).Draw( checkCol );
+						ol::Point(float(x + tempChar->left),float(y - tempChar->top)).Draw( checkCol );
 					}
-					line += tempChar.pitch;
+					line += tempChar->pitch;
 				}
-				x1+=tempChar.right;
+				x1+=tempChar->right;
 			}
 		}
 #endif
