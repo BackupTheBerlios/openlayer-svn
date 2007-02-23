@@ -1,7 +1,7 @@
 /*
  * glyph_face.c  -  Glyph Keeper routines dealing with the font face objects.
  *
- * Copyright (c) 2003-2005 Kirill Kryukov
+ * Copyright (c) 2003-2007 Kirill Kryukov
  *
  * This file is part of Glyph Keeper library, and may only be used,
  * modified, and distributed under the terms of the Glyph Keeper
@@ -17,29 +17,44 @@ static void _gk_find_mapping(GLYPH_FACE* const face1,unsigned code1,GLYPH_FACE**
 
 const char* gk_face_family(const GLYPH_FACE* const f)
 {
-    return (f && f->face && f->face->family_name) ? f->face->family_name : na;
+    return (f && f->face && f->face->family_name) ? f->face->family_name : _gk_na;
 }
 
 
 const char* gk_face_style(const GLYPH_FACE* const f)
 {
-    return (f && f->face && f->face->style_name) ? f->face->style_name : na;
+    return (f && f->face && f->face->style_name) ? f->face->style_name : _gk_na;
 }
 
 
 const char* gk_face_postscript_name(const GLYPH_FACE* const f)
 {
     const char* ps_name;
-    if (!f || !f->face) return na;
+    if (!f || !f->face) return _gk_na;
     ps_name = FT_Get_Postscript_Name(f->face);
-    return ps_name ? ps_name : na;
+    return ps_name ? ps_name : _gk_na;
 }
 
 
 const char* gk_face_driver_name(const GLYPH_FACE* const f)
 {
-    return (f && f->face && f->face->driver && f->face->driver->root.clazz && f->face->driver->root.clazz->module_name) ?
-        f->face->driver->root.clazz->module_name : na;
+    if (!f || !f->face) return _gk_na;
+/*    return (f && f->face && f->face->driver && f->face->driver->root.clazz &&  f->face->driver->root.clazz->module_name) ?
+        f->face->driver->root.clazz->module_name : _gk_na;*/
+    return _gk_na;
+}
+
+
+int gk_face_get_number_of_charmaps(const GLYPH_FACE* const f)
+{
+    if (!f || !f->face) return 0;
+    return f->face->num_charmaps;
+}
+
+
+int gk_face_is_scalable(const GLYPH_FACE* const f)
+{
+    return (f && f->face) ? FT_IS_SCALABLE(f->face) : 0;
 }
 
 
@@ -241,7 +256,7 @@ GLYPH_FACE* _gk_load_face_from_file(const char* const fname,const int face_index
         if (!file && _gk_font_path && *_gk_font_path)
         {
             int fname_length = strlen(fname);
-            char *c = _gk_font_path;
+            const char *c = _gk_font_path;
             while (!file && c && *c)
             {
                 int dirname_length;
@@ -269,6 +284,7 @@ GLYPH_FACE* _gk_load_face_from_file(const char* const fname,const int face_index
 
     f = (GLYPH_FACE*)_gk_malloc(sizeof(GLYPH_FACE));
     if (!f) return 0;
+
     f->face = 0;
     f->own_size = 0;
     f->remap = 0;
@@ -280,22 +296,29 @@ GLYPH_FACE* _gk_load_face_from_file(const char* const fname,const int face_index
 
     {
         int error = FT_New_Face(ftlib,*buf?buf:fname,face_index,&f->face);
-        if (error == FT_Err_Unknown_File_Format)
-            { _gk_msg("Error: %s: Can't load font face from \"%s\": unknown file format\n",funcname,*buf?buf:fname); free(f); return 0; }
-        if (error)
-            { _gk_msg("Error: %s: Can't load font face from \"%s\"\n",funcname,*buf?buf:fname); free(f); return 0; }
+        if (error || !f->face)
+        {
+            if (error == FT_Err_Unknown_File_Format)
+                _gk_msg("Error: %s: Can't load font face from \"%s\": unknown file format\n",funcname,*buf?buf:fname);
+            else
+                _gk_msg("Error: %s: Can't load font face from \"%s\"\n",funcname,*buf?buf:fname);
+            _gk_free(f);
+            return 0;
+        }
     }
 
-    if (!FT_IS_SCALABLE(f->face))
+    /*if (!FT_IS_SCALABLE(f->face))
     {
         _gk_msg("Error: %s: Font face is not scalable\n",funcname);
-        FT_Done_Face(f->face); free(f); return 0;
+        FT_Done_Face(f->face); _gk_free(f); return 0;
     }
     if (FT_Select_Charmap(f->face,ft_encoding_unicode))
     {
         _gk_msg("Error: %s: Font face does not contain Unicode character map\n",funcname);
-        FT_Done_Face(f->face); free(f); return 0;
-    }
+        FT_Done_Face(f->face); _gk_free(f); return 0;
+    }*/
+
+    FT_Select_Charmap(f->face,ft_encoding_unicode);
 
     f->own_size = f->face->size;
     face_count++;
@@ -347,22 +370,29 @@ GLYPH_FACE* _gk_load_face_from_memory(const unsigned char* const data,const int 
 
     {
         int error = FT_New_Memory_Face(ftlib,data,size,face_index,&f->face);
-        if (error == FT_Err_Unknown_File_Format)
-            { _gk_msg("Error: %s: Can't load font face - unknown data format\n",funcname); free(f); return 0; }
-        if (error)
-            { _gk_msg("Error: %s: Can't load font face\n",funcname); free(f); return 0; }
+        if (error || !f->face)
+        {
+            if (error == FT_Err_Unknown_File_Format)
+                _gk_msg("Error: %s: Can't load font face - unknown data format\n",funcname);
+            else
+                _gk_msg("Error: %s: Can't load font face\n",funcname);
+            _gk_free(f);
+            return 0;
+        }
     }
 
-    if (!FT_IS_SCALABLE(f->face))
+    /*if (!FT_IS_SCALABLE(f->face))
     {
         _gk_msg("Error: %s: Font face is not scalable\n",funcname);
-        FT_Done_Face(f->face); free(f); return 0;
+        FT_Done_Face(f->face); _gk_free(f); return 0;
     }
     if (FT_Select_Charmap(f->face,ft_encoding_unicode))
     {
         _gk_msg("Error: %s: Font face does not contain Unicode character map\n",funcname);
-        FT_Done_Face(f->face); free(f); return 0;
-    }
+        FT_Done_Face(f->face); _gk_free(f); return 0;
+    }*/
+
+    FT_Select_Charmap(f->face,ft_encoding_unicode);
 
     f->own_size = f->face->size;
     face_count++;
@@ -392,10 +422,10 @@ void gk_unload_face(GLYPH_FACE* const f)
             if (f->remap[a])
             {
                 GLYPH_REMAP** page_b = f->remap[a];
-                for (b=0; b<128; b++) if (page_b[b]) free(page_b[b]);
-                free(page_b);
+                for (b=0; b<128; b++) if (page_b[b]) _gk_free(page_b[b]);
+                _gk_free(page_b);
             }
-        free(f->remap);
+        _gk_free(f->remap);
     }
 
     while (f->first_renderer)
@@ -413,7 +443,7 @@ void gk_unload_face(GLYPH_FACE* const f)
     if (f->prev) f->prev->next = f->next;
     face_count--;
 
-    free(f);
+    _gk_free(f);
     _gk_msg("font face <id:%d> unloaded\n",id);
 }
 
@@ -496,7 +526,7 @@ void gk_remap_character(GLYPH_FACE* const face1,const unsigned code1,GLYPH_FACE*
         face1->remap[a_index] = (GLYPH_REMAP**)_gk_malloc(b_size);
         if (!face1->remap[a_index])
         {
-            if (a_size) { free(face1->remap); face1->remap = 0; }
+            if (a_size) { _gk_free(face1->remap); face1->remap = 0; }
             return;
         }
         (*(int*)(face1->remap+68))++;
@@ -511,8 +541,8 @@ void gk_remap_character(GLYPH_FACE* const face1,const unsigned code1,GLYPH_FACE*
         b_page[b_index] = (GLYPH_REMAP*)_gk_malloc(c_size);
         if (!b_page[b_index])
         {
-            if (b_size) { free(b_page); face1->remap[a_index] = 0; (*(int*)(face1->remap+68))--; }
-            if (a_size) { free(face1->remap); face1->remap = 0; }
+            if (b_size) { _gk_free(b_page); face1->remap[a_index] = 0; (*(int*)(face1->remap+68))--; }
+            if (a_size) { _gk_free(face1->remap); face1->remap = 0; }
             return;
         }
         (*(int*)(b_page+128))++;
@@ -566,19 +596,19 @@ void gk_unmap_character(GLYPH_FACE* const face,const unsigned code)
     (*(int*)(c_page+128))--;
     if (*(int*)(c_page+128) > 0) return;
 
-    free(c_page);
+    _gk_free(c_page);
     b_page[b_index] = 0;
     face->allocated -= 128*sizeof(GLYPH_REMAP) + sizeof(int);
     (*(int*)(b_page+128))--;
     if (*(int*)(b_page+128) > 0) return;
 
-    free(b_page);
+    _gk_free(b_page);
     face->remap[a_index] = 0;
     face->allocated -= 128*sizeof(void*) + sizeof(int);
     (*(int*)(face->remap+68))--;
     if (*(int*)(face->remap+68) > 0) return;
 
-    free(face->remap);
+    _gk_free(face->remap);
     face->remap = 0;
     face->allocated -= 68*sizeof(void*) + sizeof(int);
 }

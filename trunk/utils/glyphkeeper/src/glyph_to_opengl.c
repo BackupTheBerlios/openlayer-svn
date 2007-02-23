@@ -254,6 +254,7 @@ void _gk_create_display_lists( GLYPH_TEXTURE *texture )
    double textureW, textureH;
    int line = 0;
    int lineEnd = texture->glyphsPerSplit;
+   GLYPH *currentGlyph;
    
    CARE( texture );
    
@@ -267,7 +268,7 @@ void _gk_create_display_lists( GLYPH_TEXTURE *texture )
          textureY += texture->splitHeight;
       }
       
-      GLYPH *currentGlyph = texture->glyphs[index];
+      currentGlyph = texture->glyphs[index];
       
       textureCoX = (double) textureX/texture->w;
       textureW = (double) currentGlyph->width/texture->w;

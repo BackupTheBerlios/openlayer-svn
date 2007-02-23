@@ -1,7 +1,7 @@
 /*
  * glyph_index.c  -  Glyph Keeper routines implementing glyph cache.
  *
- * Copyright (c) 2003-2005 Kirill Kryukov
+ * Copyright (c) 2003-2007 Kirill Kryukov
  *
  * This file is part of Glyph Keeper library, and may only be used,
  * modified, and distributed under the terms of the Glyph Keeper
@@ -15,7 +15,7 @@
 static int _gk_keeper_make_space(GLYPH_KEEP* const keeper,const int bytes);
 
 
-static int glyph_index_ok_for_renderer(const GLYPH_INDEX* const index,
+static int _gk_glyph_index_ok_for_renderer(const GLYPH_INDEX* const index,
     const GLYPH_REND* const rend)
 {
     CARE(index);
@@ -27,11 +27,12 @@ static int glyph_index_ok_for_renderer(const GLYPH_INDEX* const index,
             index->hsize == rend->hsize &&
             index->vsize == rend->vsize &&
             index->text_angle == rend->text_angle &&
-            index->italic_angle == rend->italic_angle);
+            index->italic_angle == rend->italic_angle &&
+            index->bold_strength == rend->bold_strength);
 }
 
 
-static void glyph_index_init(GLYPH_INDEX* const index,
+static void _gk_glyph_index_init(GLYPH_INDEX* const index,
     const GLYPH_REND* const rend)
 {
     CARE(index);
@@ -44,11 +45,12 @@ static void glyph_index_init(GLYPH_INDEX* const index,
     index->vsize = rend->vsize;
     index->text_angle = rend->text_angle;
     index->italic_angle = rend->italic_angle;
+    index->bold_strength = rend->bold_strength;
 }
 
 
 /* Callers: gk_rend_debug. */
-static int glyph_index_size(const GLYPH_INDEX* const index)
+static int _gk_glyph_index_size(const GLYPH_INDEX* const index)
 {
     int size,a,b;
 
@@ -58,13 +60,13 @@ static int glyph_index_size(const GLYPH_INDEX* const index)
     if (!index->pages) return size;
 
     size += 69*sizeof(void*);
-    if ((int)index->pages[68])
+    if ((long)index->pages[68])
     {
         for (a=0; a<68; a++)
         {
             if (!index->pages[a]) continue;
             size += 129*sizeof(void*);
-            if ((int)index->pages[a][128])
+            if ((long)index->pages[a][128])
             {
                 for (b=0; b<128; b++) { if (index->pages[a][b]) size += 129*sizeof(void*); }  
             }
@@ -76,11 +78,11 @@ static int glyph_index_size(const GLYPH_INDEX* const index)
 
 /* the only way to create GLYPH_INDEX object */
 /* callers: gk_rend_set_keeper */
-static GLYPH_INDEX* glyph_index_create(GLYPH_KEEP* const keeper,
+static GLYPH_INDEX* _gk_glyph_index_create(GLYPH_KEEP* const keeper,
     GLYPH_REND* const rend)
 {
     GLYPH_INDEX* index;
-    funcname = "glyph_index_create()";
+    funcname = "_gk_glyph_index_create()";
 
     CARE(keeper);
     CARE(rend);
@@ -91,7 +93,7 @@ static GLYPH_INDEX* glyph_index_create(GLYPH_KEEP* const keeper,
     if (!index) return 0;
 
     index->pages = 0;
-    glyph_index_init(index,rend);
+    _gk_glyph_index_init(index,rend);
 
     index->keeper = keeper;
     index->prev = 0;
@@ -109,7 +111,7 @@ static GLYPH_INDEX* glyph_index_create(GLYPH_KEEP* const keeper,
 
 
 /* callers: gk_done_keeper */
-static void glyph_index_done(GLYPH_INDEX* const index)
+static void _gk_glyph_index_done(GLYPH_INDEX* const index)
 {
     GLYPH_KEEP* keeper;
     GLYPH_REND* renderer;
@@ -145,21 +147,21 @@ static void glyph_index_done(GLYPH_INDEX* const index)
                                 keeper->num_glyphs--;
                                 keeper->allocated -= glyph_size_in_bytes(glyph);
 
-                                if (glyph->bmp) free(glyph->bmp);
-                                free(glyph);
+                                if (glyph->bmp) _gk_free(glyph->bmp);
+                                _gk_free(glyph);
                             }
                         }
-                        free(index->pages[a][b]);
+                        _gk_free(index->pages[a][b]);
                         index->pages[a][b] = 0;
                         keeper->allocated -= 129*sizeof(void*);
                     }
                 }
-                free(index->pages[a]);
+                _gk_free(index->pages[a]);
                 index->pages[a] = 0;
                 keeper->allocated -= 129*sizeof(void*);
             }
         }
-        free(index->pages);
+        _gk_free(index->pages);
         index->pages = 0;
         keeper->allocated -= 69*sizeof(void*);
     }
@@ -169,7 +171,7 @@ static void glyph_index_done(GLYPH_INDEX* const index)
     if (index->next) index->next->prev = index->prev;
     if (index->prev) index->prev->next = index->next;
 
-    free(index);
+    _gk_free(index);
     keeper->allocated -= sizeof(GLYPH_INDEX);
 }
 
@@ -189,11 +191,11 @@ static void _gk_unload_glyph(GLYPH* const glyph)
 
     if (!glyph) return;
 
-    /* if glyph is not being kept by keeper, just free() it. */
+    /* if glyph is not being kept by keeper, just _gk_free() it. */
     if (!glyph->index)
     {
-        if (glyph->bmp) free(glyph->bmp);
-        free(glyph);
+        if (glyph->bmp) _gk_free(glyph->bmp);
+        _gk_free(glyph);
         return;
     }
 
@@ -220,7 +222,7 @@ static void _gk_unload_glyph(GLYPH* const glyph)
 
     /* unlinking the glyph from index */
     page_c[c_index] = 0;
-    (*(int*)(page_c+128))--;
+    (*(long*)(page_c+128))--;
 
     /* uninking the glyph from keeper's list */
     if (glyph == keeper->head) keeper->head = keeper->head->next;
@@ -231,25 +233,25 @@ static void _gk_unload_glyph(GLYPH* const glyph)
     /* releasing glyph's memory */
     keeper->num_glyphs--;
     keeper->allocated -= glyph_size_in_bytes(glyph);
-    if (glyph->bmp) free(glyph->bmp);
-    free(glyph);
+    if (glyph->bmp) _gk_free(glyph->bmp);
+    _gk_free(glyph);
 
     /* releasing unnecessary index pages, and index itself */
-    if (((int)page_c[128])<=0)
+    if (((long)page_c[128])<=0)
     {
-        free(page_c);
+        _gk_free(page_c);
         page_b[b_index] = 0;
         keeper->allocated -= 129*sizeof(void*);
-        (*(int*)(page_b+128))--;
-        if (((int)page_b[128])<=0)
+        (*(long*)(page_b+128))--;
+        if (((long)page_b[128])<=0)
         {
-            free(page_b);
+            _gk_free(page_b);
             index->pages[a_index] = 0;
             keeper->allocated -= 129*sizeof(void*);
-            (*(int*)(index->pages+68))--;
-            if (((int)index->pages[68])<=0)
+            (*(long*)(index->pages+68))--;
+            if (((long)index->pages[68])<=0)
             {
-                free(index->pages);
+                _gk_free(index->pages);
                 index->pages = 0;
                 keeper->allocated -= 69*sizeof(void*);
 
@@ -260,7 +262,7 @@ static void _gk_unload_glyph(GLYPH* const glyph)
                     if (index == keeper->last_index) keeper->last_index = index->prev;
                     if (index->next) index->next->prev = index->prev;
                     if (index->prev) index->prev->next = index->next;
-                    free(index);
+                    _gk_free(index);
                     keeper->allocated -= sizeof(GLYPH_INDEX);
                 }
             }
@@ -272,13 +274,13 @@ static void _gk_unload_glyph(GLYPH* const glyph)
 /* Adds 'glyph' into cache. */
 /* Returns 1 if glyph is saved, 0 if glyph is not saved. */
 /* Callers: rend_workout. */
-static int glyph_index_add_glyph(GLYPH_INDEX* const index,GLYPH* const glyph)
+static int _gk_glyph_index_add_glyph(GLYPH_INDEX* const index,GLYPH* const glyph)
 {
     GLYPH_KEEP *keeper;
     GLYPH ***page_b,**page_c;
     int a_index,b_index,c_index;
     int bytes;
-    funcname = "glyph_index_add_glyph()";
+    funcname = "_gk_glyph_index_add_glyph()";
 
     CARE(index);
     CARE(glyph);
@@ -314,7 +316,7 @@ static int glyph_index_add_glyph(GLYPH_INDEX* const index,GLYPH* const glyph)
     {
         index->pages[a_index] = (GLYPH***)_gk_malloc(129*sizeof(void*));
         if (!index->pages[a_index]) return 0;
-        (*(int*)(index->pages+68))++;
+        (*(long*)(index->pages+68))++;
         memset(index->pages[a_index],0,129*sizeof(void*));
         keeper->allocated += 129*sizeof(void*);
     }
@@ -326,7 +328,7 @@ static int glyph_index_add_glyph(GLYPH_INDEX* const index,GLYPH* const glyph)
     {
         page_b[b_index] = (GLYPH**)_gk_malloc(129*sizeof(void*));
         if (!page_b[b_index]) return 0;
-        (*(int*)(page_b+128))++;
+        (*(long*)(page_b+128))++;
         memset(page_b[b_index],0,129*sizeof(void*));
         keeper->allocated += 129*sizeof(void*);
     }
@@ -415,7 +417,7 @@ static GLYPH* glyph_index_find_glyph(GLYPH_INDEX* const index,const unsigned uni
 /* Tries to make free memory, to store 'bytes' bytes */
 /* without exceeding 'max_memory' limit. */
 /* Returns 1 on success, 0 on failure. */
-/* Callers: glyph_index_create, glyph_index_add_glyph */
+/* Callers: _gk_glyph_index_create, _gk_glyph_index_add_glyph */
 static int _gk_keeper_make_space(GLYPH_KEEP* const keeper,const int bytes)
 {
     CARE(keeper);
@@ -470,14 +472,14 @@ void gk_done_keeper(GLYPH_KEEP* const keeper)
 
     if (!keeper) return;
     while (keeper->head) _gk_unload_glyph(keeper->head);
-    while (keeper->first_index) glyph_index_done(keeper->first_index);
+    while (keeper->first_index) _gk_glyph_index_done(keeper->first_index);
 
     if (keeper==first_keeper) first_keeper = keeper->next;
     if (keeper==last_keeper) last_keeper = keeper->prev;
     if (keeper->next) keeper->next->prev = keeper->prev;
     if (keeper->prev) keeper->prev->next = keeper->next;
     mem = keeper->allocated - sizeof(GLYPH_KEEP);
-    free(keeper);
+    _gk_free(keeper);
     _gk_msg("glyph keeper destroyed, (%d bytes leak)\n",mem);
 }
 
@@ -512,7 +514,7 @@ void gk_keeper_debug(const GLYPH_KEEP* const keeper)
     GLYPH_REND *rend;
     int ni = 0, nr = 0;
 
-    _gk_msg("GLYPH_KEEP object (address:%d):\n",(int)keeper);
+    _gk_msg("GLYPH_KEEP object (address:%p):\n",keeper);
 
     if (!keeper) return;
     _gk_msg("  can keep %d glyphs, currently keeping %d\n",keeper->max_glyphs,keeper->num_glyphs);

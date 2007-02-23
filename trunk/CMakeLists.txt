@@ -18,10 +18,24 @@
 if(EXISTS ${CMAKE_SOURCE_DIR}/CMakeCache.txt)
 	file(REMOVE ${CMAKE_SOURCE_DIR}/CMakeCache.txt)
 	file(REMOVE_RECURSE ${CMAKE_SOURCE_DIR}/CMakeFiles)
-endif(EXISTS ${CMAKE_SOURCE_DIR}/CMakeCache.txt)      
+endif(EXISTS ${CMAKE_SOURCE_DIR}/CMakeCache.txt)
+if(EXISTS ${CMAKE_BINARY_DIR}/Makefile)
+	file(REMOVE ${CMAKE_BINARY_DIR}/Makefile)
+endif(EXISTS ${CMAKE_BINARY_DIR}/Makefile)	
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-	  message(FATAL_ERROR "Oops. Don't do an in-source build. Create an extra directory change into it and run cmake pointing to the base directory. IE: mkdir mybuild; cd mybuild; cmakesetup ../")
+	if(UNIX AND NOT CYGWIN)
+		message(FATAL_ERROR "Oops. Don't do an in-source build. Create an extra directory change into it and run cmake pointing to the base directory. IE: \nmkdir mybuild && cd mybuild && cmake ../ && make\nYou may need to remove CMakeCache.txt and the CMakeFiles directory in ${CMAKE_SOURCE_DIR} if you can't get rid of this error.")
+	else(UNIX AND NOT CYGWIN)
+		message(FATAL_ERROR "Oops. Don't do an in-source build. Create an extra directory change into it and run cmake pointing to the base directory. IE: \nmkdir mybuild; cd mybuild; cmakesetup ../\nYou may need to remove CMakeCache.txt and the CMakeFiles directory in  ${CMAKE_SOURCE_DIR} if you can't get rid of this error.")
+	endif(UNIX AND NOT CYGWIN)
 endif(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+
+
+# -------------------------------------------------------
+# Set working directories
+# -------------------------------------------------------
+set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
 
 # -------------------------------------------------------
@@ -49,17 +63,34 @@ project (OpenLayer)
 # Including needed macros
 # -------------------------------------------------------
 include(CMakeMacros)
+find_package(ZLIB)
+find_package(FREETYPE)
+find_package(PNG)
+find_package(ALLEGRO REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(ALLEGROGL REQUIRED)
+
+MARK_AS_ADVANCED(
+  CLEAR
+  ZLIB_LIBRARY
+  ZLIB_INCLUDE_DIR
+  PNG_LIBRARY
+  PNG_INCLUDE_DIR
+  OPENGL_glu_LIBRARY
+  OPENGL_gl_LIBRARY
+  OPENGL_INCLUDE_DIR
+  )
 
 # -------------------------------------------------------
 # User setable options
 # -------------------------------------------------------
 option(CREATE_STATIC_LIB "Make the library static?" on)
-option(DISABLE_TTF "Disable TTF" off)
+dependent_option(DISABLE_TTF "Disable TTF Support" off "FREETYPE_FOUND" on)
 if(NOT DISABLE_TTF)
 	set(TTF_OK 1)
 endif(NOT DISABLE_TTF)
 dependent_option(ENABLE_INTERNAL_FONT "Use internal font renderer" on "TTF_OK" on)
-option(DISABLE_PNG "Disable PNG support" off)
+dependent_option(DISABLE_PNG "Disable PNG support" off "PNG_FOUND" on)
 option(DISABLE_OLD_API "Disable backwards compatibility with 2.0 and below" off)
 option(DISABLE_STATE_CHANGES "Disable state changes" off)
 
@@ -121,25 +152,11 @@ if(UNIX AND NOT CYGWIN)
 		add_definitions(-DOL_NO_STATE_CHANGE)
 		set(OL_NO_STATE_CHANGE 1)
 	endif(DISABLE_STATE_CHANGES)
-	set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
-	set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 	
-	#libraries and stuff
-	exec_program(allegro-config ARGS --libs OUTPUT_VARIABLE ALLEGRO_LIB)
-	set(ALLEGROGL_LIB -lagl)
-	if(NOT DISABLE_PNG)
-		set(PNG_LIB -lpng)
-	endif(NOT DISABLE_PNG)
-	if(NOT DISABLE_TTF)
-		add_definitions("`freetype-config --cflags`")
-		exec_program(freetype-config ARGS --cflags OUTPUT_VARIABLE FREETYPE_INCLUDE)
-		exec_program(freetype-config ARGS --libs OUTPUT_VARIABLE FT_LIBS)
-		if(NOT ENABLE_INTERNAL_FONT)
-			set(GLYPHKEEPER_LIB -lglyph-agl)
-		endif(NOT ENABLE_INTERNAL_FONT)
-		set(FREETYPE_LIB ${FT_LIBS})
-	endif(NOT DISABLE_TTF)
-	set(OPENGL_LIB -lGL\ -lGLU)
+	if(NOT ENABLE_INTERNAL_FONT)
+		add_subdirectory(utils/glyphkeeper)
+		set(GLYPHKEEPER_LIB glyph-agl)
+	endif(NOT ENABLE_INTERNAL_FONT)
 endif(UNIX AND NOT CYGWIN)
 
 # -------------------------------------------------------
@@ -172,70 +189,10 @@ if(MINGW)
 		set(OL_NO_STATE_CHANGE 1)
 	endif(DISABLE_STATE_CHANGES)
 	
-	set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
-	set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-	
-	find_path(CMAKE_INCLUDE_PATH NAMES stdio.h PATHS c:/mingw/include)
-	find_path(CMAKE_LIBRARY_PATH NAMES libstdc++.a PATHS c:/mingw/lib)
-	if(NOT CMAKE_INCLUDE_PATH OR NOT CMAKE_LIBRARY_PATH)
-		message(FATAL_ERROR "Cannot find your mingw include or library paths. Please set them.")
-	endif(NOT CMAKE_INCLUDE_PATH OR NOT CMAKE_LIBRARY_PATH)
-	
-	# -------------------------------------------------------	
-	# library checks
-	# Finding all the required libs needed to compile openlayer
-	# List:
-	#		* allegro
-	#		* allegroGL
-	#		* freetype (glyphkeeper depending on user settings)
-	#		* libpng
-	# -------------------------------------------------------
-	set(ALLEGRO_LIB -lalleg)
-	set(ALLEGROGL_LIB -lagl)
-	if(NOT DISABLE_PNG)
-		set(PNG_LIB -lpng)
-	endif(NOT DISABLE_PNG)
-	if(NOT DISABLE_TTF)
-		find_path(FREETYPE_INCLUDE NAMES freetype PATHS c:/mingw/include/freetype2)
-		if(NOT FREETYPE_INCLUDE)
-			message(FATAL_ERROR "Cannot find freetype include directory. Please indicate where the directory is and reconfigure.")
-		endif(NOT FREETYPE_INCLUDE)
-		if(NOT ENABLE_INTERNAL_FONT)
-			set(GLYPHKEEPER_LIB -lglyph-agl)
-		endif(NOT ENABLE_INTERNAL_FONT)
-		set(FREETYPE_LIB -lfreetype)
-		set(Z_LIB -lz)
-	endif(NOT DISABLE_TTF)
-	set(OPENGL_LIB -lgdi32\ -lglu32\ -lopengl32)
-	
-	find_library(ALLEGRO NAMES alleg)
-	if(NOT ALLEGRO)
-		message(FATAL_ERROR "Cannot find allegro. Please indicate where the library is and reconfigure.")
-	endif(NOT ALLEGRO)
-	find_library(ALLEGROGL NAMES agl)
-	if(NOT ALLEGROGL)
-		message(FATAL_ERROR "Cannot find allegroGL. Please indicate where the library is and reconfigure.")
-	endif(NOT ALLEGROGL)
-	if(NOT DISABLE_TTF)
-		find_library(FREETYPE NAMES freetype)
-		if(NOT FREETYPE)
-			message(FATAL_ERROR "Cannot find freetype. Please indicate where the library is and reconfigure.")
-		endif(NOT FREETYPE)
-		if(NOT ENABLE_INTERNAL_FONT)
-			find_library(GLYPHKEEPER NAMES glyph-agl)
-			if(NOT GLYPHKEEPER)
-				message(FATAL_ERROR "Cannot find GlyphKeeper built with allegrogl target. Please indicate where the library is and reconfigure else use the internal renderer.")
-			endif(NOT GLYPHKEEPER)
-		endif(NOT ENABLE_INTERNAL_FONT)
-	endif(NOT DISABLE_TTF)
-	if(NOT DISABLE_PNG)
-		find_library(LIBPNG NAMES png png12)
-		if(NOT LIBPNG)
-			message(FATAL_ERROR "Cannot find libpng. Please indicate where the library is and reconfigure else disable png support.")
-		else(NOT LIBPNG)
-		endif(NOT LIBPNG)
-	endif(NOT DISABLE_PNG)
-#	-lopenlayer -lglyph-agl -lfreetype -lldpng -lpng -lz -lagl -lalleg -luser32 #-lgdi32 -lglu32-lopengl32
+	if(NOT ENABLE_INTERNAL_FONT)
+		add_subdirectory(utils/glyphkeeper)
+		set(GLYPHKEEPER_LIB glyph-agl)
+	endif(NOT ENABLE_INTERNAL_FONT)
 endif(MINGW)
 
 # -------------------------------------------------------
@@ -247,22 +204,12 @@ if(MSVC)
 	# Take those user options and set the necessary compile time preprocessors
 	# -------------------------------------------------------
 	SET(CMAKE_CXX_FLAGS "/nologo /W3 /Gy")
-    SET(CMAKE_CXX_FLAGS_DEBUG "/MTd /Z7 /Od")
-    SET(CMAKE_CXX_FLAGS_RELEASE "/MT /O2")
-    SET(CMAKE_CXX_FLAGS_MINSIZEREL "/MT /O2")
-    SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MTd /Z7 /Od")
-	
-	set(LIB_NAME_ALLEGRO "alleg" CACHE STRING "Allegro Library lib filename")
-	set(LIB_NAME_ALLEGROGL "agl" CACHE STRING "AllegroGL Library lib filename")
-	set(LIB_NAME_FREETYPE "freetype" CACHE STRING "Freetype Library lib filename")
-	if(NOT ENABLE_INTERNAL_FONT)
-		set(LIB_NAME_GLYPHKEEPER "glyph-agl" CACHE STRING "GlyphKeeper Library lib filename")
-	endif(NOT ENABLE_INTERNAL_FONT)
-	set(LIB_NAME_FREETYPE "freetype" CACHE STRING "Freetype Library lib filename")
-	set(LIB_NAME_PNG "libpng" CACHE STRING "PNG Library lib filename")
-	set(LIB_NAME_ZLIB "zlib" CACHE STRING "ZLIB Library lib filename")
-	
+    	SET(CMAKE_CXX_FLAGS_DEBUG "/MTd /Z7 /Od")
+	SET(CMAKE_CXX_FLAGS_RELEASE "/MT /O2")
+	SET(CMAKE_CXX_FLAGS_MINSIZEREL "/MT /O2")
+	SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MTd /Z7 /Od")
 	set(CMAKE_CONFIGURATION_TYPES Release)
+	
 	if(NOT DISABLE_TTF)
 		if(ENABLE_INTERNAL_FONT)
 			add_definitions(/DUSE_NEW_TTF)
@@ -285,88 +232,30 @@ if(MSVC)
 		set(OL_NO_STATE_CHANGE 1)
 	endif(DISABLE_STATE_CHANGES)
 	
-	set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
-	set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-	
-	find_path(CMAKE_LIBRARY_PATH NAMES msvcrt.lib PATHS "C:\\Program Files\\Microsoft Visual Studio 8\\VC\\lib")
-	find_path(CMAKE_INCLUDE_PATH NAMES stdio.h PATHS "C:\\Program Files\\Microsoft Visual Studio 8\\VC\\include")
-	if(NOT CMAKE_INCLUDE_PATH OR NOT CMAKE_LIBRARY_PATH)
-		message(FATAL_ERROR "Cannot find your msvc include or library paths. Please set them.")
-	endif(NOT CMAKE_INCLUDE_PATH OR NOT CMAKE_LIBRARY_PATH)
-	
-	# -------------------------------------------------------	
-	# library checks
-	# Finding all the required libs needed to compile openlayer
-	# List:
-	#		* allegro
-	#		* allegroGL
-	#		* freetype (glyphkeeper depending on user settings)
-	#		* libpng
-	# -------------------------------------------------------
-	set(LIB_LOCATION_ALLEGRO ALLEGRO-NOTFOUND)
-	find_library(LIB_LOCATION_ALLEGRO NAMES ${LIB_NAME_ALLEGRO})
-	if(NOT LIB_LOCATION_ALLEGRO)
-		message(FATAL_ERROR "Cannot find ${LIB_NAME_ALLEGRO}. Please indicate where the library is and reconfigure.")
-	endif(NOT LIB_LOCATION_ALLEGRO)
-	set(LIB_LOCATION_ALLEGROGL ALLEGROGL-NOTFOUND)
-	find_library(LIB_LOCATION_ALLEGROGL NAMES ${LIB_NAME_ALLEGROGL})
-	if(NOT LIB_LOCATION_ALLEGROGL)
-		message(FATAL_ERROR "Cannot find ${LIB_NAME_ALLEGROGL}. Please indicate where the library is and reconfigure.")
-	endif(NOT LIB_LOCATION_ALLEGROGL)
-	if(NOT DISABLE_TTF)
-		set(LIB_LOCATION_ZLIB ZLIB-NOTFOUND)
-		find_library(LIB_LOCATION_ZLIB NAMES ${LIB_NAME_ZLIB})
-		if(NOT LIB_LOCATION_ZLIB)
-			message(FATAL_ERROR "Cannot find ${LIB_NAME_ZLIB}. Please indicate where the library is and reconfigure.")
-		endif(NOT LIB_LOCATION_ZLIB)
-		set(LIB_LOCATION_FREETYPE FREETYPE-NOTFOUND)
-		find_library(LIB_LOCATION_FREETYPE NAMES ${LIB_NAME_FREETYPE})
-		if(NOT LIB_LOCATION_FREETYPE)
-			message(FATAL_ERROR "Cannot find ${LIB_NAME_FREETYPE}. Please indicate where the library is and reconfigure.")
-		endif(NOT LIB_LOCATION_FREETYPE)
-		if(NOT ENABLE_INTERNAL_FONT)
-			set(LIB_LOCATION_GLYPHKEEPER GLYPHKEEPER-NOTFOUND)
-			find_library(LIB_LOCATION_GLYPHKEEPER NAMES ${LIB_NAME_GLYPHKEEPER})
-			if(NOT LIB_LOCATION_GLYPHKEEPER)
-				message(FATAL_ERROR "Cannot find ${LIB_NAME_GLYPHKEEPER} built with allegrogl target. Please indicate where the library is and reconfigure else use the internal renderer.")
-			endif(NOT LIB_LOCATION_GLYPHKEEPER)
-		endif(NOT ENABLE_INTERNAL_FONT)
-	endif(NOT DISABLE_TTF)
-	if(NOT DISABLE_PNG)
-		set(LIB_LOCATION_LIBPNG LIBPNG-NOTFOUND)
-		find_library(LIB_LOCATION_LIBPNG NAMES ${LIB_NAME_PNG})
-		if(NOT LIB_LOCATION_LIBPNG)
-			message(FATAL_ERROR "Cannot find ${LIB_NAME_PNG}. Please indicate where the library is and reconfigure else disable png support.")
-		endif(NOT LIB_LOCATION_LIBPNG)
-	endif(NOT DISABLE_PNG)
-	
-	set(ALLEGRO_LIB /${LIB_NAME_ALLEGRO})
-	set(ALLEGROGL_LIB /${LIB_NAME_ALLEGROGL})
-	if(NOT DISABLE_PNG)
-		set(PNG_LIB /${LIB_NAME_PNG})
-	endif(NOT DISABLE_PNG)
-	if(NOT DISABLE_TTF)
-		find_path(FREETYPE_INCLUDE NAMES freetype PATHS ${CMAKE_INCLUDE_PATH}/freetype2)
-		if(NOT FREETYPE_INCLUDE)
-			message(FATAL_ERROR "Cannot find freetype include directory. Please indicate where the directory is and reconfigure.")
-		endif(NOT FREETYPE_INCLUDE)
-		if(NOT ENABLE_INTERNAL_FONT)
-			set(GLYPHKEEPER_LIB /${LIB_NAME_GLYPHKEEPER})
-		endif(NOT ENABLE_INTERNAL_FONT)
-		set(FREETYPE_LIB /${LIB_NAME_FREETYPE})
-		set(Z_LIB /${LIB_NAME_ZLIB})
-	endif(NOT DISABLE_TTF)
-	set(OPENGL_LIB /gdi32 /glu32 /opengl32)
+	if(NOT ENABLE_INTERNAL_FONT)
+		add_subdirectory(utils/glyphkeeper)
+		set(GLYPHKEEPER_LIB glyph-agl)
+	endif(NOT ENABLE_INTERNAL_FONT)
 endif(MSVC)
 
 # -------------------------------------------------------
-# Put the linked libraries together
+# Setup some vars that might cause dep issues
 # -------------------------------------------------------
-if(NOT MSVC)
-	set(REQUIRED_LIBS ${ALLEGROGL_LIB}\ ${PNG_LIB}\ ${GLYPHKEEPER_LIB}\ ${FREETYPE_LIB}\ ${Z_LIB}\ ${ALLEGRO_LIB}\ ${OPENGL_LIB})
-else(NOT MSVC)
-	set(REQUIRED_LIBS ${ALLEGROGL_LIB} ${PNG_LIB} ${GLYPHKEEPER_LIB} ${FREETYPE_LIB} ${Z_LIB} ${ALLEGRO_LIB} ${OPENGL_LIB})
-endif(NOT MSVC)
+if(DISABLE_PNG)
+	set(PNG_LIB "")
+else(DISABLE_PNG)
+	set(PNG_LIB ${PNG_LIBRARY})
+endif(DISABLE_PNG)
+if(DISABLE_TTF)
+	set(FREETYPE_LIB "")
+	set(FREETYPE_INCLUDE "")
+	set(ZLIB_LIB "")
+else(DISABLE_TTF)
+	set(FREETYPE_LIB ${FREETYPE_LIBRARY})
+	set(FREETYPE_INCLUDE ${FREETYPE_INCLUDE_DIR})
+	set(ZLIB_LIB ${ZLIB_LIBRARY})
+endif(DISABLE_TTF)	
+
 # -------------------------------------------------------
 # Create the necessary header file for the library
 # -------------------------------------------------------
@@ -376,6 +265,16 @@ configure_file(build/OpenLayer.hpp.in ${CMAKE_BINARY_DIR}/include/OpenLayer.hpp)
 # openlayer-config for *nix based systems
 # -------------------------------------------------------
 if(UNIX AND NOT CYGWIN)
+	if(NOT DISABLE_TTF)
+		if(NOT ENABLE_INTERNAL_FONT)
+			set(R_GK -lglyph-agl)
+		endif(NOT ENABLE_INTERNAL_FONT)
+		set(R_FT -lfreetype)
+	endif(NOT DISABLE_TTF)
+	if(NOT DISABLE_PNG)
+		set(R_PNG -lpng)
+	endif(NOT DISABLE_PNG)
+	set(REQUIRED_LIBS "-lagl ${R_PNG} ${R_GK} ${R_FT} -lz `allegro-config --libs` -lGL -lGLU")
 	configure_file(build/openlayer-config.in ${CMAKE_BINARY_DIR}/bin/openlayer-config ESCAPE_QUOTES)
 endif(UNIX AND NOT CYGWIN)
 
@@ -392,12 +291,12 @@ include_directories(include ${CMAKE_BINARY_DIR}/include include/OpenLayer ${FREE
 # -------------------------------------------------------
 # OpenLayer Library
 # -------------------------------------------------------
-add_library (openlayer ${CREATE_STATIC_LIB} ${SOURCES})
+add_library (openlayer ${CREATE_STATIC_LIBRARY} ${SOURCES})
 
 # -------------------------------------------------------
 # Create the library
 # -------------------------------------------------------
-target_link_libraries(openlayer ${REQUIRED_LIBS})
+target_link_libraries(openlayer)
 
 # -------------------------------------------------------
 # Demos

@@ -2,7 +2,7 @@
  * glyph_main.c  -  Glyph Keeper main routines
  * (initialization/cleanup, rendering text).
  *
- * Copyright (c) 2003-2005 Kirill Kryukov
+ * Copyright (c) 2003-2007 Kirill Kryukov
  *
  * This file is part of Glyph Keeper library, and may only be used,
  * modified, and distributed under the terms of the Glyph Keeper
@@ -52,6 +52,10 @@ void gk_library_init()
 
 void gk_library_cleanup(void)
 {
+#ifdef GLYPH_LOG
+    if (glyph_log) fprintf(glyph_log,"gk_library_cleanup() begin\n");
+#endif
+
     while (first_renderer) gk_done_renderer(first_renderer);
     while (first_keeper) gk_done_keeper(first_keeper);
     while (first_face) gk_unload_face(first_face);
@@ -62,10 +66,25 @@ void gk_library_cleanup(void)
         FT_Done_FreeType(ftlib); ftlib = 0;
     }
 
-    if (rle_buffer) { free(rle_buffer); rle_buffer = 0; }
+    if (rle_buffer) { _gk_free(rle_buffer); rle_buffer = 0; }
     rle_buffer_size = 0;
 
+#ifdef GLYPH_DEBUG_FT_MEMORY
+    if (_gk_allocated_by_ft || _gk_overhead_by_ft)
+        _gk_msg( "Memory leak! FreeType leaked %d + %d bytes!\n", _gk_allocated_by_ft, _gk_overhead_by_ft );
+    else
+        _gk_msg( "FreeType shutdown clean\n" );
+#endif
+
+#ifdef GLYPH_DEBUG_GK_MEMORY
+    if (_gk_allocated_by_gk || _gk_overhead_by_gk)
+        _gk_msg( "Memory leak! Glyph Keeper leaked %d + %d bytes!\n", _gk_allocated_by_gk, _gk_overhead_by_gk );
+    else 
+        _gk_msg("Glyph Keeper shutdown clean\n");
+#endif
+
 #ifdef GLYPH_LOG
+    if (glyph_log) fprintf(glyph_log,"gk_library_cleanup() end\n");
     if (glyph_log) { fclose(glyph_log); glyph_log = 0; }
 #endif
 }
@@ -75,7 +94,7 @@ void gk_library_cleanup(void)
  * Checks how many bytes are allocated by Glyph Keeper.
  * (FreeType memory is not counted)
  */
-int gk_bytes_allocated()
+size_t gk_bytes_allocated()
 {
     int n = 0;
     GLYPH_FACE *a;
@@ -99,79 +118,64 @@ void gk_precache_char(GLYPH_REND* const rend,const unsigned unicode)
 
     if (!rend || !rend->index) return;
 
+    if (rend->before_rend) gk_precache_char(rend->before_rend,unicode);
+
     glyph = _gk_rend_render(rend,unicode);
     if (glyph && !glyph->index) _gk_unload_glyph(glyph);
+
+    if (rend->after_rend) gk_precache_char(rend->after_rend,unicode);
 }
 
 
 void gk_precache_range(GLYPH_REND* const rend,
     const unsigned range_start,const unsigned range_end)
 {
-    GLYPH *glyph;
     unsigned code;
 
     if (!rend || !rend->index) return;
 
-    for (code=range_start; code<=range_end; code++)
-    {
-        glyph = _gk_rend_render(rend,code);
-        if (glyph && !glyph->index) _gk_unload_glyph(glyph);
-    }
+    for (code=range_start; code<=range_end; code++) gk_precache_char(rend,code);
 }
 
 
 void gk_precache_set_utf8(GLYPH_REND* const rend,const char* const char_set)
 {
-    GLYPH *glyph;
     const char* c = char_set;
     unsigned code;
 
     if (!rend || !rend->index) return;
 
-    while ( (code = _gk_utf8_getx(&c)) )
-    {
-        glyph = _gk_rend_render(rend,code);
-        if (glyph && !glyph->index) _gk_unload_glyph(glyph);
-    }
+    while ( (code = _gk_utf8_getx(&c)) ) gk_precache_char(rend,code);
 }
 
 
 void gk_precache_set_utf16(GLYPH_REND* const rend,const unsigned short* const char_set)
 {
-    GLYPH *glyph;
     const unsigned short* c = char_set;
     unsigned code;
 
     if (!rend || !rend->index) return;
 
     _gk_utf16_start_decoding(&c);
-    while ( (code = _gk_utf16_decode(&c)) )
-    {
-        glyph = _gk_rend_render(rend,code);
-        if (glyph && !glyph->index) _gk_unload_glyph(glyph);
-    }
+    while ( (code = _gk_utf16_decode(&c)) ) gk_precache_char(rend,code);
 }
 
 
 void gk_precache_set_utf32(GLYPH_REND* const rend,const unsigned* const char_set)
 {
-    GLYPH *glyph;
     const unsigned* c = char_set;
     unsigned code;
 
     if (!rend || !rend->index) return;
 
     _gk_utf32_start_decoding(&c);
-    while ( (code = _gk_utf32_decode(&c)) )
-    {
-        glyph = _gk_rend_render(rend,code);
-        if (glyph && !glyph->index) _gk_unload_glyph(glyph);
-    }
+    while ( (code = _gk_utf32_decode(&c)) ) gk_precache_char(rend,code);
 }
 
 
 /*
  * Draws background rectangle.
+ * pen_x and pen_y are in puxels.
  * adv_x and adv_y should not be both zero.
  */
 #ifdef GLYPH_TARGET_HAS_RECTFILL
@@ -181,24 +185,38 @@ static void _gk_draw_background_rectangle(GLYPH_TARGET_SURFACE* const bmp,GLYPH_
     if (rend->text_angle != 0)
     {
 #ifdef GLYPH_TARGET_HAS_RECTFILL_ANGLED
-        int ascender = gk_rend_ascender(rend);
-        int descender = gk_rend_descender(rend);
-        int x1 = pen_x - (int)(sin(rend->text_angle)*(ascender>>6));
-        int y1 = pen_y - (int)(cos(rend->text_angle)*(ascender>>6));
-        int x2 = x1 + ((adv_x+63)>>6);
-        int y2 = y1 + ((adv_y+63)>>6);
-        int x4 = pen_x - (int)(sin(rend->text_angle)*(descender>>6));
-        int y4 = pen_y - (int)(cos(rend->text_angle)*(descender>>6));
-        int x3 = x4 + ((adv_x+63)>>6);
-        int y3 = y4 + ((adv_y+63)>>6);
-        _gk_driver_rectfill_angled(bmp,x1,y1,x2,y2,x3,y3,x4,y4,rend->back_color);
+        int xlt,ylt,xlb,ylb,xrt,yrt,xrb,yrb;
+        _gk_text_rectangle_by_advance(rend,adv_x,adv_y,&xlt,&ylt,&xlb,&ylb,&xrt,&yrt,&xrb,&yrb);
+        _gk_driver_rectfill_angled(bmp,xlt+pen_x,ylt+pen_y,xrt+pen_x,yrt+pen_y,
+                                       xrb+pen_x,yrb+pen_y,xlb+pen_x,ylb+pen_y,rend->back_color);
 #endif
     }
     else
     {
         int ascender = gk_rend_ascender(rend);
         int descender = gk_rend_descender(rend);
-        _gk_driver_rectfill(bmp,pen_x,pen_y-(ascender>>6),pen_x+((adv_x+63)>>6),pen_y-(descender>>6),rend->back_color);
+        int xl = pen_x << 6;
+        int xr = xl + adv_x;
+
+        if (rend->italic_angle != 0)
+        {
+            int da = ascender ? (tan(rend->italic_angle) * ascender) : 0;
+            int dd = descender ? (tan(rend->italic_angle) * descender) : 0;
+
+            if (rend->italic_angle > 0)
+            {
+                xl += dd;
+                xr += da;
+            }
+            else
+            {
+                xl += da;
+                xr += dd;
+            }
+        }
+
+        /*_gk_driver_rectfill(bmp,pen_x,pen_y-(ascender>>6),pen_x+((adv_x+63)>>6),pen_y-(descender>>6),rend->back_color);*/
+        _gk_driver_rectfill(bmp,(xl+31)>>6,pen_y-(ascender>>6),(xr+31)>>6,pen_y-(descender>>6),rend->back_color);
     }
 }
 #endif
@@ -209,26 +227,41 @@ void gk_put_char(GLYPH_TARGET_SURFACE* const bmp,GLYPH_REND* const rend,
 {
     GLYPH *glyph = 0;
     if (!bmp || !rend) return;
+
     glyph = _gk_rend_render(rend,unicode);
     if (glyph)
     {
+        if (rend->before_rend) gk_put_char_center(bmp,rend->before_rend,unicode,
+            x + glyph->width/2 + rend->before_dx, y + glyph->height/2 + rend->before_dy);
+
         _gk_prepare_to_draw(bmp,rend);
         _gk_put_glyph(glyph,x,y);
         _gk_done_drawing();
+
+        if (rend->after_rend) gk_put_char_center(bmp,rend->after_rend,unicode,
+            x + glyph->width/2 + rend->after_dx, y + glyph->height/2 + rend->after_dy);
     }
 }
+
 
 void gk_put_char_center(GLYPH_TARGET_SURFACE* const bmp,GLYPH_REND* const rend,const unsigned unicode,
     const int x,const int y)
 {
     GLYPH *glyph;
     if (!bmp || !rend) return;
+
     glyph = _gk_rend_render(rend,unicode);
     if (glyph)
     {
+        if (rend->before_rend)
+            gk_put_char_center(bmp,rend->before_rend,unicode,x+rend->before_dx,y+rend->before_dy);
+
         _gk_prepare_to_draw(bmp,rend);
-        _gk_put_glyph(glyph,x-glyph->width/2,y-glyph->height/2);
+        _gk_put_glyph(glyph, x - glyph->center_x + glyph->left, y + glyph->center_y - glyph->top);
         _gk_done_drawing();
+
+        if (rend->after_rend)
+            gk_put_char_center(bmp,rend->after_rend,unicode,x+rend->after_dx,y+rend->after_dy);
     }
 }
 
@@ -246,11 +279,18 @@ static void _gk_internal_render_char(GLYPH_REND* const rend,const unsigned unico
     int adv_x,adv_y;
     CARE(rend);
 
+#ifdef GLYPH_LOG
+    if (glyph_log) fprintf(glyph_log,"_gk_internal_render_char()\n");
+#endif
+
     glyph = _gk_rend_render(rend,unicode);
     if (!glyph) return;
+
     adv_x = glyph->advance_x;
     adv_y = glyph->advance_y;
+
     _gk_put_glyph(glyph,((*pen_x+31)>>6)+glyph->left,((*pen_y+31)>>6)-glyph->top);
+
     *pen_x += adv_x;
     *pen_y -= adv_y;
 }
@@ -263,9 +303,20 @@ void gk_render_char(GLYPH_TARGET_SURFACE* const bmp,
     GLYPH_REND* const rend,const unsigned unicode,
     int* const pen_x,int* const pen_y)
 {
+    GLYPH* glyph;
+    int adv_x,adv_y;
+    int draw_x,draw_y;
+
     if (!bmp || !rend || !pen_x || !pen_y) return;
 
-    _gk_prepare_to_draw(bmp,rend);
+    glyph = _gk_rend_render(rend,unicode);
+    if (!glyph) return;
+
+    adv_x = glyph->advance_x;
+    adv_y = glyph->advance_y;
+
+    draw_x = ((*pen_x+31)>>6)+glyph->left;
+    draw_y = ((*pen_y+31)>>6)-glyph->top;
 
 #ifdef GLYPH_TARGET_HAS_RECTFILL
     if (rend->back_color >= 0)
@@ -276,8 +327,18 @@ void gk_render_char(GLYPH_TARGET_SURFACE* const bmp,
     }
 #endif
 
-    _gk_internal_render_char(rend,unicode,pen_x,pen_y);
+    if (rend->before_rend) gk_put_char_center(bmp,rend->before_rend,unicode,
+        ((*pen_x+31)>>6) + glyph->center_x + rend->before_dx, ((*pen_y+31)>>6) - glyph->center_y + rend->before_dy);
+
+    _gk_prepare_to_draw(bmp,rend);
+    _gk_put_glyph(glyph,draw_x,draw_y);
     _gk_done_drawing();
+
+    if (rend->after_rend) gk_put_char_center(bmp,rend->after_rend,unicode,
+        ((*pen_x+31)>>6) + glyph->center_x + rend->after_dx, ((*pen_y+31)>>6) - glyph->center_y + rend->after_dy);
+
+    *pen_x += adv_x;
+    *pen_y -= adv_y;
 }
 
 
@@ -315,8 +376,6 @@ void gk_render_line_utf8(GLYPH_TARGET_SURFACE* const bmp,
 
     if (!bmp || !rend || !text) return;
 
-    _gk_prepare_to_draw(bmp,rend);
-
 #ifdef GLYPH_TARGET_HAS_RECTFILL
     if (rend->back_color >= 0)
     {
@@ -328,9 +387,17 @@ void gk_render_line_utf8(GLYPH_TARGET_SURFACE* const bmp,
 
     x = pen_x<<6;
     y = pen_y<<6;
-    while ( (code = _gk_utf8_getx(&c)) )
-        _gk_internal_render_char(rend,code,&x,&y);
-    _gk_done_drawing();
+
+    if (rend->before_rend || rend->after_rend)
+    {
+        while ( (code = _gk_utf8_getx(&c)) ) gk_render_char(bmp,rend,code,&x,&y);
+    }
+    else
+    {
+        _gk_prepare_to_draw(bmp,rend);
+        while ( (code = _gk_utf8_getx(&c)) ) _gk_internal_render_char(rend,code,&x,&y);
+        _gk_done_drawing();
+    }
 
 #ifdef GLYPH_LOG
     if (glyph_log) fprintf(glyph_log,"gk_render_line_utf8() end\n");
@@ -348,8 +415,6 @@ void gk_render_line_utf16(GLYPH_TARGET_SURFACE* const bmp,
 
     if (!bmp || !rend || !text) return;
 
-    _gk_prepare_to_draw(bmp,rend);
-
 #ifdef GLYPH_TARGET_HAS_RECTFILL
     if (rend->back_color >= 0)
     {
@@ -359,12 +424,20 @@ void gk_render_line_utf16(GLYPH_TARGET_SURFACE* const bmp,
     }
 #endif
 
-    _gk_utf16_start_decoding(&c);
     x = pen_x<<6;
     y = pen_y<<6;
-    while ( (code = _gk_utf16_decode(&c)) )
-        _gk_internal_render_char(rend,code,&x,&y);
-    _gk_done_drawing();
+    _gk_utf16_start_decoding(&c);
+
+    if (rend->before_rend || rend->after_rend)
+    {
+        while ( (code = _gk_utf16_decode(&c)) ) gk_render_char(bmp,rend,code,&x,&y);
+    }
+    else
+    {
+        _gk_prepare_to_draw(bmp,rend);
+        while ( (code = _gk_utf16_decode(&c)) ) _gk_internal_render_char(rend,code,&x,&y);
+        _gk_done_drawing();
+    }
 }
 
 
@@ -378,8 +451,6 @@ void gk_render_line_utf32(GLYPH_TARGET_SURFACE* const bmp,
 
     if (!bmp || !rend || !text) return;
 
-    _gk_prepare_to_draw(bmp,rend);
-
 #ifdef GLYPH_TARGET_HAS_RECTFILL
     if (rend->back_color >= 0)
     {
@@ -389,12 +460,20 @@ void gk_render_line_utf32(GLYPH_TARGET_SURFACE* const bmp,
     }
 #endif
 
-    _gk_utf32_start_decoding(&c);
     x = pen_x<<6;
     y = pen_y<<6;
-    while ( (code = _gk_utf32_decode(&c)) )
-        _gk_internal_render_char(rend,code,&x,&y);
-    _gk_done_drawing();
+    _gk_utf32_start_decoding(&c);
+
+    if (rend->before_rend || rend->after_rend)
+    {
+        while ( (code = _gk_utf32_decode(&c)) ) gk_render_char(bmp,rend,code,&x,&y);
+    }
+    else
+    {
+        _gk_prepare_to_draw(bmp,rend);
+        while ( (code = _gk_utf32_decode(&c)) ) _gk_internal_render_char(rend,code,&x,&y);
+        _gk_done_drawing();
+    }
 }
 
 

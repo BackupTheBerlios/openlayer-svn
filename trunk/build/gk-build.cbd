@@ -32,7 +32,7 @@ else
 	CFLAGS="-O2 -Wall `freetype-config --cflags` -DGK_NO_LEGACY -DGLYPH_TARGET=GLYPH_TARGET_ALLEGGL"
 	LDFLAGS="`freetype-config --libs`"
 done
-GKSRC= "glyph.c glyph_global_vars.c glyph_rend.c glyph_to_allegro_mono.c glyph_dimensions.c glyph_index.c glyph_to_allegro_aa.c glyph_to_opengl.c glyph_face.c glyph_main.c glyph_to_allegro.c glyph_utils.c"
+GKSRC= "glyph.c glyph_global_vars.c glyph_rend.c glyph_to_allegro_mono.c glyph_dimensions.c glyph_index.c glyph_to_allegro_aa.c glyph_to_opengl.c glyph_face.c glyph_main.c glyph_to_allegro.c glyph_utils.c glyph_memory.c glyph_workout.c"
 
 src_paths utils/glyphkeeper/src
 OBJ_DIR= utils/glyphkeeper/obj

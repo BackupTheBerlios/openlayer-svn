@@ -1,7 +1,7 @@
 /*
  * glyph_utils.c  -  Glyph Keeper basic support routines.
  *
- * Copyright (c) 2003-2005 Kirill Kryukov
+ * Copyright (c) 2003-2007 Kirill Kryukov
  *
  * This file is part of Glyph Keeper library, and may only be used,
  * modified, and distributed under the terms of the Glyph Keeper
@@ -38,23 +38,9 @@ static void _gk_msg(const char* const format,...)
 /*
  * Setting font search path
  */
-void gk_set_font_path(char* const path)
+void gk_set_font_path(const char* const path)
 {
     _gk_font_path = path;
-}
-
-
-static void* _gk_malloc(const size_t size)
-{
-#ifdef GLYPH_LOG
-    if (glyph_log) fprintf(glyph_log,"_gk_malloc(%d) :",size);
-#endif
-    void* buf = malloc(size);
-#ifdef GLYPH_LOG
-    if (glyph_log) fprintf(glyph_log," %s\n",buf?"success":"fail");
-#endif
-    if (!buf) _gk_msg("Error: %s: Not enough memory! Can't allocate %d bytes\n",funcname,size);
-    return buf;
 }
 
 
@@ -77,7 +63,7 @@ static void _gk_install_exit_handler()
  * Returns size in bytes of one glyph.
  * Both size of GLYPH structure and size of glyph bitmap are counted.
  */
-static unsigned glyph_size_in_bytes(const GLYPH* const g)
+static size_t glyph_size_in_bytes(const GLYPH* const g)
 {
     return sizeof(GLYPH) + g->bmpsize;
 }

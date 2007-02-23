@@ -1,7 +1,7 @@
 /*
  * glyph_to_text.c  -  Glyph Keeper driver for FILE stream IO.
  *
- * Copyright (c) 2003-2005 Kirill Kryukov
+ * Copyright (c) 2003-2007 Kirill Kryukov
  *
  * This file is part of Glyph Keeper library, and may only be used,
  * modified, and distributed under the terms of the Glyph Keeper

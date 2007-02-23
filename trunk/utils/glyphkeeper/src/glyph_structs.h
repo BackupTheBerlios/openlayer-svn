@@ -1,7 +1,7 @@
 /*
  * glyph_structs.h  -  Glyph Keeper structures.
  *
- * Copyright (c) 2003-2005 Kirill Kryukov
+ * Copyright (c) 2003-2007 Kirill Kryukov
  *
  * This file is part of Glyph Keeper library, and may only be used,
  * modified, and distributed under the terms of the Glyph Keeper
@@ -30,7 +30,7 @@ typedef struct GLYPH
     unsigned unicode;
 
     /* Glyph dimensions, in pixels. */
-    unsigned short width,height;
+    unsigned short width, height;
 
     /*
      * Glyph bitmap, (width x height) pixels in size.
@@ -54,10 +54,16 @@ typedef struct GLYPH
      * Glyph bearing, in pixels.
      * It is glyph bitmap position, relative to the pen position.
      */
-    short left,top;
+    short left, top;
+
+    /*
+     * Position of glyph center relative to pen position.
+     * Positive x goes right, positive y goes up.
+     */
+    short center_x, center_y;
 
     /* Pen position advance, in 1/64th of pixel. */
-    int advance_x,advance_y;
+    int advance_x, advance_y;
 
     /*
      * If not 0, points to GLYPH_INDEX object, where the glyph is stored.
@@ -143,7 +149,7 @@ struct GLYPH_FACE
      * List of all GLYPH_REND objects using this font face.
      * Once you unload this face all that renderers will become useless.
      */
-    GLYPH_REND *first_renderer,*last_renderer;
+    GLYPH_REND *first_renderer, *last_renderer;
 };
 
 
@@ -177,6 +183,7 @@ typedef struct GLYPH_INDEX
     unsigned hsize,vsize;
     double text_angle;
     double italic_angle;
+    int bold_strength;
 
     /* GLYPH_KEEP object, using this index */
     GLYPH_KEEP *keeper;
@@ -336,8 +343,15 @@ struct GLYPH_REND
     /* Text rotation angle, in radians */
     double text_angle;
 
+    /* Sine and cosine of the angle to not re-compute them */
+    double text_angle_cos;
+    double text_angle_sin;
+
     /* Italicizing angle, in radians */
     double italic_angle;
+
+    /* Strength of emboldening */
+    int bold_strength;
 
     /* True if this renderer uses glyph transformation */
     int do_matrix_transform;
@@ -352,6 +366,18 @@ struct GLYPH_REND
     /* Background color. Normally -1 which means transparent. */
     /* Otherwise depth-independent value: (r<<16) | (g<<8) | b */
     int back_color;
+
+    /*
+     * Renderers to be automatically used to render the same character before, and after the
+     * character is rendered with this renderer.
+     */
+    GLYPH_REND *before_rend, *after_rend;
+
+    /*
+     * Offset of the glyph rendered before and after. Offset is relative to the test origin
+     * point, so positive x axis goes right, positive y axis goes up.
+     */
+    int before_dx, before_dy, after_dx, after_dy;
 
     /*
      * Points to the target-specific info used for better integration with the target.

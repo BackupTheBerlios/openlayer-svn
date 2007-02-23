@@ -1,7 +1,7 @@
 /*
  * glyph_global_vars.c  -  Glyph Keeper global variables.
  *
- * Copyright (c) 2003-2005 Kirill Kryukov
+ * Copyright (c) 2003-2007 Kirill Kryukov
  *
  * This file is part of Glyph Keeper library, and may only be used,
  * modified, and distributed under the terms of the Glyph Keeper
@@ -16,8 +16,8 @@
  * Version guard.
  */
 static const int _gk_version_major = 0;
-static const int _gk_version_minor = 29;
-static const int _gk_version_patch = 1;
+static const int _gk_version_minor = 32;
+static const int _gk_version_patch = 0;
 static const int _gk_target = GLYPH_TARGET;
 
 /*
@@ -32,10 +32,12 @@ static FILE* glyph_log = 0;
  */
 static void (*_gk_messenger)(const char* const) = 0;
 
+
+
 /*
  * Font path
  */
-static char* _gk_font_path = 0;
+static const char* _gk_font_path = 0;
 
 /*
  * Name of currently working routine, used for error reporting.
@@ -56,10 +58,12 @@ static unsigned char* rle_buffer = 0;
 static unsigned rle_buffer_size = 0;
 
 
+
 /*
  * FT_Bitmap for processing glyph rendered by FreeType.
  */
 static FT_Bitmap _gk_workout_bitmap;
+
 
 
 /*
@@ -76,10 +80,14 @@ static int _gk_utf16_opposite_byte_sex = 0;
  */
 static int _gk_utf32_opposite_byte_sex = 0;
 
+
+
 /*
  * FreeType library instance handle.
  */
 static FT_Library ftlib = 0;
+
+
 
 /*
  * Number of currently used GLYPH_FACE objects.
@@ -91,12 +99,12 @@ static unsigned face_count = 0;
  */
 static unsigned face_first_free_id = 1;
 
+
+
 /*
  * Global list of GLYPH_FACE objects.
  */
 static GLYPH_FACE *first_face = 0, *last_face = 0;
-
-static const char na[] = "UNAVAILABLE";
 
 /*
  * Global list of renderers.
@@ -107,6 +115,23 @@ static GLYPH_REND *first_renderer = 0, *last_renderer = 0;
  * Global list of GLYPH_KEEP objects.
  */
 static GLYPH_KEEP *first_keeper = 0, *last_keeper = 0;
+
+
+
+/*
+ * Default return string for unavailable font properties.
+ */
+static const char _gk_na[] = "UNAVAILABLE";
+
+
+
+/*
+ * True measures of memory allocated by Glyph Keeper and FreeType.
+ */
+size_t _gk_allocated_by_gk = 0;
+size_t _gk_overhead_by_gk = 0;
+size_t _gk_allocated_by_ft = 0;
+size_t _gk_overhead_by_ft = 0;
 
 
 #endif  /* included_from_glyph_c */

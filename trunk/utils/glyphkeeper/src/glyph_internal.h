@@ -1,7 +1,7 @@
 /*
  * glyph_internal.h  -  Glyph Keeper internal header file.
  *
- * Copyright (c) 2003-2005 Kirill Kryukov
+ * Copyright (c) 2003-2007 Kirill Kryukov
  *
  * This file is part of Glyph Keeper library, and may only be used,
  * modified, and distributed under the terms of the Glyph Keeper
@@ -20,9 +20,12 @@
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include FT_INTERNAL_OBJECTS_H
 #include FT_BITMAP_H
+#include FT_GLYPH_H
+#include FT_SIZES_H
 #include FT_SYNTHESIS_H
+#include FT_OUTLINE_H
+#include FT_TRIGONOMETRY_H
 
 #include "../include/glyph.h"
 #include "glyph_structs.h"
@@ -88,6 +91,8 @@ static void _gk_done_drawing();
 static void _gk_unload_glyph(GLYPH* const glyph);
 
 static GLYPH* _gk_rend_render(GLYPH_REND* const rend,const unsigned unicode);
+
+static void _gk_msg(const char* const format,...);
 
 
 #endif
