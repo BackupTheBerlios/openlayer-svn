@@ -193,6 +193,8 @@ if(MINGW)
 		add_subdirectory(utils/glyphkeeper)
 		set(GLYPHKEEPER_LIB glyph-agl)
 	endif(NOT ENABLE_INTERNAL_FONT)
+	
+	set(WIN_LIBS -luser32 -lgdi32) 
 endif(MINGW)
 
 # -------------------------------------------------------
@@ -236,6 +238,8 @@ if(MSVC)
 		add_subdirectory(utils/glyphkeeper)
 		set(GLYPHKEEPER_LIB glyph-agl)
 	endif(NOT ENABLE_INTERNAL_FONT)
+	
+	set(WIN_LIBS /Luser32 /Lgdi32) 
 endif(MSVC)
 
 # -------------------------------------------------------
