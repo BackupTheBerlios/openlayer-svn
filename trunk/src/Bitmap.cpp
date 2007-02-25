@@ -971,13 +971,15 @@ LoadListOfBitmaps( string filenameBegin, string extension, unsigned int numNumbe
 
 
 
-void Bitmap::
+bool Bitmap::
 Save( const char *filename ) {
    OL_MEMORY_IMG *image = GetMemoryBitmap();
 
-   GlDriver::Get()->SaveMemoryBitmap( image, Setup::ToAbsolutePathname( filename ).c_str() );
+   bool result = GlDriver::Get()->SaveMemoryBitmap( image, Setup::ToAbsolutePathname( filename ).c_str() );
 
    destroy_bitmap( image );
+   
+   return result;
 }
 
 

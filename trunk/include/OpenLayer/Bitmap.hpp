@@ -138,7 +138,7 @@ public:
     
     // Saves the Bitmap to disk with the specified filename //
     // The type of the file depends on the extension of the filename //
-    void Save( const char *filename );
+    bool Save( const char *filename );
     
     
     // Draws the bitmap to the screen at the specified top-left coordinates //
