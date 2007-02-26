@@ -70,6 +70,7 @@ namespace ol
 	OL_LIB_DECLSPEC void gk_rend_set_text_alpha_color( GLYPH_REND* const rend, const unsigned alpha_color);
 	OL_LIB_DECLSPEC int gk_rend_ascender_pixels( GLYPH_REND* const rend );
 	OL_LIB_DECLSPEC int rend_ascender_pixels( GLYPH_REND* const rend );
+	OL_LIB_DECLSPEC int gk_rend_height_pixels( GLYPH_REND* const rend );
 	OL_LIB_DECLSPEC int text_width_utf8(GLYPH_REND* const rend,const char* const text);
 	OL_LIB_DECLSPEC GLYPH_TEXTURE *gk_create_texture( GLYPH_REND *rend, int rangeStart, int rangeLength );
 	OL_LIB_DECLSPEC void gk_unload_texture_from_gpu( GLYPH_TEXTURE *texture );
@@ -231,6 +232,9 @@ namespace ol
 			
 			//! Get height
 			int getHeight();
+			
+			//! Get total height
+			int getTotalHeight();
 			
 			//! Get italics
 			int getItalics();

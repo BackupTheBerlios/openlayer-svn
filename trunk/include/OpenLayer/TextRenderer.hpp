@@ -104,6 +104,11 @@ public:
    // Returns the italics angle of the text //
    int GetItalics() const;
    
+   // Font height
+   int FontHeight() const;
+   // Font total height
+   int FontTotalHeight() const;
+   
    // Returns the width and height of multi-lined text //
    int Width( const std::string &text ) const;
    int Height( const std::string &text ) const;

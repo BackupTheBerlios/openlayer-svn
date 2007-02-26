@@ -379,6 +379,16 @@ RenderLineAligned( const string &line, int x, int y,
    }
 }
 
+int TextRenderer::
+FontHeight() const {
+   return gk_rend_ascender_pixels( rend );
+}
+
+int TextRenderer::
+FontTotalHeight() const {
+   return gk_rend_height_pixels( rend );
+}
+
 
 int TextRenderer::
 FirstLineWidth( const string &text ) const {

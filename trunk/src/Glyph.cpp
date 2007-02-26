@@ -115,8 +115,9 @@ namespace ol
 		tempChar.length = (w + ew)+face->glyph->advance.x >> 6;
 			
 		return tempChar;
-#endif
+#else
 		return character();
+#endif
 	}
 	
 	// Create single index
@@ -214,8 +215,9 @@ namespace ol
 		}
 					
 		return faceLoaded;
-#endif
+#else
 		return false;
+#endif
 	}
 			
 	// Load font from file
@@ -250,8 +252,9 @@ namespace ol
 		}
 		
 		return faceLoaded;
-#endif
+#else
 		return false;
+#endif
 	}
 	
 	void Glyph::render(double x, double y, Rgba col, Bitmap *bmp, int alignment, const std::string & text, ...)
@@ -441,6 +444,16 @@ namespace ol
 		return size.height;
 	}
 	
+	// Get total height
+	int Glyph::getTotalHeight()
+	{
+#ifdef USE_NEW_TTF
+		return size.height * (face->height)/(double)(face->units_per_EM);
+#else
+		return size.height;
+#endif
+	}
+	
 	// Get Italics
 	int Glyph::getItalics()
 	{
@@ -544,6 +557,11 @@ namespace ol
 		return rend->glyphFace->getHeight();
 	}
 	
+	int gk_rend_height_pixels( GLYPH_REND* const rend )
+	{
+		return rend->glyphFace->getTotalHeight();
+	}
+	
 	int text_width_utf8(GLYPH_REND* const rend,const char* const text)
 	{
 		return (int)rend->glyphFace->getLength(text);
@@ -588,6 +606,6 @@ namespace ol
 		// Nothing to be done
 	}
 
-	}
+}
 
 #endif /* OL_GLYPH_CPP */
