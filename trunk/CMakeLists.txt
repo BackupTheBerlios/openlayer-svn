@@ -211,6 +211,7 @@ if(MSVC)
 	SET(CMAKE_CXX_FLAGS_MINSIZEREL "/MT /O2")
 	SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MTd /Z7 /Od")
 	set(CMAKE_CONFIGURATION_TYPES Release)
+	add_definitions("/link SUBSYSTEM:WINDOWS")
 	
 	if(NOT DISABLE_TTF)
 		if(ENABLE_INTERNAL_FONT)
@@ -239,7 +240,7 @@ if(MSVC)
 		set(GLYPHKEEPER_LIB glyph-agl)
 	endif(NOT ENABLE_INTERNAL_FONT)
 	
-	set(WIN_LIBS /Luser32 /Lgdi32) 
+	set(WIN_LIBS /user32 /gdi32) 
 endif(MSVC)
 
 # -------------------------------------------------------
