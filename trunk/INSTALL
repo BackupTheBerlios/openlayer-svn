@@ -61,4 +61,6 @@ To Use:
 	WINDOWS
 - Link your projects with:
 	"-lopenlayer -lglyph-agl -lfreetype -lpng -lz -lagl -lalleg -luser32 -lgdi32 -lglu32 -lopengl32"
+	If you have issues with freetype and get messages like: .... #include expects "FILENAME" or <FILENAME>
+	you need to pass in the freetype2 dir location when building, ie: "-I%MINGDIR%\include\freetype2"
 	
