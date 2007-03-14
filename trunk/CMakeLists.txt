@@ -244,6 +244,13 @@ if(MSVC)
 endif(MSVC)
 
 # -------------------------------------------------------
+# Added stuff for osx
+# -------------------------------------------------------
+if(APPLE)
+	set(WIN_LIBS "-framework Carbon")
+endif(APPLE)
+
+# -------------------------------------------------------
 # Setup some vars that might cause dep issues
 # -------------------------------------------------------
 if(DISABLE_PNG)
