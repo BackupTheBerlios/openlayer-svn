@@ -1,18 +1,20 @@
 #include "Rgba.hpp"
 #include "Internal.hpp"
 
+#include <iomanip>
+
 using namespace ol;
 using namespace std;
 
 // STATIC CLASS VARIABLES //
 
-Rgba Rgba::BLACK = Rgba( 0.0, 0.0, 0.0, 1.0 );
-Rgba Rgba::WHITE = Rgba( 1.0, 1.0, 1.0, 1.0 );
-Rgba Rgba::RED = Rgba( 1.0, 0.0, 0.0, 1.0 );
-Rgba Rgba::YELLOW = Rgba( 1.0, 1.0, 0.0, 1.0 );
-Rgba Rgba::GREEN = Rgba( 0.0, 1.0, 0.0, 1.0 );
-Rgba Rgba::BLUE = Rgba( 0.0, 0.0, 1.0, 1.0 );
-Rgba Rgba::INVISIBLE = Rgba( 0.0, 0.0, 0.0, 0.0 );
+const Rgba Rgba::BLACK = Rgba( 0.0, 0.0, 0.0, 1.0 );
+const Rgba Rgba::WHITE = Rgba( 1.0, 1.0, 1.0, 1.0 );
+const Rgba Rgba::RED = Rgba( 1.0, 0.0, 0.0, 1.0 );
+const Rgba Rgba::YELLOW = Rgba( 1.0, 1.0, 0.0, 1.0 );
+const Rgba Rgba::GREEN = Rgba( 0.0, 1.0, 0.0, 1.0 );
+const Rgba Rgba::BLUE = Rgba( 0.0, 0.0, 1.0, 1.0 );
+const Rgba Rgba::INVISIBLE = Rgba( 0.0, 0.0, 0.0, 0.0 );
 
 
 static string HEX_CHARS = "0123456789abcdef";
@@ -97,18 +99,25 @@ Rgba( bool invalidiate )
 
 
 
-bool Rgba::
-IsValid() {
-   return r >= 0.0 && g >= 0.0 && b >= 0.0 && a >= 0.0;
-}
-
-
-
-
 int Rgba::
 Packed() const {
    return makeacol32( Rgba::CompToI(r), Rgba::CompToI(g), Rgba::CompToI(b), Rgba::CompToI(a));
 }
 
 
+
+std::string Rgba::ToString() const {
+  std::stringstream s;
+  s << "Color: ( " << r << ", " << g << ", " << b << ", " << a << " )";
+  return s.str();
+}
+
+std::string Rgba::ToHex() const {
+  std::stringstream s;
+  s << std::hex << std::setw( 2 ) << std::setfill('0') << CompToI(r);
+  s << std::hex << std::setw( 2 ) << std::setfill('0') << CompToI(g);
+  s << std::hex << std::setw( 2 ) << std::setfill('0') << CompToI(b);
+  s << std::hex << std::setw( 2 ) << std::setfill('0') << CompToI(a);
+  return s.str();
+}
 

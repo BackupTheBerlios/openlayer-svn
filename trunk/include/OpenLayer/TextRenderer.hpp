@@ -48,7 +48,7 @@ public:
    // Construct the font by using the face from an another TextRenderer //
    // If you don't specify any color or italics angle they'll be inherited from the other renderer! //
    TextRenderer( const TextRenderer &otherRenderer, int width = 12, int height = 10,
-                 Rgba col = Rgba( false ), int italics = UNDEFINED_ITALICS );
+                 Rgba col = Rgba(), int italics = UNDEFINED_ITALICS );
    
    // Construct the font by using a GlyphKeeper font face //
    TextRenderer( GLYPH_FACE *face, int width = 12, int height = 10, Rgba col = Rgba::BLACK,
@@ -68,7 +68,7 @@ public:
    // Loads a font using the face from an another TextRenderer, returns true on success //
    // If you don't specify any color or italics angle they'll be inherited from the other renderer! //
    bool Load( const TextRenderer &otherRenderer, int width, int height,
-              Rgba col = Rgba( false ), int italics = UNDEFINED_ITALICS );
+              Rgba col = Rgba(), int italics = UNDEFINED_ITALICS );
    
    // Loads a font from a Glyph Keeper face, returns true on success //
    // Pass true to destroyFace if you wish the font face to be automatically destroyed //
@@ -93,17 +93,17 @@ public:
    virtual void Destroy( bool eraseFromGarbageCollection = false );
    
    // Sets the font color //
-   void SetColor( const Rgba col );
+   void SetColor( const Rgba& col );
    
    // Returns the color of the font //
-   Rgba GetColor() const;
+   const Rgba& GetColor() const;
    
    // Sets the italics angle of the text //
    void SetItalics( int italicsAngle );
    
    // Returns the italics angle of the text //
    int GetItalics() const;
-   
+
    // Font height
    int FontHeight() const;
    // Font total height
@@ -112,7 +112,7 @@ public:
    // Returns the width and height of multi-lined text //
    int Width( const std::string &text ) const;
    int Height( const std::string &text ) const;
-   
+
    // Returns the width and height of the first text line of multi-lined text //
    int FirstLineWidth( const std::string &text ) const;
    int FirstLineHeight( const std::string &text ) const;
@@ -121,7 +121,9 @@ public:
    virtual bool IsValid() const;
     
    // The boolean operator returns the same as the IsValid-method //
-   inline operator bool() { return IsValid(); }
+   inline operator bool() {
+      return IsValid();
+   }
    
    inline void UseTags( bool turnedOn ) {
       useTags = turnedOn;
@@ -129,7 +131,7 @@ public:
    
    static std::string GetColoredText( const std::string &str, Rgba color );
    
-   inline Vec2D GetTextSize( const std::string str ) {
+   inline Vec2D GetTextSize( const std::string& str ) {
       return Vec2D( Width( str ), Height( str ));
    }
    
@@ -163,7 +165,9 @@ public:
     virtual void UnloadToMemory() { UnloadFromGPU(); }
    
 private:
-   void StartRendering() const { SelectColor( col ); }
+   void StartRendering() const {
+      SelectColor( col );
+   }
    void SelectColor( const Rgba &color ) const;
    void FinishRendering() const;
    void RenderLineAligned( const std::string &line, int x, int y,

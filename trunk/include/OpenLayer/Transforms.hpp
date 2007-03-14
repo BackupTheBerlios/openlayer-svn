@@ -62,14 +62,14 @@ public:
 
 
    // Tint the whole screen to a color (default: Rgba::INVISIBLE) //
-   static void SetTintColor( Rgba color );
+   static void SetTintColor( const Rgba& color );
 
    // Sets the coefficients of the red, green, blue and alpha channels //
    // The default is Rgba::WHITE (all channels are 1.0) //
-   static void SetColorChannels( Rgba cofficients );
+   static void SetColorChannels( const Rgba& cofficients );
 
    // Returns the coefficients of the color channels //
-   static Rgba GetColorChannels();
+   static const Rgba& GetColorChannels();
 
    // You don't usually need to call any of the following functions //
 

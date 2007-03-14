@@ -7,8 +7,8 @@
 #include "Declspec.hpp"
 
 #include <string>
-#include <sstream>
-#include <iomanip>
+// #include <sstream>
+// #include <iomanip>
 
 
 
@@ -25,7 +25,7 @@ public:
    Rgba( int    r, int    g, int    b, int    a = 255 )              : r( Rgba::CompToF(r)), g( Rgba::CompToF(g)), b( Rgba::CompToF(b)), a( Rgba::CompToF(a)) {}
    Rgba( int    col,                          int a )                { *this = Rgba( getr32( col ), getg32( col ), getb32( col ), a ); }
    
-   Rgba( const std::string &hexPresentation );
+   explicit Rgba( const std::string &hexPresentation );
    
    Rgba() : r( 0.0 ), g( 0.0 ), b( 0.0 ), a( 0.0 ) {}
    
@@ -33,8 +33,8 @@ public:
    float r, g, b, a;
    
    // Some default colors //
-   static Rgba BLACK, WHITE, RED, YELLOW, GREEN, BLUE;
-   static Rgba INVISIBLE; // Has zero alpha //
+   static const Rgba BLACK, WHITE, RED, YELLOW, GREEN, BLUE;
+   static const Rgba INVISIBLE; // Has zero alpha //
    
    // Returns a color interpolated between this and otherColor //
    // using the factor (0...1) such that if factor is zero, it //
@@ -58,33 +58,21 @@ public:
    
    #ifdef NO_COLOR_CHANNELS
       
-      inline void Select() const {
-         SelectRaw();
-      }
+   inline void Select() const {
+     SelectRaw();
+   }
       
    #else // NO_COLOR_CHANNELS
    
-      inline void Select() const {
-         Rgba colorChannels = ol::Transforms::GetColorChannels();
-         glColor4f( colorChannels.r * r, colorChannels.g * g, colorChannels.b * b, colorChannels.a * a );
-      }
+   inline void Select() const {
+     const Rgba& colorChannels = ol::Transforms::GetColorChannels();
+     glColor4f( colorChannels.r * r, colorChannels.g * g, colorChannels.b * b, colorChannels.a * a );
+   }
       
    #endif // NO_COLOR_CHANNELS
    
-   inline std::string ToString() const {
-      std::stringstream s;
-      s << "Color: ( " << r << ", " << g << ", " << b << ", " << a << " )";
-      return s.str();
-   }
-   
-   inline std::string ToHex() const {
-      std::stringstream s;
-      s << std::hex << std::setw( 2 ) << std::setfill('0') << CompToI(r);
-      s << std::hex << std::setw( 2 ) << std::setfill('0') << CompToI(g);
-      s << std::hex << std::setw( 2 ) << std::setfill('0') << CompToI(b);
-      s << std::hex << std::setw( 2 ) << std::setfill('0') << CompToI(a);
-      return s.str();
-   }
+   std::string ToString() const;
+   std::string ToHex() const;
    
    // Returns the color in a packed 32-bit integer //
    int Packed() const;
@@ -100,14 +88,17 @@ public:
 private:
    unsigned int parseHex( const std::string &hex, int pos );
    
-   Rgba( bool invalidiated );
+   explicit Rgba( bool invalidiated );
    Rgba( int specialPackedColor, bool notUsed );
    
    static inline int CompToI( float c ) { return int( 255.0 * c ); }
    static inline float CompToF( int c ) { return float(c)/255.0; }
    int SpecialPacked() const;
    
-   bool IsValid();
+   inline bool IsValid()
+   {
+     return r >= 0.0 && g >= 0.0 && b >= 0.0 && a >= 0.0;
+   }
 };
 
 

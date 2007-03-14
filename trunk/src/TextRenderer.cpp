@@ -84,7 +84,7 @@ Load( const char *filename, int w, int h, Rgba col, int italics, bool useHinting
 
    OlLog( string( "Loading a true type font: " ) + absoluteFilename );
 
-   face = load_face_from_file( absoluteFilename.c_str(), 0 );
+   face = gk_load_face_from_file( absoluteFilename.c_str(), 0 );
 
    bool valid = false;
 
@@ -136,17 +136,17 @@ Load( GLYPH_FACE *face, int w, int h, Rgba col, int italics, bool useHinting ) {
    this->face = face;
    this->useHinting = useHinting;
    
-   rend = create_renderer( face, 0 );
+   rend = gk_create_renderer( face, 0 );
 
    if( !rend )
       return false;
 
-   rend_set_italic( rend, italics );
+   gk_rend_set_italic( rend, italics );
 
-   rend_set_size_pixels( rend, w, h );
+   gk_rend_set_size_pixels( rend, w, h );
 
    if( useHinting ) {
-      rend_set_hinting_default( rend );
+      gk_rend_set_hinting_default( rend );
    }
    else {
       gk_rend_set_hinting_off( rend );
@@ -282,7 +282,7 @@ Print( const string &text, int x, int y, int maxLineWidth, TextAlignment alignme
          case ' ': case '\n': {
             string substr( text, start, i-start );
 
-            int lineWidth = text_width_utf8( rend, substr.c_str() );
+            int lineWidth = gk_text_width_utf8( rend, substr.c_str() );
 
             if( lineWidth > maxLineWidth && !noLastSpace ) {
                string line( text, start, lastSpace - start );
@@ -301,7 +301,7 @@ Print( const string &text, int x, int y, int maxLineWidth, TextAlignment alignme
 
             string line( text, start, i-start );
 
-            lineWidth = text_width_utf8( rend, substr.c_str() );
+            lineWidth = gk_text_width_utf8( rend, substr.c_str() );
 
             TextAlignment realAlignment = ( alignment == JUSTIFY )? LEFT : alignment;
 
@@ -319,7 +319,7 @@ Print( const string &text, int x, int y, int maxLineWidth, TextAlignment alignme
    if( start != text.length() ) {
       string line( text, start, text.length()-start );
 
-      int lineWidth = text_width_utf8( rend, line.c_str() );
+      int lineWidth = gk_text_width_utf8( rend, line.c_str() );
 
       if( lineWidth > maxLineWidth && !noLastSpace ) {
          string linePart( text, start, lastSpace - start );
@@ -343,10 +343,16 @@ RenderLineAligned( const string &line, int x, int y,
       int textX = x;
 
       switch( alignment ) {
-         case LEFT: break;
-         case RIGHT: textX += maxLineWidth - text_width_utf8( rend, line.c_str() ); break;
-         case CENTER: textX += (maxLineWidth - text_width_utf8( rend, line.c_str() ))/2; break;
-	      case JUSTIFY: break; //nothing
+         case LEFT:
+           break;
+         case RIGHT:
+           textX += maxLineWidth - gk_text_width_utf8( rend, line.c_str() );
+           break;
+         case CENTER:
+           textX += (maxLineWidth - gk_text_width_utf8( rend, line.c_str() ))/2;
+           break;
+	      case JUSTIFY:
+          break; //nothing
       }
 
       gk_render_line_gl_utf8( texture, line.c_str(), textX, y );
@@ -358,7 +364,7 @@ RenderLineAligned( const string &line, int x, int y,
          if( line[i] == ' ' ) numSpaces++;
       }
 
-      float pixelsPerSpace = float( maxLineWidth - text_width_utf8( rend, line.c_str() ))/numSpaces;
+      float pixelsPerSpace = float( maxLineWidth - gk_text_width_utf8( rend, line.c_str() ))/numSpaces;
       int wordStart = 0;
       float wordX = x;
 
@@ -366,7 +372,7 @@ RenderLineAligned( const string &line, int x, int y,
          if( line[i] == ' ' ) {
             string word( line, wordStart, i - wordStart );
             gk_render_line_gl_utf8( texture, word.c_str(), int( wordX ), y );
-            wordX += text_width_utf8( rend, ( word + " " ).c_str() ) + pixelsPerSpace;
+            wordX += gk_text_width_utf8( rend, ( word + " " ).c_str() ) + pixelsPerSpace;
 
             wordStart = i+1;
          }
@@ -397,13 +403,13 @@ FirstLineWidth( const string &text ) const {
    for( unsigned int i = 0; i < text.length(); i++ ) {
       if( text[i] == '\n' ) {
          string substr( text, 0, i );
-         width = text_width_utf8( rend, substr.c_str() );
+         width = gk_text_width_utf8( rend, substr.c_str() );
          break;
       }
    }
 
    if( width == 0 ) {
-      width = text_width_utf8( rend, text.c_str() );
+      width = gk_text_width_utf8( rend, text.c_str() );
    }
 
    return width;
@@ -413,7 +419,7 @@ FirstLineWidth( const string &text ) const {
 
 int TextRenderer::
 FirstLineHeight( const std::string &text ) const {
-   return rend_ascender_pixels( rend );
+   return gk_rend_ascender_pixels( rend );
 }
 
 
@@ -434,7 +440,7 @@ Width( const string &text ) const {
    for( unsigned int i = 0; i < text.length(); i++ ) {
       if( text[i] == '\n' ) {
          string substr( text, start, i-start );
-         currW += text_width_utf8( rend, substr.c_str() );
+         currW += gk_text_width_utf8( rend, substr.c_str() );
          if( currW > width )
             width = currW;
          
@@ -450,7 +456,7 @@ Width( const string &text ) const {
             if( substr.substr( 0, COLOR_START_TAG_BEGIN.size() ) == COLOR_START_TAG_BEGIN
                   || substr == COLOR_END_TAG ) {
                string textThusFar( text, start, i-start );
-               currW += text_width_utf8( rend, textThusFar.c_str() );
+               currW += gk_text_width_utf8( rend, textThusFar.c_str() );
                start = tagEndPos+1;
                i = start-1;
             }
@@ -461,7 +467,7 @@ Width( const string &text ) const {
    if( start != text.length() || currW != 0 ) {
       string substr( text, start, text.length()-start );
       
-      currW += text_width_utf8( rend, substr.c_str() );
+      currW += gk_text_width_utf8( rend, substr.c_str() );
       if( currW > width )
          width = currW;
    }
@@ -473,7 +479,7 @@ Width( const string &text ) const {
 
 int TextRenderer::
 Height( const string &text ) const {
-   int textHeight = rend_ascender_pixels( rend );//text_height_utf8( rend, text.c_str());
+   int textHeight = gk_rend_ascender_pixels( rend );//text_height_utf8( rend, text.c_str());
    int height = 0;
    unsigned int start = 0;
    for( unsigned int i = 0; i < text.length(); i++ ) {
@@ -523,13 +529,13 @@ IsValid() const {
 
 
 void TextRenderer::
-SetColor( const Rgba col ) {
+SetColor( const Rgba& col ) {
    this->col = col;
 }
 
 
 
-Rgba TextRenderer::
+const Rgba& TextRenderer::
 GetColor() const {
    return col;
 }
@@ -541,7 +547,7 @@ void TextRenderer::
 SetItalics( int italics ) {
    if( italics != this->italics ) {
       UnloadFromGPU();
-      rend_set_italic( rend, italics );
+      gk_rend_set_italic( rend, italics );
       SendToGPU();
    }
 }

@@ -58,26 +58,43 @@ namespace ol
 			
 	};
 	
-	OL_LIB_DECLSPEC GLYPH_FACE *load_face_from_file(const char *filename, int index);
-	OL_LIB_DECLSPEC GLYPH_REND *create_renderer( GLYPH_FACE* const face, int index );
-	OL_LIB_DECLSPEC void rend_set_italic( GLYPH_REND* const rend, int italics );
-	OL_LIB_DECLSPEC void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned int width, const unsigned int height);
-	OL_LIB_DECLSPEC void rend_set_hinting_default( GLYPH_REND* const rend );
+	OL_LIB_DECLSPEC GLYPH_FACE *gk_load_face_from_file(const char *filename, int index);
+	OL_LIB_DECLSPEC GLYPH_REND *gk_create_renderer( GLYPH_FACE* const face, int index );
+	OL_LIB_DECLSPEC void gk_rend_set_italic( GLYPH_REND* const rend, int italics );
+	OL_LIB_DECLSPEC void gk_rend_set_size_pixels( GLYPH_REND* const rend, const unsigned int width, const unsigned int height);
+	OL_LIB_DECLSPEC void gk_rend_set_hinting_default( GLYPH_REND* const rend );
 	OL_LIB_DECLSPEC void gk_rend_set_hinting_off( GLYPH_REND* const rend );
 	OL_LIB_DECLSPEC void rend_set_render_mode_normal( GLYPH_REND* const rend );
-	OL_LIB_DECLSPEC Rgba colorConvert(const unsigned char *c,short ext);
-	OL_LIB_DECLSPEC Rgba colorConvert(const unsigned int c);
 	OL_LIB_DECLSPEC void gk_rend_set_text_alpha_color( GLYPH_REND* const rend, const unsigned alpha_color);
 	OL_LIB_DECLSPEC int gk_rend_ascender_pixels( GLYPH_REND* const rend );
-	OL_LIB_DECLSPEC int rend_ascender_pixels( GLYPH_REND* const rend );
 	OL_LIB_DECLSPEC int gk_rend_height_pixels( GLYPH_REND* const rend );
-	OL_LIB_DECLSPEC int text_width_utf8(GLYPH_REND* const rend,const char* const text);
+	OL_LIB_DECLSPEC int gk_text_width_utf8(GLYPH_REND* const rend,const char* const text);
 	OL_LIB_DECLSPEC GLYPH_TEXTURE *gk_create_texture( GLYPH_REND *rend, int rangeStart, int rangeLength );
 	OL_LIB_DECLSPEC void gk_unload_texture_from_gpu( GLYPH_TEXTURE *texture );
 	OL_LIB_DECLSPEC void gk_destroy_texture( GLYPH_TEXTURE *texture );
 	OL_LIB_DECLSPEC void gk_render_line_gl_utf8( GLYPH_TEXTURE *texture, const char *text, int x, int y );
 	OL_LIB_DECLSPEC void gk_send_texture_to_gpu( GLYPH_TEXTURE *texture );
-	
+
+//   OL_LIB_DECLSPEC Rgba colorConvert(const unsigned char *c,short ext);
+//   OL_LIB_DECLSPEC Rgba colorConvert(const unsigned int c);
+
+  inline Rgba colorConvert(const unsigned char *c,short ext)
+  {
+    const float component = *c / (float)(ext-1);
+    return Rgba(component, component, component, component);
+  }
+
+  inline Rgba colorConvert(const unsigned int c)
+  {
+    return Rgba(
+                (((c >> 16) & 0xff )/255.0f)
+                ,(((c >>  8) & 0xff )/255.0f)
+                ,(((c      ) & 0xff )/255.0f)
+                ,(((c >> 24) & 0xff )/255.0f)
+               );
+  }
+
+
 	class OL_LIB_DECLSPEC dimension
 	{
 		public:
@@ -210,10 +227,12 @@ namespace ol
 			bool load(const std::string & filename, int index=0, unsigned int width=14, unsigned int height=8);
 			
 			//! Get text length
-			double getLength(const std::string & text);
+			double getLength(const char* text);
 			
 			//! Render font to a bitmap
-			void render(double x, double y, Rgba col, Bitmap *bmp, int alignment, const std::string & text, ...);
+			void render(double x, double y, const Rgba& col, Bitmap *bmp, int alignment, const char* text, ...);
+
+      void renderFixed(double x, double y, const Rgba& col, Bitmap *bmp, int alignment, const char* text);
 			
 			//! Set size
 			void setSize(int w, int h);

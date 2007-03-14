@@ -112,7 +112,7 @@ namespace ol
 		tempChar.right = face->glyph->advance.x >> 6;
 		tempChar.unicode = unicode;
 			
-		tempChar.length = (w + ew)+face->glyph->advance.x >> 6;
+		tempChar.length = ( (w + ew)+face->glyph->advance.x ) >> 6;
 			
 		return tempChar;
 #else
@@ -143,43 +143,42 @@ namespace ol
 #endif
 	}
 	
-	// Render a character from the lookup table (utilizing the workBitmap)
-	void Glyph::drawCharacter(signed long unicode, double &x1, double &y1, Bitmap *bitmap, const Rgba & col)
-	{
+  // Render a character from the lookup table (utilizing the workBitmap)
+  void Glyph::drawCharacter(signed long unicode, double &x1, double &y1, Bitmap *bitmap, const Rgba & col)
+  {
 #ifdef USE_NEW_TTF
-		std::map<dimension, std::map<signed long, character> >::iterator ft;
-		ft = fontTable.find(size);
-		if(ft!=fontTable.end())
-		{
-			std::map<signed long, character>::iterator p;
-			p = (ft->second).find(unicode);
-			if(p!=(ft->second).end())
-			{
-				character *tempChar = &p->second;
-				
-				unsigned char *line = tempChar->line;
-				for (int y = (int)y1; y < (int)(y1)+tempChar->rows; y++)
-				{
-					unsigned char *buffer = line;
-					for (int x = (int)x1; x < (int)(x1)+tempChar->width; x++)
-					{
-						Rgba checkCol = colorConvert(buffer++,tempChar->grays);
-						if(checkCol.r==0 && checkCol.g==0 && checkCol.b==0 && checkCol.a==0)continue;
-						double intensity = ( checkCol.r * 0.30 + checkCol.g * 0.59 + checkCol.b * 0.11);
-						checkCol.r = col.r * intensity;
-						checkCol.g = col.g * intensity;
-						checkCol.b = col.b * intensity;
-						checkCol.a = col.a * intensity;
-						
-						ol::Point(float(x + tempChar->left),float(y - tempChar->top)).Draw( checkCol );
-					}
-					line += tempChar->pitch;
-				}
-				x1+=tempChar->right;
-			}
-		}
+    std::map<dimension, std::map<signed long, character> >::const_iterator ft = fontTable.find(size);
+    if(ft!=fontTable.end())
+    {
+      std::map<signed long, character>::const_iterator p = (ft->second).find(unicode);
+      if(p!=(ft->second).end())
+      {
+        const character *tempChar = &p->second;
+
+        unsigned char *line = tempChar->line;
+        for (int y = (int)y1; y < (int)(y1)+tempChar->rows; y++)
+        {
+          unsigned char *buffer = line;
+          for (int x = (int)x1; x < (int)(x1)+tempChar->width; x++)
+          {
+            Rgba checkCol = colorConvert(buffer++,tempChar->grays);
+            if(checkCol.r==0 && checkCol.g==0 && checkCol.b==0 && checkCol.a==0)
+              continue;
+            const double intensity = ( checkCol.r * 0.30 + checkCol.g * 0.59 + checkCol.b * 0.11);
+            checkCol.r = col.r * intensity;
+            checkCol.g = col.g * intensity;
+            checkCol.b = col.b * intensity;
+            checkCol.a = col.a * intensity;
+
+            ol::Point(float(x + tempChar->left),float(y - tempChar->top)).Draw( checkCol );
+          }
+          line += tempChar->pitch;
+        }
+        x1+=tempChar->right;
+      }
+    }
 #endif
-	}
+  }
 
 	
 	// Load font from memory
@@ -257,7 +256,7 @@ namespace ol
 #endif
 	}
 	
-	void Glyph::render(double x, double y, Rgba col, Bitmap *bmp, int alignment, const std::string & text, ...)
+	void Glyph::render(double x, double y, const Rgba& col, Bitmap *bmp, int alignment, const char* text, ...)
 	{
 #ifdef USE_NEW_TTF
 		if(faceLoaded)
@@ -265,11 +264,12 @@ namespace ol
 			double rend_x=0;
 			double rend_y=0;
 			std::ostringstream str;
-					
-					// Get extra arguments
+
+      // Get extra arguments
 			va_list ap;
 			va_start(ap, text);
-			for(unsigned int i = 0; i<text.length();++i)
+      const size_t text_length = strlen(text);
+      for(size_t i = 0; i<text_length;++i)
 			{
 				if(text[i]=='%')
 				{
@@ -296,75 +296,91 @@ namespace ol
 				}
 			}
 			va_end(ap);
-					
-			std::string fixedText(str.str());
-			switch(alignment)
-			{
-				case 0:
-					rend_x=x;
-					rend_y=y;
-					break;
-				case 1:
-					rend_x = x - getLength(fixedText)/2;
-					rend_y=y;
-					break;
-				case 2:
-					rend_x = x - getLength(fixedText);
-					rend_y=y;
-					break;
-			}
-			int previous = 0;
-			int next = 0;
-			
-			// Get the point size and set it to the primary size in order to avoid messed up fonts
-				
-			GLfloat psGrab, psizes[2];
-			glGetFloatv(GL_POINT_SIZE_RANGE, psizes);
-			glGetFloatv(GL_POINT_SIZE, &psGrab);
-			glPointSize(psizes[0]);
-			
-			// Save the old transform state
-			ol::Transforms::PushPlacement();
-				
-			// Also set the projection mode and switch back if necessary
-			ol::Settings::SetOrthographicProjection();
-			
-			for(unsigned int i = 0; i<fixedText.length();++i)
-			{
-				if(kerning && previous && next)
-				{
-					next = FT_Get_Char_Index( face, fixedText[i] );
-					FT_Vector delta;
-					FT_Get_Kerning( face, previous, next, FT_KERNING_DEFAULT, &delta );
-					rend_x += delta.x >> 6;
-					previous = next;
-				}
-				drawCharacter(fixedText[i],rend_x, rend_y, bmp, col);
-			}
-			
-			// Set previous pointsize
-			glPointSize(psGrab);
-			
-			// Restore last mode
-			ol::Settings::RestoreOldProjection();
-			
-			// Restore transform
-			ol::Transforms::PopPlacement();
-			
+
+      std::string fixedText(str.str());
+      renderFixed(x, y, col, bmp, alignment, fixedText.c_str());
 		}
 #endif
 	}
 	
 	
+  void Glyph::renderFixed(double x, double y, const Rgba& col, Bitmap *bmp, int alignment, const char* text)
+  {
+#ifdef USE_NEW_TTF
+    if(faceLoaded)
+    {
+      double rend_x=0;
+      double rend_y=0;
+
+      switch(alignment)
+      {
+      case 0:
+        rend_x=x;
+        rend_y=y;
+        break;
+      case 1:
+        rend_x = x - getLength(text)/2;
+        rend_y=y;
+        break;
+      case 2:
+        rend_x = x - getLength(text);
+        rend_y=y;
+        break;
+      }
+
+      // Get the point size and set it to the primary size in order to avoid messed up fonts
+
+      GLfloat psGrab, psizes[2];
+      glGetFloatv(GL_POINT_SIZE_RANGE, psizes);
+      glGetFloatv(GL_POINT_SIZE, &psGrab);
+      glPointSize(psizes[0]);
+
+      // Save the old transform state
+      ol::Transforms::PushPlacement();
+
+      // Also set the projection mode and switch back if necessary
+      ol::Settings::SetOrthographicProjection();
+
+      int previous = 1;
+      int next = 1;
+      const size_t text_length = strlen(text);
+      for(size_t i = 0; i<text_length;++i)
+      {
+        if(kerning && previous && next)
+        {
+          next = FT_Get_Char_Index( face, text[i] );
+          FT_Vector delta;
+          FT_Get_Kerning( face, previous, next, FT_KERNING_DEFAULT, &delta );
+          rend_x += delta.x >> 6;
+          previous = next;
+        }
+        drawCharacter(text[i],rend_x, rend_y, bmp, col);
+      }
+
+      // Set previous pointsize
+      glPointSize(psGrab);
+
+      // Restore last mode
+      ol::Settings::RestoreOldProjection();
+
+      // Restore transform
+      ol::Transforms::PopPlacement();
+
+    }
+#endif
+  }
+
+
 	// Get text length
-	double Glyph::getLength(const std::string & text)
+	double Glyph::getLength(const char* text)
 	{
 		double length=0;
 		std::map<dimension, std::map<signed long, character> >::iterator ft;
 		ft = fontTable.find(size);
 		if(ft!=fontTable.end())
 		{
-			for(unsigned int i = 0; i<text.length();++i)
+      const size_t text_length = strlen(text);
+			for(unsigned int i = 0; i<text_length;++i)
 			{
 				std::map<signed long, character>::iterator p;
 				p = (ft->second).find(text[i]);
@@ -477,7 +493,7 @@ namespace ol
 		if(glyphFace)delete glyphFace;	
 	}
 	
-	GLYPH_FACE *load_face_from_file(const char *filename, int index)
+	GLYPH_FACE *gk_load_face_from_file(const char *filename, int index)
 	{
 		GLYPH_FACE *temp = new GLYPH_FACE();
 		
@@ -498,7 +514,7 @@ namespace ol
 		// Nothing to do	
 	}
 	
-	GLYPH_REND *create_renderer( GLYPH_FACE* const face, int index )
+	GLYPH_REND *gk_create_renderer( GLYPH_FACE* const face, int index )
 	{
 		GLYPH_REND *temp = new GLYPH_REND();
 		
@@ -507,17 +523,17 @@ namespace ol
 		return temp;
 	}
 	
-	void rend_set_italic( GLYPH_REND* const rend, int italics )
+	void gk_rend_set_italic( GLYPH_REND* const rend, int italics )
 	{
 		rend->glyphFace->setItalics(italics);
 	}
 	
-	void rend_set_size_pixels( GLYPH_REND* const rend, const unsigned int width, const unsigned int height)
+	void gk_rend_set_size_pixels( GLYPH_REND* const rend, const unsigned int width, const unsigned int height)
 	{
 		rend->glyphFace->setSize(width, height);
 	}
 	
-	void rend_set_hinting_default( GLYPH_REND* const rend )
+	void gk_rend_set_hinting_default( GLYPH_REND* const rend )
 	{
 		rend->glyphFace->setHinting(true);
 	}
@@ -532,16 +548,6 @@ namespace ol
 		rend->glyphFace->setAntialias(true);
 	}
 	
-	Rgba colorConvert(const unsigned char *c,short ext)
-	{
-		return Rgba(*c * 255 / (ext - 1), *c * 255 / (ext - 1),*c * 255 / (ext - 1),*c * 255 / (ext - 1));
-	}
-	
-	Rgba colorConvert(const unsigned int c)
-	{
-		return Rgba((float)(((c >> 16) & 0xff )/255.0),(float)(((c >> 8) & 0xff )/255.0),(float)(((c) & 0xff )/255.0),(float)(((c >> 24) & 0xff )/255.0));
-	}
-	
 	void gk_rend_set_text_alpha_color( GLYPH_REND* const rend, const unsigned alpha_color)
 	{
 		rend->glyphFace->color = colorConvert(alpha_color);
@@ -552,17 +558,12 @@ namespace ol
 		return rend->glyphFace->getHeight();
 	}
 	
-	int rend_ascender_pixels( GLYPH_REND* const rend )
-	{
-		return rend->glyphFace->getHeight();
-	}
-	
 	int gk_rend_height_pixels( GLYPH_REND* const rend )
 	{
 		return rend->glyphFace->getTotalHeight();
 	}
 	
-	int text_width_utf8(GLYPH_REND* const rend,const char* const text)
+	int gk_text_width_utf8(GLYPH_REND* const rend,const char* const text)
 	{
 		return (int)rend->glyphFace->getLength(text);
 	}
@@ -598,7 +599,7 @@ namespace ol
 	
 	void gk_render_line_gl_utf8( GLYPH_TEXTURE *texture, const char *text, int x, int y )
 	{
-		texture->glyphFace->render(x,y,texture->glyphFace->color,NULL,0,text);
+		texture->glyphFace->renderFixed(x,y,texture->glyphFace->color,NULL,0,text);
 	}
 	
 	void gk_send_texture_to_gpu( GLYPH_TEXTURE *texture )

@@ -173,7 +173,7 @@ ApplyTransforms() {
 
 
 void Transforms::
-SetTintColor( Rgba color ) {
+SetTintColor( const Rgba& color ) {
    Transforms::color = color;
 }
 
@@ -202,13 +202,13 @@ ApplyTinting() {
 
 
 void Transforms::
-SetColorChannels( Rgba cofficients ) {
+SetColorChannels( const Rgba& cofficients ) {
    colorChannels = cofficients;
 }
 
 
 
-Rgba Transforms::
+const Rgba& Transforms::
 GetColorChannels() {
    return colorChannels;
 }
