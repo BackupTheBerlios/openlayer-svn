@@ -25,6 +25,9 @@
 #ifndef OPENLAYER_HPP
 #define OPENLAYER_HPP
 
+// Shared library (DLL on windows)
+#cmakedefine OL_SHARED
+
 // Defines set accordingly to compiled settings
 #define OL_DRIVER ALLEGRO_GL
 #ifndef OL_NO_PNG

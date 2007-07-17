@@ -90,7 +90,8 @@ if(NOT DISABLE_TTF)
 	set(TTF_OK 1)
 endif(NOT DISABLE_TTF)
 dependent_option(ENABLE_INTERNAL_FONT "Use internal font renderer" on "TTF_OK" on)
-dependent_option(DISABLE_PNG "Disable PNG support" off "PNG_FOUND" on)
+# dependent_option(DISABLE_PNG "Disable PNG support" on "PNG_FOUND" on)
+option(DISABLE_PNG "Disable PNG support" off)
 option(DISABLE_OLD_API "Disable backwards compatibility with 2.0 and below" off)
 option(DISABLE_STATE_CHANGES "Disable state changes" off)
 
@@ -303,12 +304,12 @@ include_directories(include ${CMAKE_BINARY_DIR}/include include/OpenLayer ${FREE
 # -------------------------------------------------------
 # OpenLayer Library
 # -------------------------------------------------------
-add_library (openlayer ${CREATE_STATIC_LIBRARY} ${SOURCES})
+add_library (openlayer ${CREATE_STATIC_LIB} ${SOURCES})
 
 # -------------------------------------------------------
 # Create the library
 # -------------------------------------------------------
-target_link_libraries(openlayer)
+target_link_libraries(openlayer ${ALLEGROGL_LIBRARY} ${PNG_LIB} ${GLYPHKEEPER_LIB} ${FREETYPE_LIB} ${ZLIB_LIB} ${ALLEGRO_LIBRARY} ${OPENGL_LIBRARIES} ${WIN_LIBS})
 
 # -------------------------------------------------------
 # Demos
